@@ -1,9 +1,36 @@
-Self-Supervised Anomaly Detection using Video World Model for AV
 
-Note
+AV - Anomaly Detection/Perception
+Problem statement Versions:
+- (If real time): On Driving Model that can drive through the worst driving conditions (weather and ground obstacles)
+- (If simulation): Be able to create 3D simulations from the messiest data of weather conditions and obstacles
+- What nathan said about LiDAR competition?? lol
 
-Topics: Video World Model, Autonomous Driving
+Active Cross-Modality Adverse-Weather Selection: Katherine
+    - Dataset: Real time (harder? stretch goal?) or simulation (core idea?)
+    - Data Trimming: Are the scenes rare enough to be used by the adverse model? (if so, that data is used for the model)
+        - Rare-Scenario Detection as a Data-Curation Engine for AV Perception - Alejandro
+    2. Model: Depth Anything V2? World Model? ___________________
+    3. Metrics
+        - Occulusion Filter
+        - Puddle / Occlusion-Aware Drivable-Space Estimator - Varad
+    4. Visually show cleaned data and metrics in engine (before and after)
 
-    Learn "normal" behavior from the scene over time
-    Event clustering and statistical mapping
-    Flag anomalous behavior observed: new road closure, wet spill, etc.
+On Deck:
+3D Occupancy World Model for Household Clutter Prediction - Varad
+Self-Supervised Anomaly Detection using Video World Model for AV - Nathan A
+
+Other Ideas:
+- Learned Frame Budgeting for VLMs = Nathan A
+- Causal-Policy Urban Forecasting VLM (C-PUF) Katherine
+- Context and Quality-Aware VLM for Low-Vision Users - Nathan B
+- Damage-and-Accessibility-Aware Disaster Mapping - Nathan B
+
+
+Next Steps:
+- Wed 10-12 AM: (someone find link) Go to TA office hours to stress test idea @Nathan A, Nathan B, Varad Tawde, Katherine
+- Finalize Project Proposal Idea Meeting - TBD TIME
+- Clean up project idea working summary (above) - Katherine
+
+
+
+
