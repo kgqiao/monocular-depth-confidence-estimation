@@ -1,0 +1,9 @@
+Self-Supervised Anomaly Detection using Video World Model for AV
+
+Note
+
+Topics: Video World Model, Autonomous Driving
+
+    Learn "normal" behavior from the scene over time
+    Event clustering and statistical mapping
+    Flag anomalous behavior observed: new road closure, wet spill, etc.
