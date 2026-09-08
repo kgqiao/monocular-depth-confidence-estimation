@@ -1,4 +1,62 @@
 
+
+AV - Anomaly Detection/Perception
+Problem statement:
+- (If simulation): Be able to create 3D simulations from the messiest data of weather conditions and obstacles
+
+Active Cross-Modality Adverse-Weather Selection
+1. Dataset: static dataset
+
+2. Core Contribution 1 - Improving depth Anything V2 via refined calculations of variance
+
+[ ### Phase 3: Temporal Uncertainty & Vision Disagreement
+*Quantify frame-to-frame geometric instability induced by weather noise.*
+*   **Primary Stack:** PyTorch, Depth Anything V2 (Metric variant).
+*   **Implementation:** Process sequential RGB frames through *Depth Anything V2*. Because raindrops or 
+heavy fog distort lens elements dynamically, depth predictions for static structures will fluctuate violently 
+over time. Implement a temporal sliding-window filter to calculate the statistical pixel-wise depth variance 
+($\sigma^2$) across a 5-frame interval. High variance flags transient weather distortion.
+
+### Phase 4: The Active Cross-Modality Selector *(Core Contribution)*
+*Formulate a cross-modality data pruning policy that cross-examines vision with physics.*
+*   **Primary Stack:** Python, NumPy, SciPy (Information Theory module).
+*   **Implementation:** Build the active selector logic. For regions where visual depth variance spikes, look up the projected 
+Radar depths in that exact spatial cluster. Since Radar waves pierce rain and snow without degradation, treat the Radar as an 
+absolute structural sanity check. If the camera's depth prediction fundamentally contradicts the Radar data, drop the frame. 
+If they match despite the rain, keep the frame. Prune the raw video data down to an optimized sub-set of the top ~10–15% highest-
+fidelity frames.
+
+3. Core Contribution 2: Improving by adding an occulusion filter
+- (add Varad)
+
+
+
+
+
+4. Metric Comparison - proving the results of the improvements made from our contribution
+    - Standard Depth Anything vs our improved depth anything (before and after)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 AV - Anomaly Detection/Perception
 Problem statement Versions:
 - (If real time): On Driving Model that can drive through the worst driving conditions (weather and ground obstacles)
