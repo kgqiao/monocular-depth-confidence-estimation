@@ -1,10 +1,49 @@
-# Route B: Can we predict where Depth Anything is wrong, before we see the error?
+# Can we predict where Depth Anything is wrong, before we see the error?
 
 > Depth Anything V2 outputs a depth for every pixel and no indication of which pixels to trust. This project trains a small model that reads the depth model's own features and predicts, per pixel, whether that depth is about to be wrong.
 
 The prediction is made from the camera alone plus a few hundred radar points.
 The answer key comes from lidar, which the deployed system would not have. So
 the model is learning to anticipate an error it cannot measure.
+
+---
+
+## Updates
+
+- The learned confidence head is the main contribution.
+- Adverse weather stays as the use case, because it is the framing the TA liked
+  and it gives the work a human application.
+- The Google doc's Core Contribution 1, the cross-modality frame selector, stays
+  in the proposal as a secondary contribution and a floor deliverable. It is
+  already approved and it needs no training, so it is the thing we can promise.
+- Dataset is not decided. nuScenes for training; an adverse-weather set named as
+  a candidate for evaluation.
+
+
+---
+
+## Use Case
+
+Depth Anything is used as a drop-in depth source in driving, robotics, AR and
+reconstruction, and none of those uses get a signal saying which pixels to
+believe. Adverse weather is the sharpest instance of the problem: rain on the
+lens, spray, low sun and night are exactly when the depth is worst and when a
+wrong depth costs the most.
+
+The caveat is that nuScenes weather is mild. Published occupancy work reports
+lidar-only dropping only a few mIoU from clear day to rainy night, which is a
+property of the dataset, not of rain. Nathan A has the papers in the repo;
+pull the exact number and cite it rather than repeating "a few".
+
+So the claim we can defend on nuScenes is the general one: **we can predict when
+Depth Anything is wrong.** Weather is one of the conditions we report it under,
+alongside night. Two other conditions are worth reporting for the same reason and
+cost nothing extra, because the failure has the same shape: textureless surfaces
+where there is nothing to estimate depth from, and object boundaries where the
+depth is ambiguous between foreground and background.
+
+If we want a strong weather claim, it has to come from a dataset with strong
+weather. See [Datasets](#datasets).
 
 ---
 
@@ -96,7 +135,7 @@ pixels and at inference produces a confidence for every pixel in the image.
 
 ## Training Path
 
-> Use CARC GPU time
+> We can use CARC GPU time
 
 **Pass 1: cache the frozen model's outputs.** Load the Depth Anything checkpoint
 and the nuScenes images. Forward pass only, no gradients. Write to disk, per
@@ -146,12 +185,95 @@ scene count in each split next to the number.
 
 ---
 
+## Secondary contribution: the frame selector
+
+The Google doc's Contribution 1 ranks frames by depth variance, checks the
+suspect regions against radar, and keeps the best 10 to 15 percent. It trains
+nothing and it is already approved. Keeping it costs almost nothing here,
+because it is already in the plan twice over.
+
+It is already a baseline. "Raw temporal variance, no learning" in the list above
+is that rule, scored on the same axes as the head. If the head cannot beat it,
+that is a real finding and the selector becomes the result rather than the
+fallback.
+
+It is already scoreable at frame granularity. Rank whole frames by mean
+predicted confidence instead of ranking pixels, drop the worst N percent, and
+recompute depth error on the frames that remain. That is the sparsification
+curve with the frame as the unit. It gives the selector a number, which the
+Google doc version did not have.
+
+So the honest framing for the proposal: the selector is the hand-designed
+version of the same idea, and the head is the learned version. We report both,
+on the same axes. The floor is that the selector works and we say by how much.
+
+Where the two differ: the selector makes a keep-or-drop decision per frame and
+throws data away, and the head emits a dense map for every frame and throws
+nothing away. Anything downstream that needs an output for every frame, occupancy
+included, can only use the head.
+
+---
+
+## Datasets
+
+nuScenes trains the head. It is the only candidate with all four things the head
+needs at once: a lidar sweep for labels, radar for the residual channels, 12 Hz
+camera sweeps for temporal variance, and weather tags for the splits.
+
+For an adverse-weather evaluation set, the constraint is that the head needs
+lidar to be scored at all, and needs radar and sequences for its input channels
+to survive the move.
+
+| | Camera | Lidar | Radar | Sequences | Fit |
+|---|---|---|---|---|---|
+| nuScenes | 6 | 1 | 5 | 20 s at 12 Hz | Training and dev |
+| STF / DENSE | 2 | 2 | 1 | verify | Best transfer candidate |
+| Zenseact ZOD | 1 | 3 | none listed | 1473 x 20 s | Lidar yes, radar channels do not transfer |
+| DAWN | 1 | none | none | none | Cannot run the head |
+
+**STF / DENSE** (Bijelic et al., CVPR 2020, `SeeingThroughFog`) is the closest
+match: 12,000 samples from 10,000 km in northern Europe plus 1,500 in a fog
+chamber, with camera, lidar, radar and a gated NIR camera. Real snow and dense
+fog, which nuScenes does not have. The fog chamber is the interesting part, since
+visibility is controlled rather than observed. Verify whether it ships temporal
+sequences or discrete samples, because temporal variance needs neighbouring
+frames.
+
+**ZOD** is permissively licensed, has three lidars and 1473 twenty-second
+sequences, and covers Nordic weather. One forward camera and no radar in the
+sensor list, so the two radar channels have nothing to read. Usable if the radar
+ablation says radar was not carrying the head anyway.
+
+**DAWN** cannot support this project. It is roughly 1,000 stills scraped from
+image search with 2D boxes drawn on them. No lidar means no labels, no radar
+means no residual channels, and no sequences means no temporal variance. It is
+built for detection benchmarking. Worth saying this out loud before it goes in
+the proposal.
+
+**On transfer.** Training on nuScenes and evaluating on any of these is a domain
+shift, not a free extra split. Different lidar, different intrinsics, different
+camera count, different radar or none. The decoder-feature channels should carry
+over since Depth Anything is frozen and general, but the radar channels will not
+transfer without recomputation, and the calibration work is real. Scope it as a
+stretch with a stated fallback: if transfer does not land, the weather claim is
+reported on nuScenes and named as mild.
+
+---
+
 ## Things to keep in mind
 
 **Lidar labels are missing where they would be most interesting.** Wet asphalt
 is specular and returns fewer lidar points. In rain we get fewer labels exactly
 in the region where camera depth is most suspect. Report label density per
 weather split so this is visible rather than hidden.
+
+**Variance fails on textureless surfaces and at object edges, not only in rain.**
+A blank wall gives the depth model nothing to fix on, and a boundary pixel is
+genuinely ambiguous between foreground and background. Both produce unstable
+depth with no weather involved. This widens the contribution rather than
+weakening it, but it means variance alone cannot tell weather from geometry, and
+the head has to learn the difference from the decoder features. Report the
+confidence maps broken out by these cases, not only by weather tag.
 
 **The radar channels are mostly zeros.** Five radars return a few hundred points
 per keyframe. Projected into six images, most pixels have no radar and the
@@ -212,6 +334,36 @@ so the number is comparable to published work.
 
 This stage trains a full occupancy network and is where the compute risk lives.
 Stage 1 stands on its own without it.
+
+
+---
+
+## Next Steps After Pre-Proposal
+
+- Fraction of pixels with a lidar return, per camera, from the depth view.
+- Actual decoder feature dimensions of DA-V2 ViT-B, and the resulting cache size.
+- Whether the BEVCar weather split release is usable as published.
+- Poggi et al. CVPR 2020 for the AUSE and AURG definitions, and which of its
+  baselines transfer to a supervised foundation model.
+- Whether anyone has published depth-uncertainty numbers for Depth Anything
+  specifically. The existing work is mostly KITTI and Monodepth2.
+- The exact mIoU drop from clear day to rainy night, with the citation. Nathan A
+  has the papers in the repo. This number is load-bearing for how hard we push
+  the weather framing.
+- Whether STF / DENSE ships temporal sequences or only discrete samples, and
+  whether its radar is usable without a proprietary decoder.
+- ZOD radar: confirm it is genuinely absent rather than just missing from the
+  summaries we read.
+- Access lead time on STF / DENSE and ZOD. Both need registration, and a slow
+  approval decides this for us.
+
+#### Experiment
+
+Plot per-pixel depth variance against actual depth error versus lidar, colored
+by weather tag, using the sandbox as it stands. If the correlation is strong,
+the head has something to learn from. If it is weak, the variance channel is
+dead weight and we find that out for the price of one plot rather than one
+semester.
 
 ---
 
