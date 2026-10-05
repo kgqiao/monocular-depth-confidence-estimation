@@ -25,7 +25,7 @@ export NUSCENES_DATAROOT=/path/to/nuscenes
 export DEPTH_ANYTHING_CHECKPOINT=/path/to/depth_anything_v2_vitb.pth
 ```
 
-Each command also takes `--dataroot`, and `depth-check` takes `--checkpoint`, in place of the variables.
+Each command also takes `--dataroot`, and `depth-check` takes `--checkpoint`, in place of the variables. Run the commands from `pipeline/`: `outputs/` and `results/` are relative to the working folder.
 
 ### Usage
 

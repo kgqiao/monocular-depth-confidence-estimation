@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import sys
 import time
 from pathlib import Path
 
@@ -13,11 +14,21 @@ from .overlay import draw_overlay
 from .project import project_lidar, project_radar
 from .report import density_rows, write_csv, write_summary
 
-PIPELINE_DIR = Path(__file__).resolve().parents[2]
+DEFAULT_VERSION = "v1.0-mini"
 
 
 def load(args) -> NuScenes:
-    return NuScenes(resolve_dataroot(args.dataroot), args.version)
+    nusc = NuScenes(resolve_dataroot(args.dataroot), args.version)
+    if nusc.skipped_scenes:
+        names = ", ".join(s["name"] for s in nusc.skipped_scenes)
+        print(f"warning: skipped {len(nusc.skipped_scenes)} scenes with missing keyframe files: {names}",
+              file=sys.stderr)
+    return nusc
+
+
+def default_summary(version: str) -> Path:
+    name = "projection-density.md" if version == DEFAULT_VERSION else f"projection-density-{version}.md"
+    return Path("results") / name
 
 
 def cmd_scenes(args) -> None:
@@ -52,12 +63,16 @@ def cmd_overlays(args) -> None:
 
 def cmd_report(args) -> None:
     nusc = load(args)
+    summary = Path(args.summary) if args.summary else default_summary(nusc.version)
+    if nusc.skipped_scenes and not args.summary:
+        raise SystemExit(f"Scenes are missing, so the report would not cover the whole split. "
+                         f"Pass --summary to write it anyway; {summary} is left as it is.")
     rows = density_rows(nusc)
     csv_path = Path(args.out) / "projection_density.csv"
     write_csv(rows, csv_path)
-    write_summary(rows, nusc, Path(args.summary))
+    write_summary(rows, nusc, summary)
     print(f"wrote {len(rows)} rows to {csv_path}")
-    print(f"wrote the summary to {args.summary}")
+    print(f"wrote the summary to {summary}")
 
 
 def cmd_depth_check(args) -> None:
@@ -85,7 +100,7 @@ def cmd_depth_check(args) -> None:
 def build_parser() -> argparse.ArgumentParser:
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--dataroot", help="nuScenes folder; default $NUSCENES_DATAROOT")
-    common.add_argument("--version", default="v1.0-mini")
+    common.add_argument("--version", default=DEFAULT_VERSION)
 
     parser = argparse.ArgumentParser(prog="confhead", description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -95,13 +110,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("overlays", parents=[common],
                        help="draw lidar and radar on the first keyframe of each scene")
-    p.add_argument("--out", default=PIPELINE_DIR / "outputs")
+    p.add_argument("--out", default="outputs")
     p.set_defaults(run=cmd_overlays)
 
     p = sub.add_parser("report", parents=[common],
                        help="lidar and radar pixel density over every keyframe camera image")
-    p.add_argument("--out", default=PIPELINE_DIR / "outputs")
-    p.add_argument("--summary", default=PIPELINE_DIR / "results" / "projection-density.md")
+    p.add_argument("--out", default="outputs")
+    p.add_argument("--summary", help="default results/projection-density.md, with -<version> for other splits")
     p.set_defaults(run=cmd_report)
 
     p = sub.add_parser("depth-check", parents=[common],

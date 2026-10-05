@@ -141,13 +141,18 @@ class NuScenes:
 
     def _keep_scenes_on_disk(self) -> None:
         """The tables list every scene of the split; a partial download may
-        carry the files of only some. Keep the scenes whose keyframes exist."""
+        carry the files of only some. Keep the scenes whose keyframe files all
+        exist; list the others in `skipped_scenes`."""
         def present(scene: dict) -> bool:
-            first = self.samples_of_scene[scene["token"]][0]
-            sd = self.keyframe_sd[first["token"]]["CAM_FRONT"]
-            return (self.dataroot / sd["filename"]).exists()
+            return all(
+                (self.dataroot / sd["filename"]).exists()
+                for sample in self.samples_of_scene[scene["token"]]
+                for sd in self.keyframe_sd[sample["token"]].values()
+            )
 
         self.scenes = [s for s in self.table["scene"] if present(s)]
+        kept = {s["token"] for s in self.scenes}
+        self.skipped_scenes = [s for s in self.table["scene"] if s["token"] not in kept]
 
     def condition(self, scene: dict) -> str:
         return condition_of(scene["description"])
