@@ -37,6 +37,12 @@ def test_a_header_that_does_not_match_the_layout_fails_with_the_file_name():
         parse_radar_pcd(pcd(records(1), size=SIZE.replace("2", "4", 1)), "b.pcd")
 
 
+def test_a_truncated_file_fails_with_the_file_name():
+    raw = pcd(records(5))
+    with pytest.raises(ValueError, match=r"d\.pcd: shorter than its 5 points"):
+        parse_radar_pcd(raw[: len(raw) - 7 - 2 * RADAR_PCD_DTYPE.itemsize], "d.pcd")
+
+
 def test_ascii_or_compressed_data_fails():
     with pytest.raises(ValueError, match="not a binary PCD"):
         parse_radar_pcd(pcd(records(1)).replace(b"DATA binary", b"DATA ascii"), "c.pcd")
