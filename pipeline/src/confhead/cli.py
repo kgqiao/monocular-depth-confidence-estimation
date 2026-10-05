@@ -16,6 +16,11 @@ from .report import density_rows, write_csv, write_summary
 
 DEFAULT_VERSION = "v1.0-mini"
 
+# The pipeline folder when the code runs from its source tree (uv's editable
+# install), else the working folder.
+_SOURCE_ROOT = Path(__file__).resolve().parents[2]
+BASE_DIR = _SOURCE_ROOT if (_SOURCE_ROOT / "pyproject.toml").is_file() else Path.cwd()
+
 
 def load(args) -> NuScenes:
     nusc = NuScenes(resolve_dataroot(args.dataroot), args.version)
@@ -28,7 +33,7 @@ def load(args) -> NuScenes:
 
 def default_summary(version: str) -> Path:
     name = "projection-density.md" if version == DEFAULT_VERSION else f"projection-density-{version}.md"
-    return Path("results") / name
+    return BASE_DIR / "results" / name
 
 
 def cmd_scenes(args) -> None:
@@ -110,12 +115,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("overlays", parents=[common],
                        help="draw lidar and radar on the first keyframe of each scene")
-    p.add_argument("--out", default="outputs")
+    p.add_argument("--out", default=BASE_DIR / "outputs")
     p.set_defaults(run=cmd_overlays)
 
     p = sub.add_parser("report", parents=[common],
                        help="lidar and radar pixel density over every keyframe camera image")
-    p.add_argument("--out", default="outputs")
+    p.add_argument("--out", default=BASE_DIR / "outputs")
     p.add_argument("--summary", help="default results/projection-density.md, with -<version> for other splits")
     p.set_defaults(run=cmd_report)
 

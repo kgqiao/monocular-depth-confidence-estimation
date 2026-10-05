@@ -25,7 +25,7 @@ export NUSCENES_DATAROOT=/path/to/nuscenes
 export DEPTH_ANYTHING_CHECKPOINT=/path/to/depth_anything_v2_vitb.pth
 ```
 
-Each command also takes `--dataroot`, and `depth-check` takes `--checkpoint`, in place of the variables. Run the commands from `pipeline/`: `outputs/` and `results/` are relative to the working folder.
+Each command also takes `--dataroot`, and `depth-check` takes `--checkpoint`, in place of the variables.
 
 ### Usage
 
@@ -59,7 +59,7 @@ Run the tests. The test that reads real data runs only when `NUSCENES_DATAROOT` 
 uv run pytest
 ```
 
-`outputs/` is not in git. `results/` holds the small summaries that the team reads.
+Both `outputs/` and `results/` are inside `pipeline/`, from whichever folder you run the commands. `outputs/` is not in git. `results/` holds the small summaries that the team reads.
 
 ## Conventions
 
