@@ -97,6 +97,8 @@ def parse_radar_pcd(raw: bytes, name: str) -> np.ndarray:
         if got != want:
             raise ValueError(f"{name}: PCD {key} is {got}, expected {want}")
     n = int(header["POINTS"])
+    if len(raw) - header_end < n * RADAR_PCD_DTYPE.itemsize:
+        raise ValueError(f"{name}: shorter than its {n} points; the file is truncated")
     return np.frombuffer(raw, dtype=RADAR_PCD_DTYPE, count=n, offset=header_end)
 
 
