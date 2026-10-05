@@ -73,6 +73,33 @@ def apply(m: np.ndarray, pts: np.ndarray) -> np.ndarray:
     return pts @ m[:3, :3].T + m[:3, 3]
 
 
+def parse_radar_pcd(raw: bytes, name: str) -> np.ndarray:
+    """Binary PCD bytes -> structured array of RADAR_PCD_DTYPE records.
+
+    The header must declare exactly the fields, sizes and types of
+    RADAR_PCD_DTYPE; anything else fails with the file name.
+    """
+    marker = b"DATA binary\n"
+    if marker not in raw:
+        raise ValueError(f"{name}: not a binary PCD file")
+    header_end = raw.index(marker) + len(marker)
+    header = dict(line.split(" ", 1) for line in raw[:header_end].decode().splitlines()
+                  if line and not line.startswith("#"))
+    names = list(RADAR_PCD_DTYPE.names)
+    expected = {
+        "FIELDS": names,
+        "SIZE": [str(RADAR_PCD_DTYPE[n].itemsize) for n in names],
+        "TYPE": ["F" if RADAR_PCD_DTYPE[n].kind == "f" else "I" for n in names],
+        "COUNT": ["1"] * len(names),
+    }
+    for key, want in expected.items():
+        got = header.get(key, "").split()
+        if got != want:
+            raise ValueError(f"{name}: PCD {key} is {got}, expected {want}")
+    n = int(header["POINTS"])
+    return np.frombuffer(raw, dtype=RADAR_PCD_DTYPE, count=n, offset=header_end)
+
+
 def condition_of(description: str) -> str:
     return "night" if "night" in description.lower() else "day"
 
@@ -206,11 +233,8 @@ class NuScenes:
         Filtering follows the devkit defaults: invalid_state == 0,
         ambig_state == 3, and dyn_prop 0 to 6 (7, "stopped", is dropped).
         """
-        raw = (self.dataroot / sd["filename"]).read_bytes()
-        header_end = raw.index(b"DATA binary\n") + len(b"DATA binary\n")
-        header = raw[:header_end].decode()
-        n = int(next(line for line in header.splitlines() if line.startswith("POINTS")).split()[1])
-        rec = np.frombuffer(raw, dtype=RADAR_PCD_DTYPE, count=n, offset=header_end)
+        path = self.dataroot / sd["filename"]
+        rec = parse_radar_pcd(path.read_bytes(), path.name)
         rec = rec[(rec["invalid_state"] == 0) & (rec["ambig_state"] == 3) & (rec["dyn_prop"] < 7)]
         xyz = np.stack([rec["x"], rec["y"], rec["z"]], axis=1).astype(np.float64)
         return apply(self.sensor_to_ref(frame, sd), xyz)
