@@ -3,8 +3,15 @@
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 
-from .nuscenes import NuScenes, resolve_dataroot
+from PIL import Image
+
+from .nuscenes import CAMERA_CHANNELS, NuScenes, resolve_dataroot
+from .overlay import draw_overlay
+from .project import project_lidar, project_radar
+
+PIPELINE_DIR = Path(__file__).resolve().parents[2]
 
 
 def load(args) -> NuScenes:
@@ -21,6 +28,26 @@ def cmd_scenes(args) -> None:
     print(f"{len(nusc.scenes)} scenes, {total} keyframes")
 
 
+def cmd_overlays(args) -> None:
+    nusc = load(args)
+    out = Path(args.out) / "overlays"
+    out.mkdir(parents=True, exist_ok=True)
+    n = 0
+    for scene in nusc.scenes:
+        frame = nusc.frame(scene["first_sample_token"])
+        for channel in CAMERA_CHANNELS:
+            cam = nusc.camera(frame, channel)
+            lidar = project_lidar(nusc, frame, cam)
+            radar = project_radar(nusc, frame, cam)
+            title = (f"{scene['name']} ({nusc.condition(scene)})  {channel}  "
+                     f"lidar {lidar.n_pixels} px ({lidar.fraction:.2%})  "
+                     f"radar {radar.n_pixels} px from {radar.n_points} points")
+            img = draw_overlay(Image.open(cam.image_path), lidar, radar, title)
+            img.save(out / f"{scene['name']}_{channel}.jpg", quality=90)
+            n += 1
+    print(f"wrote {n} overlays to {out}")
+
+
 def build_parser() -> argparse.ArgumentParser:
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--dataroot", help="nuScenes folder; default $NUSCENES_DATAROOT")
@@ -31,6 +58,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("scenes", parents=[common], help="list the scenes on disk")
     p.set_defaults(run=cmd_scenes)
+
+    p = sub.add_parser("overlays", parents=[common],
+                       help="draw lidar and radar on the first keyframe of each scene")
+    p.add_argument("--out", default=PIPELINE_DIR / "outputs")
+    p.set_defaults(run=cmd_overlays)
     return parser
 
 
