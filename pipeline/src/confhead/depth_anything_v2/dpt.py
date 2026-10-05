@@ -1,3 +1,7 @@
+# Modified from https://github.com/DepthAnything/Depth-Anything-V2 (Apache 2.0):
+# removed DepthAnythingV2.infer_image and image2tensor, the cv2, torchvision and
+# util.transform imports they used, and util/transform.py. confhead/depth.py does
+# the preprocessing instead. The other files of this module are unchanged.
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

@@ -73,4 +73,4 @@ uv run pytest
 - `src/confhead/nuscenes.py`: tables, calibration, and point clouds.
 - `src/confhead/project.py`: points to a sparse depth map and a mask.
 - `src/confhead/overlay.py`, `src/confhead/report.py`: the overlays and the density report.
-- `src/confhead/depth.py`: the Depth Anything V2 predictor. The model is in `src/confhead/depth_anything_v2/` (Apache 2.0, from [Depth-Anything-V2](https://github.com/DepthAnything/Depth-Anything-V2)).
+- `src/confhead/depth.py`: the Depth Anything V2 predictor. The model is in `src/confhead/depth_anything_v2/` (Apache 2.0, from [Depth-Anything-V2](https://github.com/DepthAnything/Depth-Anything-V2)); `dpt.py` is modified, and its header says how.
