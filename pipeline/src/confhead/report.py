@@ -82,7 +82,7 @@ def write_summary(rows: list[dict], nusc: NuScenes, path: Path) -> None:
         f"{n_samples} keyframes, {len(rows)} camera images of 1600 x 900.",
         "",
         f"Each image gets the keyframe lidar sweep and the keyframe returns of all five radars "
-        f"(devkit filter: `invalid_state` 0, `ambig_state` 3), with no earlier sweeps. "
+        f"(the devkit's default filter: `invalid_state` 0, `ambig_state` 3, `dyn_prop` 0 to 6), with no earlier sweeps. "
         f"Points count from {MIN_DEPTH:g} m to {MAX_DEPTH:g} m in depth along the optical axis. "
         f"A pixel counts once, however many points land on it. All values are means per image.",
         "",

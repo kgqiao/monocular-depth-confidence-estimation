@@ -198,15 +198,15 @@ class NuScenes:
     def read_radar(self, frame: Frame, sd: dict) -> np.ndarray:
         """(N,3) float64 xyz in the reference ego frame.
 
-        Filtering follows the devkit defaults: invalid_state == 0 and
-        ambig_state == 3.
+        Filtering follows the devkit defaults: invalid_state == 0,
+        ambig_state == 3, and dyn_prop 0 to 6 (7, "stopped", is dropped).
         """
         raw = (self.dataroot / sd["filename"]).read_bytes()
         header_end = raw.index(b"DATA binary\n") + len(b"DATA binary\n")
         header = raw[:header_end].decode()
         n = int(next(line for line in header.splitlines() if line.startswith("POINTS")).split()[1])
         rec = np.frombuffer(raw, dtype=RADAR_PCD_DTYPE, count=n, offset=header_end)
-        rec = rec[(rec["invalid_state"] == 0) & (rec["ambig_state"] == 3)]
+        rec = rec[(rec["invalid_state"] == 0) & (rec["ambig_state"] == 3) & (rec["dyn_prop"] < 7)]
         xyz = np.stack([rec["x"], rec["y"], rec["z"]], axis=1).astype(np.float64)
         return apply(self.sensor_to_ref(frame, sd), xyz)
 
