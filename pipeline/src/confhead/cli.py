@@ -10,6 +10,7 @@ from PIL import Image
 from .nuscenes import CAMERA_CHANNELS, NuScenes, resolve_dataroot
 from .overlay import draw_overlay
 from .project import project_lidar, project_radar
+from .report import density_rows, write_csv, write_summary
 
 PIPELINE_DIR = Path(__file__).resolve().parents[2]
 
@@ -48,6 +49,16 @@ def cmd_overlays(args) -> None:
     print(f"wrote {n} overlays to {out}")
 
 
+def cmd_report(args) -> None:
+    nusc = load(args)
+    rows = density_rows(nusc)
+    csv_path = Path(args.out) / "projection_density.csv"
+    write_csv(rows, csv_path)
+    write_summary(rows, nusc, Path(args.summary))
+    print(f"wrote {len(rows)} rows to {csv_path}")
+    print(f"wrote the summary to {args.summary}")
+
+
 def build_parser() -> argparse.ArgumentParser:
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--dataroot", help="nuScenes folder; default $NUSCENES_DATAROOT")
@@ -63,6 +74,12 @@ def build_parser() -> argparse.ArgumentParser:
                        help="draw lidar and radar on the first keyframe of each scene")
     p.add_argument("--out", default=PIPELINE_DIR / "outputs")
     p.set_defaults(run=cmd_overlays)
+
+    p = sub.add_parser("report", parents=[common],
+                       help="lidar and radar pixel density over every keyframe camera image")
+    p.add_argument("--out", default=PIPELINE_DIR / "outputs")
+    p.add_argument("--summary", default=PIPELINE_DIR / "results" / "projection-density.md")
+    p.set_defaults(run=cmd_report)
     return parser
 
 
