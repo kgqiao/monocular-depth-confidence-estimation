@@ -83,8 +83,11 @@ def parse_radar_pcd(raw: bytes, name: str) -> np.ndarray:
     if marker not in raw:
         raise ValueError(f"{name}: not a binary PCD file")
     header_end = raw.index(marker) + len(marker)
-    header = dict(line.split(" ", 1) for line in raw[:header_end].decode().splitlines()
-                  if line and not line.startswith("#"))
+    header = {}
+    for line in raw[:header_end].decode("ascii", errors="replace").splitlines():
+        if line and not line.startswith("#"):
+            key, _, value = line.partition(" ")
+            header[key] = value
     names = list(RADAR_PCD_DTYPE.names)
     expected = {
         "FIELDS": names,
@@ -96,7 +99,10 @@ def parse_radar_pcd(raw: bytes, name: str) -> np.ndarray:
         got = header.get(key, "").split()
         if got != want:
             raise ValueError(f"{name}: PCD {key} is {got}, expected {want}")
-    n = int(header["POINTS"])
+    points = header.get("POINTS", "").strip()
+    if not points.isdigit():
+        raise ValueError(f"{name}: PCD POINTS is {points!r}, expected a count")
+    n = int(points)
     if len(raw) - header_end < n * RADAR_PCD_DTYPE.itemsize:
         raise ValueError(f"{name}: shorter than its {n} points; the file is truncated")
     return np.frombuffer(raw, dtype=RADAR_PCD_DTYPE, count=n, offset=header_end)

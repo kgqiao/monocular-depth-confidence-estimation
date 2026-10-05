@@ -43,6 +43,18 @@ def test_a_truncated_file_fails_with_the_file_name():
         parse_radar_pcd(raw[: len(raw) - 7 - 2 * RADAR_PCD_DTYPE.itemsize], "d.pcd")
 
 
+@pytest.mark.parametrize("points_line", [b"", b"POINTS one\n"], ids=["missing", "not a number"])
+def test_a_missing_or_bad_points_count_fails_with_the_file_name(points_line):
+    raw = pcd(records(1)).replace(b"POINTS 1\n", points_line)
+    with pytest.raises(ValueError, match=r"e\.pcd: PCD POINTS"):
+        parse_radar_pcd(raw, "e.pcd")
+
+
+def test_a_header_line_with_no_value_does_not_break_parsing():
+    raw = pcd(records(2)).replace(b"VERSION 0.7\n", b"VERSION\n")
+    assert len(parse_radar_pcd(raw, "f.pcd")) == 2
+
+
 def test_ascii_or_compressed_data_fails():
     with pytest.raises(ValueError, match="not a binary PCD"):
         parse_radar_pcd(pcd(records(1)).replace(b"DATA binary", b"DATA ascii"), "c.pcd")
