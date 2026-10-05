@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import time
 from pathlib import Path
 
 from PIL import Image
@@ -59,6 +60,28 @@ def cmd_report(args) -> None:
     print(f"wrote the summary to {args.summary}")
 
 
+def cmd_depth_check(args) -> None:
+    from .depth import DepthPredictor, resolve_checkpoint
+
+    checkpoint = resolve_checkpoint(args.checkpoint)
+    nusc = load(args)
+    frame = nusc.frame(nusc.scenes[0]["first_sample_token"])
+    cam = nusc.camera(frame, "CAM_FRONT")
+
+    t0 = time.perf_counter()
+    predictor = DepthPredictor(checkpoint)
+    t1 = time.perf_counter()
+    pred = predictor.predict(cam.image_path)
+    t2 = time.perf_counter()
+    pred = predictor.predict(cam.image_path)
+    t3 = time.perf_counter()
+
+    print(f"image   {cam.image_path.name} ({cam.width} x {cam.height})")
+    print(f"device  {predictor.device}")
+    print(f"output  {pred.shape} {pred.dtype}, relative inverse depth {pred.min():.3f} to {pred.max():.3f}")
+    print(f"time    load {t1 - t0:.1f} s, first pass {t2 - t1:.2f} s, second pass {t3 - t2:.2f} s")
+
+
 def build_parser() -> argparse.ArgumentParser:
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--dataroot", help="nuScenes folder; default $NUSCENES_DATAROOT")
@@ -80,6 +103,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--out", default=PIPELINE_DIR / "outputs")
     p.add_argument("--summary", default=PIPELINE_DIR / "results" / "projection-density.md")
     p.set_defaults(run=cmd_report)
+
+    p = sub.add_parser("depth-check", parents=[common],
+                       help="run Depth Anything V2 once on one CAM_FRONT keyframe")
+    p.add_argument("--checkpoint", help="ViT-B checkpoint; default $DEPTH_ANYTHING_CHECKPOINT")
+    p.set_defaults(run=cmd_depth_check)
     return parser
 
 
