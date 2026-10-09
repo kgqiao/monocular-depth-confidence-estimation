@@ -1,0 +1,14 @@
+{
+  "roles": {
+    "Datasets and Training": 2,
+    "Evaluation": 2,
+    "Cross team coordinator": 1
+  },
+  "preferences": {
+    "Nathan A": ["Datasets and Training", "Cross team coordinator", "Evaluation"],
+    "Alejandro A": ["Cross team coordinator", "Evaluation", "Datasets and Training"],
+    "Nathan B": ["Datasets and Training", "Evaluation", "Cross team coordinator"],
+    "Varad T": ["Datasets and Training", "Evaluation", "Cross team coordinator"],
+    "Katherine Q": ["Datasets and Training", "Evaluation", "Cross team coordinator"]
+  }
+}
