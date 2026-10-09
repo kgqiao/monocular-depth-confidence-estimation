@@ -2,9 +2,11 @@
 
 ## About
 
-Depth Anything V2 gives a depth for every pixel of a camera image, but it does not say which pixels to trust. This project trains a small head that predicts, per pixel, when that depth is wrong. Lidar supplies the answer key, and radar is one of the inputs. See [Form B](../Prepreposal/Brainstorm/Project%20Scope%20Visual%20(Form%20B).md) and the [pre-proposal](../Prepreposal/Deliberable/CS566%20-%20Project%20Pre-proposal.pdf).
+Depth Anything V2 gives a depth for every pixel of a camera image, but it does not say which pixels to trust. This project trains a small head that predicts, per pixel, when that depth is wrong. Lidar supplies the answer key, and radar is one of the inputs. 
 
-This folder is the code. It starts on nuScenes v1.0-mini. Today it reads the dataset, projects the lidar and radar returns into the six camera images, and runs Depth Anything V2. Those projections are the labels and the radar inputs of the head.
+See [Form B](../Prepreposal/Brainstorm/Project%20Scope%20Visual%20(Form%20B).md) and the [pre-proposal](../Prepreposal/Deliberable/CS566%20-%20Project%20Pre-proposal.pdf).
+
+This project reads the dataset, projects the lidar and radar returns into the six camera images, and runs Depth Anything V2. Those projections are the labels and the radar inputs of the head.
 
 The loader, the depth predictor, and the vendored Depth Anything V2 come from [autonomous-vehicle-sandbox](https://github.com/nathanaday/autonomous-vehicle-sandbox).
 
