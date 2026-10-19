@@ -17,7 +17,7 @@ import numpy as np
 from confhead.items import load_points
 from confhead.nuscenes import CAMERA_CHANNELS, DATAROOT_ENV, NuScenes
 
-REPO = Path(__file__).resolve().parents[1]
+PROJECT = Path(__file__).resolve().parents[1]
 MIN_DEPTH, MAX_DEPTH = 1.0, 80.0
 
 
@@ -43,9 +43,9 @@ def table(rows: list[dict], key: str, order) -> list[str]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--dataroot", type=Path,
-                        default=os.environ.get(DATAROOT_ENV, REPO / "datasets/nuscenes/v1.0-mini"))
-    parser.add_argument("--csv", type=Path, default=REPO / "outputs/projection_density.csv")
-    parser.add_argument("--summary", type=Path, default=REPO / "results/projection-density.md")
+                        default=os.environ.get(DATAROOT_ENV, PROJECT.parent / "datasets/nuscenes/v1.0-mini"))
+    parser.add_argument("--csv", type=Path, default=PROJECT / "outputs/projection_density.csv")
+    parser.add_argument("--summary", type=Path, default=PROJECT / "results/projection-density.md")
     args = parser.parse_args()
 
     nusc = NuScenes(args.dataroot)

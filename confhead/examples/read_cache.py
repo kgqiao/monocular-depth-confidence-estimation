@@ -10,12 +10,12 @@ from torch.utils.data import DataLoader
 
 from confhead import Cache, ConfidenceDataset, HeadInputs
 
-REPO = Path(__file__).resolve().parents[1]
+PROJECT = Path(__file__).resolve().parents[1]
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--cache", type=Path, default=REPO / "outputs/cache/nuscenes-mini")
+    parser.add_argument("--cache", type=Path, default=PROJECT / "outputs/cache/nuscenes-mini")
     args = parser.parse_args()
 
     cache = Cache(args.cache)

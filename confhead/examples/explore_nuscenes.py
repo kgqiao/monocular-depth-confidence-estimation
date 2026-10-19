@@ -16,16 +16,16 @@ from confhead.items import load_points
 from confhead.nuscenes import DATAROOT_ENV, NuScenes
 from confhead.plot import draw_points
 
-REPO = Path(__file__).resolve().parents[1]
+PROJECT = Path(__file__).resolve().parents[1]
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--dataroot", type=Path,
-                        default=os.environ.get(DATAROOT_ENV, REPO / "datasets/nuscenes/v1.0-mini"))
+                        default=os.environ.get(DATAROOT_ENV, PROJECT.parent / "datasets/nuscenes/v1.0-mini"))
     parser.add_argument("--scenes", nargs="*", help="scene names; default every scene")
     parser.add_argument("--radar-sweeps", type=int, default=1)
-    parser.add_argument("--out", type=Path, default=REPO / "outputs/overlays")
+    parser.add_argument("--out", type=Path, default=PROJECT / "outputs/overlays")
     args = parser.parse_args()
 
     nusc = NuScenes(args.dataroot)

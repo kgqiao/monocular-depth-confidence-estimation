@@ -17,7 +17,7 @@ from pathlib import Path
 
 from confhead.cache import build, format_plan, format_verify, load_config, plan, to_toml, verify
 
-REPO = Path(__file__).resolve().parents[1]
+PROJECT = Path(__file__).resolve().parents[1]
 
 
 def shard(text: str) -> tuple[int, int]:
@@ -29,7 +29,7 @@ def shard(text: str) -> tuple[int, int]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--config", default=REPO / "configs/nuscenes-mini.toml")
+    parser.add_argument("--config", default=PROJECT / "configs/nuscenes-mini.toml")
     parser.add_argument("--set", action="append", default=[], metavar="SECTION.KEY=VALUE",
                         help="change one setting; repeat for more")
     parser.add_argument("--plan", action="store_true", help="print the plan and the settings, and stop")
@@ -58,7 +58,7 @@ def main() -> None:
         settings = (Path(cfg.output.root) / "config.toml").read_text()
         summary = (f"# Cache summary\n\nWritten by `examples/build_cache.py`.\n\n```\n{text}\n```\n\n"
                    f"Settings:\n\n```toml\n{settings}```\n")
-        args.summary.write_text(summary.replace(f"{REPO}/", ""))
+        args.summary.write_text(summary.replace(f"{PROJECT.parent}/", ""))
     sys.exit(1 if report.failed or result["problems"] else 0)
 
 

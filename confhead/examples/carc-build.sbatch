@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build the cache on CARC as a job array, one shard per array task. From the repository root:
+# Build the cache on CARC as a job array, one shard per array task. From the confhead folder:
 #
 #   mkdir -p logs
 #   sbatch --account=<project> --array=0-7 --export=ALL,CONFIG=configs/nuscenes-mini.toml examples/carc-build.sbatch

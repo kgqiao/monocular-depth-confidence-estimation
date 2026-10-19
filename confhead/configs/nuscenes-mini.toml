@@ -3,7 +3,7 @@
 # Relative paths resolve against this folder.
 
 [source]
-dataroot = "../datasets/nuscenes/v1.0-mini"
+dataroot = "../../datasets/nuscenes/v1.0-mini"
 version = "v1.0-mini"
 cameras = ["CAM_FRONT_LEFT", "CAM_FRONT", "CAM_FRONT_RIGHT", "CAM_BACK_LEFT", "CAM_BACK", "CAM_BACK_RIGHT"]
 scenes = []
