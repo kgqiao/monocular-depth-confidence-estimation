@@ -11,13 +11,13 @@ from confhead.cache import Cache
 from confhead.labels import LabelConfig
 from confhead.plot import entry_figure
 
-REPO = Path(__file__).resolve().parents[1]
+PROJECT = Path(__file__).resolve().parents[1]
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("keys", nargs="*", help="entry keys; default a spread of --count entries")
-    parser.add_argument("--cache", type=Path, default=REPO / "outputs/cache/nuscenes-mini")
+    parser.add_argument("--cache", type=Path, default=PROJECT / "outputs/cache/nuscenes-mini")
     parser.add_argument("--count", type=int, default=6)
     parser.add_argument("--dataroot", type=Path, help="nuScenes folder; default the one the cache was built from")
     parser.add_argument("--tau", type=float, default=0.10)

@@ -1,6 +1,2 @@
 __pycache__/
 datasets/
-.venv/
-outputs/
-*.egg-info/
-.pytest_cache/

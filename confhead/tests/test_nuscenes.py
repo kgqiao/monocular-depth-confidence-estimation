@@ -11,8 +11,7 @@ from confhead.geometry import apply, pose_to_mat, project
 from confhead.items import load_points
 from confhead.nuscenes import DATAROOT_ENV, NuScenes, read_lidar
 
-REPO = Path(__file__).resolve().parents[1]
-DATAROOT = Path(os.environ.get(DATAROOT_ENV, REPO / "datasets/nuscenes/v1.0-mini"))
+DATAROOT = Path(os.environ.get(DATAROOT_ENV, Path(__file__).resolve().parents[2] / "datasets/nuscenes/v1.0-mini"))
 CHECKPOINT = os.environ.get("DEPTH_ANYTHING_CHECKPOINT", "")
 
 needs_data = pytest.mark.skipif(not (DATAROOT / "v1.0-mini").is_dir(), reason="no nuScenes v1.0-mini")
