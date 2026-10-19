@@ -1,10 +1,10 @@
 # Cache summary
 
-Written by `confcache verify --summary`.
+Written by `examples/build_cache.py`.
 
 ```
-cache        /Users/nathanaday/projects/usc/kqiao-cs566-project-repo/train-v1/cache-pipeline/outputs/cache/nuscenes-mini-g2
-entries      2424 (0 stale files left out), 5.75 GB on disk
+cache        confhead/outputs/cache/nuscenes-mini-g2
+entries      2424 (0 stale files left out), 3.43 GB on disk
 tags         train: 1938, val: 486
 points       3613 lidar and 150 radar per entry
 fits         lidar 99.8%, radar 86.5% of entries; mean lidar fit RMSE 0.0241 1/m
@@ -18,8 +18,7 @@ Settings:
 
 ```toml
 [source]
-kind = "nuscenes"
-dataroot = "/Users/nathanaday/projects/usc/kqiao-cs566-project-repo/datasets/nuscenes/v1.0-mini"
+dataroot = "datasets/nuscenes/v1.0-mini"
 version = "v1.0-mini"
 cameras = ["CAM_FRONT_LEFT", "CAM_FRONT", "CAM_FRONT_RIGHT", "CAM_BACK_LEFT", "CAM_BACK", "CAM_BACK_RIGHT"]
 scenes = []
@@ -40,27 +39,20 @@ offsets = [-2, -1, 1, 2]
 align = "lidar"
 min_fit_points = 20
 min_overlap = 0.3
-keep_neighbors = false
 
 [points]
 min_depth = 1.0
 max_depth = 80.0
-lidar_sweeps = 1
 radar_sweeps = 5
 
 [output]
-root = "/Users/nathanaday/projects/usc/kqiao-cs566-project-repo/train-v1/cache-pipeline/outputs/cache/nuscenes-mini-g2"
-feature_dtype = "float16"
-store_full_disparity = true
-compress = false
+root = "confhead/outputs/cache/nuscenes-mini-g2"
 
 [run]
 device = "auto"
 precision = "fp32"
 batch_size = 10
 num_workers = 4
-writer_threads = 2
-log_every = 200
 
 [splits]
 train = ["scene-0061", "scene-0553", "scene-0655", "scene-0757", "scene-0796", "scene-1077", "scene-1094", "scene-1100"]
