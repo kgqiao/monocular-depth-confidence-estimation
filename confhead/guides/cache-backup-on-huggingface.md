@@ -93,14 +93,14 @@ sbatch examples/carc-upload.sbatch /scratch1/$USER/confhead-cache/nuscenes-train
 The log prints one line for each shard:
 
 ```
-nuscenes-trainval: 34 shards of 25 scenes, none in kgqiao/confhead-cache yet
+nuscenes-trainval: 34 shards of 25 scenes, none in nadayusc/confhead-cache yet
 shard 00000 (1/34): ... files, ... GB to ... GB (87%), packed in ... s, sent in ... s
 ```
 
 When the job ends, the log shows a summary:
 
 ```
-repository   https://huggingface.co/datasets/kgqiao/confhead-cache/tree/main/nuscenes-trainval
+repository   https://huggingface.co/datasets/nadayusc/confhead-cache/tree/main/nuscenes-trainval
 shards       34: 34 uploaded, 0 unchanged
 size         ... GB of cache files in ... GB of shards (87%)
 time         ... min
@@ -124,7 +124,7 @@ The second argument is the folder to restore into. Without it, the cache goes in
 Without confhead, `hf` and `tar` restore the cache too:
 
 ```sh
-hf download kgqiao/confhead-cache --repo-type dataset --include "nuscenes-trainval/*" --local-dir .
+hf download nadayusc/confhead-cache --repo-type dataset --include "nuscenes-trainval/*" --local-dir .
 for f in nuscenes-trainval/shards/*.tar.zst; do tar --zstd -xf "$f" -C nuscenes-trainval; done
 rm -r nuscenes-trainval/shards
 ```
