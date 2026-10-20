@@ -4,11 +4,16 @@ version = "0.1.0"
 description = "A per-pixel confidence head for the depth of a frozen Depth Anything V2, on nuScenes."
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "huggingface_hub>=1.0",
     "matplotlib>=3.9",
     "numpy>=2.0",
     "pillow>=10.0",
     "torch>=2.4",
+    "zstandard>=0.23",
 ]
+
+[project.scripts]
+confhead = "confhead.cli:main"
 
 [dependency-groups]
 dev = ["pytest>=8"]
