@@ -31,6 +31,7 @@ from typing import Any
 
 import numpy as np
 
+from ..geometry import Fit
 from .config import CacheConfig, to_toml
 
 FORMAT_VERSION = 1
@@ -177,6 +178,18 @@ class Entry:
         with np.load(self.path) as z:
             return {k: z[k] for k in (names or z.files)}
 
+    def image(self) -> np.ndarray:
+        """The camera image from the dataset: (height, width, 3) uint8 RGB."""
+        from PIL import Image
+        if not self.image_path.is_file():
+            raise FileNotFoundError(f"{self.image_path}: the dataset is not at {self.dataroot}; "
+                                    "open the cache with Cache(root, dataroot=...) to say where it is")
+        return np.asarray(Image.open(self.image_path).convert("RGB"))
+
+    def fit(self, align: str = "lidar") -> Fit | None:
+        """The scale-and-shift fit that makes the disparity metric, "lidar" or "radar"; None when it failed."""
+        return Fit.from_dict(self.meta[f"fit_{align}"])
+
     @property
     def key(self) -> str:
         return self.meta["key"]
@@ -201,6 +214,7 @@ class Cache:
         if self.index["fingerprint"] != self.header["fingerprint"]:
             raise RuntimeError(f"{self.root}/index.json is out of date; call confhead.cache.build_index on it.")
         self.dataroot = Path(dataroot or self.header["settings"]["source"]["dataroot"])
+        self._by_key = {r["key"]: r for r in self.index["entries"]}
 
     @property
     def settings(self) -> dict[str, Any]:
@@ -224,10 +238,9 @@ class Cache:
         return [self.entry(r) for r in self.rows(**filters)]
 
     def _row(self, key: str) -> dict:
-        for r in self.index["entries"]:
-            if r["key"] == key:
-                return r
-        raise KeyError(f"no entry {key!r} in {self.root}")
+        if key not in self._by_key:
+            raise KeyError(f"no entry {key!r} in {self.root}")
+        return self._by_key[key]
 
     def __len__(self) -> int:
         return len(self.index["entries"])
