@@ -5,12 +5,14 @@
     cache = Cache(cfg.output.root)
 """
 
+from .backup import BackupConfig, download, load_backup_config, upload
 from .build import BuildReport, build, select_items
 from .config import CacheConfig, load_config, to_toml
-from .report import format_plan, format_verify, plan, verify
+from .report import format_info, format_plan, format_verify, info, plan, verify
 from .store import Cache, CacheMismatch, Entry, build_index
 
 __all__ = [
-    "BuildReport", "Cache", "CacheConfig", "CacheMismatch", "Entry", "build", "build_index",
-    "format_plan", "format_verify", "load_config", "plan", "select_items", "to_toml", "verify",
+    "BackupConfig", "BuildReport", "Cache", "CacheConfig", "CacheMismatch", "Entry", "build", "build_index",
+    "download", "format_info", "format_plan", "format_verify", "info", "load_backup_config", "load_config", "plan",
+    "select_items", "to_toml", "upload", "verify",
 ]

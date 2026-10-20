@@ -1,7 +1,9 @@
-"""Look at a cache before and after the build: the plan and the checks."""
+"""Look at a cache before and after the build: the plan, the checks, and what is on disk."""
 
 from __future__ import annotations
 
+import json
+import os
 from collections import Counter
 from pathlib import Path
 from typing import Any
@@ -212,4 +214,84 @@ def format_verify(v: dict[str, Any]) -> str:
         lines += [f"  {p}" for p in v["problems"][:50]]
     else:
         lines.append("problems     none")
+    return "\n".join(lines)
+
+
+# ----- info -------------------------------------------------------------------
+
+
+def info(root: str | Path) -> dict[str, Any]:
+    """What a cache folder holds, from its header, its index, and a listing of its files.
+
+    Fast on a large cache: it reads no entry, only the folder listings and the file sizes.
+    """
+    root = Path(root)
+    if not (root / "cache.json").is_file():
+        raise FileNotFoundError(f"{root} holds no cache.json; it is not a cache folder")
+    header = json.loads((root / "cache.json").read_text())
+
+    scenes = npz = js = pairs = temp = 0
+    entry_bytes = 0
+    entries = root / "entries"
+    for scene in sorted(os.scandir(entries), key=lambda d: d.name) if entries.is_dir() else []:
+        if not scene.is_dir():
+            continue
+        scenes += 1
+        stems: Counter = Counter()
+        for f in os.scandir(scene.path):
+            entry_bytes += f.stat().st_size
+            if f.name.startswith("."):
+                temp += 1
+            elif f.name.endswith(".npz"):
+                npz += 1
+                stems[f.name[:-4]] += 1
+            elif f.name.endswith(".json"):
+                js += 1
+                stems[f.name[:-5]] += 1
+        pairs += sum(1 for c in stems.values() if c == 2)
+    others = (f for p in root.iterdir() if p != entries for f in ([p] if p.is_file() else p.rglob("*")))
+    total_bytes = entry_bytes + sum(f.stat().st_size for f in others if f.is_file())
+
+    index = None
+    if (root / "index.json").is_file():
+        ix = json.loads((root / "index.json").read_text())
+        index = {
+            "entries": len(ix["entries"]),
+            "current": ix["fingerprint"] == header["fingerprint"],
+            "stale_entries": ix.get("stale_entries", 0),
+            "tags": dict(Counter(t for r in ix["entries"] for t in r["tags"])),
+        }
+    return {
+        "root": str(root.resolve()),
+        "fingerprint": header["fingerprint"],
+        "created": header.get("created", ""),
+        "settings": header["settings"],
+        "scenes": scenes,
+        "npz": npz,
+        "json": js,
+        "pairs": pairs,
+        "temp_files": temp,
+        "bytes_entries": float(entry_bytes),
+        "bytes_total": float(total_bytes),
+        "index": index,
+    }
+
+
+def format_info(v: dict[str, Any]) -> str:
+    s = v["settings"]
+    lines = [
+        f"cache        {v['root']}  (fingerprint {v['fingerprint']}, created {v['created']})",
+        f"source       {s['source']['version']}, model {s['model']['encoder']} tap {s['model']['tap']}, "
+        f"grid.patch_multiple {s['grid']['patch_multiple']}, {s['run']['precision']}",
+        f"size         {_mb(v['bytes_total'])} in all, {_mb(v['bytes_entries'])} of entries",
+        f"on disk      {v['pairs']} complete entries in {v['scenes']} scenes "
+        f"({v['npz']} .npz, {v['json']} .json, {v['temp_files']} unfinished temp files)",
+    ]
+    ix = v["index"]
+    if ix is None:
+        lines.append("index        none; write it with examples/build_cache.py --check")
+    else:
+        state = "current" if ix["current"] else "out of date; write it again with examples/build_cache.py --check"
+        tags = ", ".join(f"{k}: {c}" for k, c in ix["tags"].items()) or "no tags"
+        lines.append(f"index        {ix['entries']} entries ({tags}), {ix['stale_entries']} stale left out, {state}")
     return "\n".join(lines)
