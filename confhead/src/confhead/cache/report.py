@@ -22,6 +22,12 @@ def _mb(n: float) -> str:
     return f"{n / 1e6:,.1f} MB" if n < 1e9 else f"{n / 1e9:,.2f} GB"
 
 
+def _names(names: list[str], most: int = 12) -> str:
+    if len(names) <= most:
+        return ", ".join(names)
+    return f"{', '.join(names[:3])}, ..., {names[-1]}"
+
+
 # ----- plan -----------------------------------------------------------------
 
 
@@ -77,8 +83,10 @@ def plan(cfg: CacheConfig, shard: tuple[int, int] = (0, 1)) -> dict[str, Any]:
 def format_plan(p: dict[str, Any], cfg: CacheConfig) -> str:
     lines = [
         f"cache        {p['root']}  (fingerprint {p['fingerprint']})",
-        f"scenes       {len(p['scenes'])}: {', '.join(p['scenes'])}",
+        f"scenes       {len(p['scenes'])}: {_names(p['scenes'])}",
     ]
+    if cfg.splits:
+        lines.append("splits       " + ", ".join(f"{tag} {len(names)} scenes" for tag, names in cfg.splits.items()))
     if p["skipped_scenes"]:
         lines.append(f"skipped      {', '.join(p['skipped_scenes'])} (keyframe files missing)")
     lines += [
