@@ -13,7 +13,7 @@ from ..items import load_points
 from ..labels import LabelConfig, lidar_labels
 from .build import select_items
 from .config import CacheConfig
-from .store import Cache, entry_done
+from .store import Cache, done_keys
 
 POINT_ROW_BYTES = 6 * 4
 
@@ -38,7 +38,7 @@ def plan(cfg: CacheConfig, shard: tuple[int, int] = (0, 1)) -> dict[str, Any]:
         raise ValueError("No items match source.scenes and source.cameras.")
     root = Path(cfg.output.root)
     fingerprint = cfg.fingerprint()
-    done = sum(entry_done(root, it.scene, it.key, fingerprint) for it in items)
+    done = len(done_keys(root, ((it.scene, it.key) for it in items), fingerprint))
 
     first = items[0].view
     gw, gh = cfg.grid_size(first.width, first.height)

@@ -23,6 +23,7 @@ import json
 import os
 import platform
 import tempfile
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timezone
 from pathlib import Path
@@ -69,14 +70,27 @@ def write_entry(root: Path, scene: str, key: str, arrays: dict[str, np.ndarray],
     _atomic_write(js, _json_bytes(meta))
 
 
-def entry_done(root: Path, scene: str, key: str, fingerprint: str) -> bool:
-    npz, js = entry_paths(root, scene, key)
-    if not (npz.is_file() and js.is_file()):
-        return False
-    try:
-        return json.loads(js.read_text()).get("fingerprint") == fingerprint
-    except (OSError, json.JSONDecodeError):
-        return False
+def done_keys(root: Path, entries: Iterable[tuple[str, str]], fingerprint: str) -> set[str]:
+    """The keys of the (scene, key) entries that are complete and carry this fingerprint.
+
+    Lists each scene folder once, and reads only the meta of the entries in it.
+    """
+    listings: dict[str, set[str]] = {}
+    done = set()
+    for scene, key in entries:
+        if scene not in listings:
+            try:
+                listings[scene] = set(os.listdir(Path(root) / "entries" / scene))
+            except FileNotFoundError:
+                listings[scene] = set()
+        if not {f"{key}.npz", f"{key}.json"} <= listings[scene]:
+            continue
+        try:
+            if json.loads(entry_paths(root, scene, key)[1].read_text()).get("fingerprint") == fingerprint:
+                done.add(key)
+        except (OSError, json.JSONDecodeError):
+            pass
+    return done
 
 
 def _versions() -> dict[str, str]:

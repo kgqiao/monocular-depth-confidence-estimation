@@ -5,7 +5,7 @@ import pytest
 import torch
 
 from confhead.cache.config import CacheConfig
-from confhead.cache.store import Cache, CacheMismatch, build_index, entry_done, open_for_build, write_entry
+from confhead.cache.store import Cache, CacheMismatch, build_index, done_keys, open_for_build, write_entry
 from confhead.dataset import ConfidenceDataset, HeadInputs, RadarConfig, radar_channels
 from confhead.geometry import Fit, rasterize
 from confhead.labels import LabelConfig, lidar_labels
@@ -91,9 +91,10 @@ def test_store_round_trip_index_and_dataset(tmp_path):
     for scene in ("scene-a", "scene-b"):
         arrays, meta = make_entry(scene=scene, key=f"{scene}_000_CAM_FRONT")
         meta["fingerprint"] = cfg.fingerprint()
-        assert not entry_done(root, scene, meta["key"], cfg.fingerprint())
+        assert not done_keys(root, [(scene, meta["key"])], cfg.fingerprint())
         write_entry(root, scene, meta["key"], arrays, meta)
-        assert entry_done(root, scene, meta["key"], cfg.fingerprint())
+        assert done_keys(root, [(scene, meta["key"])], cfg.fingerprint()) == {meta["key"]}
+        assert not done_keys(root, [(scene, meta["key"])], "another fingerprint")
     index = build_index(root, cfg.splits)
     assert [r["tags"] for r in index["entries"]] == [["train"], ["val"]]
 
