@@ -40,24 +40,6 @@ Each team meets once a week with the coordinator, and everybody meets at the wee
 
 The pre-proposal is titled "Knowing When Not to Trust Depth: A Learned Per-Pixel Confidence Head for Monocular Depth in Adverse Driving Conditions" ([[CS566 Project Pre-proposal]], p. 1). It proposes a small convolutional head on top of a frozen [[Depth Anything V2]]. The head predicts, per pixel, whether the depth error exceeds a threshold. It reads the depth model's features, temporal depth variance, and radar signals, and lidar projected into the image gives the training labels. See [[Per-Pixel Depth Confidence Head]].
 
-## My Journal
-
-The following are my own notes as we progress through the project. I will continue to capture new ideas, findings, and document understanding here. 
-
-We have proposed a self driving application where we want to train a sensor fusion head to improve the accuracy of depth calculations. The main contribution is to assign confidence score to depth anything outputs. At the moment, depth anything confidently produces a pixel map of depth estimates, with no way to know which parts of trust worthy or not trust worthy. 
-
-In theory, you can do this training with any monocular image dataset that also has a depth ground truth. We are kind of bringing the scope closer with the insight that NuScenes and other self-driving datasets provide what we believe are the right foundations for this training: we have a set of RGB images and corresponding RADAR/LiDAR values that act as ground truth.
-
-A [[Head (machine learning)|head]] is a small neural network attached to a larger pre-trained model. It reads the model's outputs. Useful as you can keep the larger pre-trained model frozen while still adding to its capabilities or behavior.
-
-Radar vs. Lidar
-
-We have only 10-30 radar points per image, and all the radar points are at the mounting height of the radar: there is no height dimension.
-
-For the sake of this project, we are assuming the data collection car has lidar, and the road car does not have lidar. This means the road car will rely on our depth anything head for the true depth eval.
-
-Possible extension: assign the confidence score to entire objects, not just the pixel. Recognize and segment them, and take the depth measurement to the nearest point of the object, so you now have a confidence prediction per object. So once you have the confidence head, there are other ways you can play with the backbone to keep improving upon it.
-
 ## Timeline
 
 - **Pre-proposal.** The group submitted [[CS566 Project Pre-proposal]], and the TA answered with [[CS566 Project Pre-preposal Feedback]]. The course sources disagree on its deadline; see [[CS566-DeepLearning]].
