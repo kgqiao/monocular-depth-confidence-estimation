@@ -80,6 +80,12 @@ uv run examples/build_cache.py --limit 12
 uv run examples/build_cache.py
 ```
 
+See what a cache folder holds and its size on disk, without opening an entry:
+
+```sh
+uv run confhead cache info outputs/cache/nuscenes-mini
+```
+
 Draw cache entries as figures like the one above, and read one training batch:
 
 ```sh
@@ -126,6 +132,13 @@ The settings that change the content of an entry make a fingerprint. A build int
 examples/carc-submit.sh configs/nuscenes-trainval.toml 16
 ```
 
+[guides/cache-backup-on-huggingface.md](guides/cache-backup-on-huggingface.md) backs up a built cache to a Hugging Face dataset repository as compressed shards, and restores it:
+
+```sh
+sbatch examples/carc-upload.sbatch /scratch1/$USER/confhead-cache/nuscenes-trainval
+uv run confhead cache download nuscenes-trainval /scratch1/$USER/confhead-cache/nuscenes-trainval
+```
+
 ## API
 
 | Module | What it holds |
@@ -134,7 +147,8 @@ examples/carc-submit.sh configs/nuscenes-trainval.toml 16
 | [`items`](src/confhead/items.py) | `Item`, `View`, `PointFile`: one camera image with its neighbors and sweeps; `load_points` |
 | [`geometry`](src/confhead/geometry.py) | Frames, projection, pixel grids, sampling, rasterizing, and the scale-and-shift `Fit` |
 | [`depth`](src/confhead/depth.py) | `FrozenDepthAnything`: disparity and one decoder feature map; `preprocess` |
-| [`cache`](src/confhead/cache/) | `CacheConfig`, `load_config`, `build`, `plan`, `verify`, and the `Cache` reader |
+| [`cache`](src/confhead/cache/) | `CacheConfig`, `load_config`, `build`, `plan`, `verify`, `info`, and the `Cache` reader; `backup`: `upload` and `download` on Hugging Face |
+| [`cli`](src/confhead/cli.py) | The `confhead` command: `cache info`, `cache upload`, `cache download` |
 | [`labels`](src/confhead/labels.py) | `LabelConfig`, `lidar_labels`: where the depth is wrong against lidar |
 | [`dataset`](src/confhead/dataset.py) | `ConfidenceDataset`, `HeadInputs`, `RadarConfig`: the head inputs and labels as a PyTorch `Dataset` |
 | [`plot`](src/confhead/plot.py) | `draw_points`, `draw_map`, `entry_figure`: matplotlib figures of items and cache entries |
@@ -145,11 +159,11 @@ The rules that the code follows, and why, are in [design.md](design.md).
 
 ## Layout
 
-- `src/confhead/`: the library. `depth_anything_v2/` is the vendored model.
+- `src/confhead/`: the library, and the `confhead` command in `cli.py`. `depth_anything_v2/` is the vendored model.
 - `examples/`: scripts that use the library, and the CARC job scripts.
 - `guides/`: step-by-step guides.
 - `notebooks/`: tutorials that run on a built cache.
-- `configs/`: cache settings.
+- `configs/`: cache settings, and the Hugging Face repository of the backup.
 - `results/`: the small summaries that the team reads.
 - `docs/`: the figure of this README.
 - `outputs/`: caches, figures, and tables that the examples write. Not in git.

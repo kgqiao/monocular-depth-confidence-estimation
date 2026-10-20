@@ -5,10 +5,11 @@ Modules:
     items       one camera image with its neighbors and point files; point projection
     geometry    frames, projection, pixel grids, sampling, scale-and-shift fit
     depth       the frozen Depth Anything V2 with a decoder feature tap
-    cache       build, check, and read the cache of model outputs
+    cache       build, check, read, and back up the cache of model outputs
     labels      lidar error labels
     dataset     the head inputs and the PyTorch dataset over a cache
     plot        figures of items and cache entries
+    cli         the confhead command
 """
 
 from .cache import Cache, CacheConfig, build, load_config
