@@ -175,6 +175,7 @@ Each task skips the entries that are already built and continues with the rest.
 | `... does not exist; the dataroot must hold the v1.0-trainval/ tables` | Make `source.dataroot` point to the folder that holds `v1.0-trainval/`. |
 | `... holds a cache built with other settings` | You changed a setting that changes the content of an entry. Set a new `output.root`, or add `--overwrite` to build every entry again. |
 | `... holds no cache yet; build it first` | The check job ran before any build task wrote an entry. Read the build logs for the error. |
+| `torch ... has no kernels for <GPU>` | The installed torch does not support this GPU. Run `git pull` and `uv sync` on the login node, then submit again. |
 | A build log ends with `failed: <entry>: ...` | The log names each entry that failed and the cause. Fix the cause, then submit again. |
 
 ## Build the test split
