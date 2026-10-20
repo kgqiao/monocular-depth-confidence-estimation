@@ -24,7 +24,7 @@ class LabelConfig:
 
 
 def fit_of(meta: dict, align: str) -> Fit | None:
-    """The scale-and-shift fit of a cache entry, "lidar" or "radar"; None when it failed."""
+    """The scale-and-shift fit in an entry's meta, "lidar" or "radar"; None when it failed."""
     return Fit.from_dict(meta[f"fit_{align}"])
 
 

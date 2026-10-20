@@ -5,7 +5,7 @@ import pytest
 import torch
 
 from confhead.cache.config import CacheConfig
-from confhead.cache.store import Cache, CacheMismatch, build_index, entry_done, open_for_build, write_entry
+from confhead.cache.store import Cache, CacheMismatch, build_index, done_keys, open_for_build, write_entry
 from confhead.dataset import ConfidenceDataset, HeadInputs, RadarConfig, radar_channels
 from confhead.geometry import Fit, rasterize
 from confhead.labels import LabelConfig, lidar_labels
@@ -91,9 +91,10 @@ def test_store_round_trip_index_and_dataset(tmp_path):
     for scene in ("scene-a", "scene-b"):
         arrays, meta = make_entry(scene=scene, key=f"{scene}_000_CAM_FRONT")
         meta["fingerprint"] = cfg.fingerprint()
-        assert not entry_done(root, scene, meta["key"], cfg.fingerprint())
+        assert not done_keys(root, [(scene, meta["key"])], cfg.fingerprint())
         write_entry(root, scene, meta["key"], arrays, meta)
-        assert entry_done(root, scene, meta["key"], cfg.fingerprint())
+        assert done_keys(root, [(scene, meta["key"])], cfg.fingerprint()) == {meta["key"]}
+        assert not done_keys(root, [(scene, meta["key"])], "another fingerprint")
     index = build_index(root, cfg.splits)
     assert [r["tags"] for r in index["entries"]] == [["train"], ["val"]]
 
@@ -102,16 +103,24 @@ def test_store_round_trip_index_and_dataset(tmp_path):
     loaded = cache.entry("scene-a_000_CAM_FRONT").load()
     assert loaded["features"].dtype == np.float16 and loaded["lidar"].shape == (3, 6)
     assert json.loads((root / "entries/scene-a/scene-a_000_CAM_FRONT.json").read_text())["arrays"]["lidar"]["shape"] == [3, 6]
-    assert cache.entry("scene-a_000_CAM_FRONT").image_path.name == "x.jpg"
+    entry = cache.entry("scene-a_000_CAM_FRONT")
+    assert entry.image_path.name == "x.jpg"
     assert Cache(root, dataroot=tmp_path / "data").entry("scene-a_000_CAM_FRONT").image_path == tmp_path / "data/x.jpg"
+    with pytest.raises(KeyError, match="no entry 'scene-z'"):
+        cache.entry("scene-z")
+    with pytest.raises(FileNotFoundError, match="dataroot="):
+        entry.image()
+    assert entry.fit("lidar") == Fit(0.1, 0.0, 10, 0.0) and entry.fit("radar") == Fit(0.1, 0.0, 10, 0.0)
 
     ds = ConfidenceDataset(cache, tag="train")
     sample = ds[0]
     assert sample["x"].shape == (3 + 4, GRID[1], GRID[0]) and sample["x"].dtype == torch.float32
     assert sample["target"].shape == sample["mask"].shape == (1, GRID[1], GRID[0])
     assert ds.inputs.channel_names(3)[-4:] == ["depth", "temporal_relstd", "radar_residual", "radar_valid"]
+    assert len(ds.channel_names) == 64 + 4  # the default settings tap 64 channels; this entry holds 3
     ablated = ConfidenceDataset(cache, HeadInputs(radar=False, temporal=False), tag="train")
     assert ablated[0]["x"].shape[0] == 3 + 1
+    assert ablated.channel_names[-1] == "depth"
 
 
 def test_a_cache_with_other_settings_is_refused(tmp_path):
@@ -136,3 +145,17 @@ def test_stale_entries_leave_the_index(tmp_path):
     write_entry(root, "scene-a", meta["key"], arrays, meta)
     index = build_index(root)
     assert index["entries"] == [] and index["stale_entries"] == 1
+
+
+def test_draw_map_and_features_rgb_cover_the_image():
+    from matplotlib.figure import Figure
+    from confhead.plot import draw_map, features_rgb
+
+    arrays, _ = make_entry()
+    ax = Figure().subplots()
+    image = np.zeros((IMAGE[1], IMAGE[0], 3), dtype=np.uint8)
+    im = draw_map(ax, arrays["disparity_grid"], IMAGE, image=image, mask=arrays["temporal_count"] > 0, cmap="magma")
+    assert tuple(im.get_extent()) == (-0.5, IMAGE[0] - 0.5, IMAGE[1] - 0.5, -0.5)
+    assert ax.get_xlim() == (-0.5, IMAGE[0] - 0.5) and ax.get_ylim() == (IMAGE[1] - 0.5, -0.5)
+    rgb = features_rgb(np.random.default_rng(0).normal(size=(3, GRID[1], GRID[0])).astype(np.float32))
+    assert rgb.shape == (GRID[1], GRID[0], 3) and rgb.min() >= 0 and rgb.max() <= 1
