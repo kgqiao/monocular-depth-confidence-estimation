@@ -1,8 +1,9 @@
 """Cache build settings.
 
 Every setting has a default here. A TOML file changes some of them, and
-`section.key=value` overrides change them again. Relative paths in a file
-resolve against the folder of that file.
+`section.key=value` overrides change them again. Paths expand `~` and
+environment variables such as `$USER`. Relative paths in a file resolve
+against the folder of that file.
 """
 
 from __future__ import annotations
@@ -172,7 +173,7 @@ def _apply(cfg: CacheConfig, data: dict[str, Any], origin: str) -> None:
 def _resolve_path(value: str, base: Path) -> str:
     if not value:
         return value
-    p = Path(value).expanduser()
+    p = Path(os.path.expandvars(value)).expanduser()
     return str(p if p.is_absolute() else (base / p).resolve())
 
 
@@ -254,6 +255,8 @@ def to_toml(cfg: CacheConfig) -> str:
 
     lines = []
     for section, values in cfg.to_dict().items():
+        if not values:
+            continue
         lines.append(f"[{section}]")
         lines.extend(f"{k} = {value(v)}" for k, v in values.items())
         lines.append("")
