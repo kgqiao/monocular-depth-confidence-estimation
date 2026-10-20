@@ -18,6 +18,7 @@ import torch
 from torch.utils.data import Dataset
 
 from .cache.store import Cache
+from .depth import tap_channels
 from .geometry import rasterize
 from .labels import LabelConfig, fit_of, lidar_labels
 
@@ -76,7 +77,10 @@ class HeadInputs:
 
 
 class ConfidenceDataset(Dataset):
-    """`ConfidenceDataset(Cache(root), tag="train")`. Filters are those of `Cache.rows`."""
+    """`ConfidenceDataset(Cache(root), tag="train")`. Filters are those of `Cache.rows`.
+
+    `channel_names` names the channels of x in order.
+    """
 
     def __init__(self, cache: Cache, inputs: HeadInputs = HeadInputs(), **filters):
         self.cache = cache
@@ -84,6 +88,8 @@ class ConfidenceDataset(Dataset):
         self.rows = cache.rows(**filters)
         if not self.rows:
             raise ValueError(f"no entries in {cache.root} match {filters}")
+        model = cache.settings["model"]
+        self.channel_names = inputs.channel_names(tap_channels(model["encoder"], model["tap"]))
 
     def __len__(self) -> int:
         return len(self.rows)

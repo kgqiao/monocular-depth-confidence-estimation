@@ -65,14 +65,26 @@ The `$USER` in a path changes to your CARC user name, so the same file works for
 
 ## 4. Check the plan
 
-The plan reads the dataset and tells you what the build will do. It does not use a GPU. It takes about a minute.
+The plan reads the dataset and tells you what the build will do. It does not use a GPU. The trainval tables need several GB of memory, so run the plan as a short CPU job, not on the login node:
 
 ```sh
 uv sync
-uv run examples/build_cache.py --config configs/nuscenes-trainval.toml --plan
+srun --account=$SBATCH_ACCOUNT --cpus-per-task=2 --mem=32G --time=00:30:00 \
+  uv run examples/build_cache.py --config configs/nuscenes-trainval.toml --plan
 ```
 
-Read the first lines of the output:
+> [!NOTE]
+> `srun` does not read `SBATCH_ACCOUNT`, so the command sets the account with `--account`.
+
+The job can wait in the queue before it starts. Then the plan takes a few minutes, and it prints a line after each step:
+
+```
+reading the v1.0-trainval tables and listing the files in /scratch1/<user>/nuscenes
+850 scenes on disk, 0 skipped, in ... s
+204894 items in ... s
+```
+
+Then read the first lines of the plan:
 
 ```
 scenes       850: scene-0001, scene-0002, scene-0003, ..., scene-1110
@@ -129,7 +141,7 @@ squeue --me
 tail -f logs/confhead-build-<job>_0.out
 ```
 
-Each build log prints the speed and the time left after every 25 items. To stop all tasks, use `scancel <job>`.
+Each build task first reads the tables, as the plan does, which takes a few minutes. Then its log prints the speed and the time left after every 25 items. To stop all tasks, use `scancel <job>`.
 
 ## 8. Read the check
 
@@ -163,6 +175,7 @@ Each task skips the entries that are already built and continues with the rest.
 | `... does not exist; the dataroot must hold the v1.0-trainval/ tables` | Make `source.dataroot` point to the folder that holds `v1.0-trainval/`. |
 | `... holds a cache built with other settings` | You changed a setting that changes the content of an entry. Set a new `output.root`, or add `--overwrite` to build every entry again. |
 | `... holds no cache yet; build it first` | The check job ran before any build task wrote an entry. Read the build logs for the error. |
+| `torch ... has no kernels for <GPU>` | The installed torch does not support this GPU. Run `git pull` and `uv sync` on the login node, then submit again. |
 | A build log ends with `failed: <entry>: ...` | The log names each entry that failed and the cause. Fix the cause, then submit again. |
 
 ## Build the test split

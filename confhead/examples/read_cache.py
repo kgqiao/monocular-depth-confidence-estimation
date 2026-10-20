@@ -26,7 +26,7 @@ def main() -> None:
 
     train = ConfidenceDataset(cache, tag="train")
     batch = next(iter(DataLoader(train, batch_size=8, shuffle=True, num_workers=2)))
-    names = train.inputs.channel_names(batch["x"].shape[1] - 4)
+    names = train.channel_names
     print(f"x       {tuple(batch['x'].shape)}: {names[0]} .. {names[-5]}, then {', '.join(names[-4:])}")
     labeled = batch["mask"].sum()
     print(f"mask    {tuple(batch['mask'].shape)}: {labeled / batch['mask'].numel():.1%} of cells hold a lidar label")

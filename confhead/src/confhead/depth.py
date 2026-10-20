@@ -66,13 +66,30 @@ def preprocess(path: str | Path, short_side: int = 518) -> np.ndarray:
 
 
 def pick_device(name: str = "auto") -> torch.device:
-    if name != "auto":
-        return torch.device(name)
-    if torch.cuda.is_available():
-        return torch.device("cuda")
-    if torch.backends.mps.is_available():
-        return torch.device("mps")
-    return torch.device("cpu")
+    if name == "auto":
+        if torch.cuda.is_available():
+            name = "cuda"
+        elif torch.backends.mps.is_available():
+            name = "mps"
+        else:
+            name = "cpu"
+    device = torch.device(name)
+    if device.type == "cuda":
+        check_cuda_kernels(device)
+    return device
+
+
+def check_cuda_kernels(device: torch.device) -> None:
+    """Raise if this torch build has no kernels for the GPU, which otherwise fails later inside a convolution."""
+    major, minor = torch.cuda.get_device_capability(device)
+    for arch in torch.cuda.get_arch_list():
+        kind, _, cc = arch.partition("_")
+        built = (int(cc[:-1]), int(cc[-1]))
+        if (kind == "sm" and built[0] == major and built[1] <= minor) or (kind == "compute" and built <= (major, minor)):
+            return
+    raise RuntimeError(f"torch {torch.__version__} has no kernels for {torch.cuda.get_device_name(device)} "
+                       f"(compute capability {major}.{minor}); it supports {' '.join(torch.cuda.get_arch_list())}. "
+                       f"Run `uv sync` to install the CUDA build from pyproject.toml, or use another GPU.")
 
 
 class FrozenDepthAnything:

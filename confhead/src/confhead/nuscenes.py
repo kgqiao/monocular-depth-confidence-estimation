@@ -12,6 +12,7 @@ Ego frame: x forward, y left, z up.
 from __future__ import annotations
 
 import json
+import os
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
@@ -134,6 +135,7 @@ class NuScenes:
         self._channel_of_cs = {
             cs["token"]: self.get("sensor", cs["sensor_token"])["channel"] for cs in self.table["calibrated_sensor"]
         }
+        self._listings: dict[str, frozenset[str]] = {}
         self._keyframe_sd: dict[str, dict[str, dict]] = {}
         for sd in self.table["sample_data"]:
             if sd["is_key_frame"]:
@@ -141,7 +143,7 @@ class NuScenes:
 
         every = [self._scene(s) for s in self.table["scene"]]
         # The tables list every scene of the version; a partial download may carry the files of only some.
-        self.scenes: list[Scene] = [s for s in every if self._on_disk(s)]
+        self.scenes: list[Scene] = [s for s in every if self._scene_on_disk(s)]
         self.skipped_scenes: list[Scene] = [s for s in every if s not in self.scenes]
 
     def get(self, table: str, token: str) -> dict:
@@ -162,9 +164,18 @@ class NuScenes:
                      condition=condition_of(record["description"]), weather=weather_of(record["description"]),
                      samples=tuple(samples))
 
-    def _on_disk(self, scene: Scene) -> bool:
-        return all((self.dataroot / sd["filename"]).exists()
-                   for s in scene.samples for sd in self._keyframe_sd[s].values())
+    def _scene_on_disk(self, scene: Scene) -> bool:
+        return all(self._on_disk(sd) for s in scene.samples for sd in self._keyframe_sd[s].values())
+
+    def _on_disk(self, sd: dict) -> bool:
+        """Whether the file of a sample_data record is on disk. Lists each folder once."""
+        folder, _, name = sd["filename"].rpartition("/")
+        if folder not in self._listings:
+            try:
+                self._listings[folder] = frozenset(os.listdir(self.dataroot / folder))
+            except FileNotFoundError:
+                self._listings[folder] = frozenset()
+        return name in self._listings[folder]
 
     # ----- items ---------------------------------------------------------
 
@@ -207,10 +218,9 @@ class NuScenes:
         def point_files(first: dict, count: int, read) -> tuple[PointFile, ...]:
             files, sd = [], first
             while sd is not None and len(files) < count:
-                path = self.dataroot / sd["filename"]
-                if path.exists():
+                if self._on_disk(sd):
                     files.append(PointFile(
-                        path=path, read=read,
+                        path=self.dataroot / sd["filename"], read=read,
                         sensor_to_cam=global_to_cam @ self._sensor_to_global(sd),
                         dt=(sd["timestamp"] - cam_sd["timestamp"]) / 1e6,
                         sweep=len(files),
@@ -261,6 +271,6 @@ class NuScenes:
                     step += 1
                 if sd is None:
                     break
-                if (self.dataroot / sd["filename"]).exists():
+                if self._on_disk(sd):
                     out.append((offset, self._view(sd)))
         return tuple(sorted(out, key=lambda p: p[0]))
