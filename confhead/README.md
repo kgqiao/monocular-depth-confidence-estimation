@@ -110,14 +110,11 @@ The settings that change the content of an entry make a fingerprint. A build int
 
 ### On CARC
 
-[`examples/carc-build.sbatch`](examples/carc-build.sbatch) runs the build as a job array. Each task builds one shard, so the shards run on different GPUs at the same time:
+[guides/cache-building-on-carc.md](guides/cache-building-on-carc.md) builds the cache for the full nuScenes v1.0-trainval with [`configs/nuscenes-trainval.toml`](configs/nuscenes-trainval.toml). One command submits a GPU job array that builds the shards, and a CPU job that checks the cache after the shards end:
 
 ```sh
-mkdir -p logs
-sbatch --account=<project> --array=0-7 examples/carc-build.sbatch
+examples/carc-submit.sh configs/nuscenes-trainval.toml 16
 ```
-
-When every task has ended, run `uv run examples/build_cache.py` once to write the full index and check the cache.
 
 ## API
 
@@ -139,7 +136,8 @@ The rules that the code follows, and why, are in [design.md](design.md).
 ## Layout
 
 - `src/confhead/`: the library. `depth_anything_v2/` is the vendored model.
-- `examples/`: scripts that use the library, and the CARC job script.
+- `examples/`: scripts that use the library, and the CARC job scripts.
+- `guides/`: step-by-step guides.
 - `configs/`: cache settings.
 - `results/`: the small summaries that the team reads.
 - `docs/`: the figure of this README.

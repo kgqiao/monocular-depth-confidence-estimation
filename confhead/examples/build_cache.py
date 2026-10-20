@@ -4,18 +4,19 @@
     uv run examples/build_cache.py --limit 12
     uv run examples/build_cache.py --set grid.patch_multiple=2 --set output.root=outputs/cache/mini-g2
     uv run examples/build_cache.py --shard 0/8           # one task of a job array
+    uv run examples/build_cache.py --check               # after the tasks of a job array
 
-A stopped build continues where it stopped. After the shards of a job array
-end, run it once more without --shard: every entry is done, so it only
-writes the index and checks the cache.
+A stopped build continues where it stopped. --check builds nothing: it writes
+the index, checks every entry, and counts the entries still missing.
 """
 
 import argparse
+import dataclasses
 import logging
 import sys
 from pathlib import Path
 
-from confhead.cache import build, format_plan, format_verify, load_config, plan, to_toml, verify
+from confhead.cache import build, build_index, format_plan, format_verify, load_config, plan, to_toml, verify
 
 PROJECT = Path(__file__).resolve().parents[1]
 
@@ -33,6 +34,8 @@ def main() -> None:
     parser.add_argument("--set", action="append", default=[], metavar="SECTION.KEY=VALUE",
                         help="change one setting; repeat for more")
     parser.add_argument("--plan", action="store_true", help="print the plan and the settings, and stop")
+    parser.add_argument("--check", action="store_true",
+                        help="build nothing: write the index, check the cache, and count the missing entries")
     parser.add_argument("--shard", type=shard, default=(0, 1), metavar="I/N")
     parser.add_argument("--limit", type=int, default=0, help="build at most this many entries")
     parser.add_argument("--overwrite", action="store_true", help="build every entry again, also with other settings")
@@ -43,15 +46,26 @@ def main() -> None:
     cfg = load_config(args.config, args.set)
     if args.plan:
         print(format_plan(plan(cfg, args.shard), cfg))
-        print(f"\n# fingerprint {cfg.fingerprint()}\n{to_toml(cfg)}", end="")
+        print(f"\n# fingerprint {cfg.fingerprint()}\n{to_toml(dataclasses.replace(cfg, splits={}))}", end="")
         return
 
-    report = build(cfg, shard=args.shard, limit=args.limit, overwrite=args.overwrite)
-    if args.shard != (0, 1):
-        sys.exit(1 if report.failed else 0)
+    missing, failed = 0, False
+    if args.check:
+        if not (Path(cfg.output.root) / "cache.json").is_file():
+            sys.exit(f"{cfg.output.root} holds no cache yet; build it first")
+        p = plan(cfg)
+        missing = p["items"] - p["done"]
+        build_index(Path(cfg.output.root), cfg.splits)
+    else:
+        report = build(cfg, shard=args.shard, limit=args.limit, overwrite=args.overwrite)
+        if args.shard != (0, 1):
+            sys.exit(1 if report.failed else 0)
+        failed = bool(report.failed)
 
     result = verify(cfg.output.root)
     text = format_verify(result)
+    if missing:
+        text += f"\nmissing      {missing} of {p['items']} entries; submit the build again to finish them"
     print(text)
     if args.summary:
         args.summary.parent.mkdir(parents=True, exist_ok=True)
@@ -59,7 +73,7 @@ def main() -> None:
         summary = (f"# Cache summary\n\nWritten by `examples/build_cache.py`.\n\n```\n{text}\n```\n\n"
                    f"Settings:\n\n```toml\n{settings}```\n")
         args.summary.write_text(summary.replace(f"{PROJECT.parent}/", ""))
-    sys.exit(1 if report.failed or result["problems"] else 0)
+    sys.exit(1 if failed or missing or result["problems"] else 0)
 
 
 if __name__ == "__main__":
