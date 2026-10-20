@@ -2,7 +2,7 @@
 
 ## About
 
-Depth Anything V2 gives a depth for every pixel of a camera image, but it does not say which pixels to trust. Our CSCI 566 project trains a small head on top of the frozen model that predicts, per pixel, when that depth is wrong. Lidar supplies the answer key in training. Radar, which a deployed car has, is one of the inputs. See [Form B](../Prepreposal/Brainstorm/Project%20Scope%20Visual%20(Form%20B).md) and the [pre-proposal](../Prepreposal/Deliberable/CS566%20-%20Project%20Pre-proposal.pdf).
+Depth Anything V2 gives a depth for every pixel of a camera image, but it does not say which pixels to trust. Our CSCI 566 project trains a small head on top of the frozen model that predicts, per pixel, when that depth is wrong. Lidar supplies the answer key in training. Radar, which a deployed car has, is one of the inputs. See [Form B](../Docs/Prepreposal/Brainstorm/Project%20Scope%20Visual%20(Form%20B).md) and the [pre-proposal](../Docs/Prepreposal/Deliberable/CS566%20-%20Project%20Pre-proposal.pdf).
 
 `confhead` is the Python library for every part of that work. It reads nuScenes, runs the frozen model, and builds the cache that the head trains on.
 
