@@ -12,6 +12,11 @@ dependencies = [
 
 [dependency-groups]
 dev = ["pytest>=8"]
+notebook = [
+    "ipykernel>=7.4.0",
+    "jupyterlab>=4.6.4",
+    "nbconvert>=7.17.2",
+]
 
 [build-system]
 requires = ["hatchling"]

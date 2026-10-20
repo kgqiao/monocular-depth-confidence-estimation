@@ -93,6 +93,16 @@ Run the tests. The tests on real data run when the dataset is at its default pla
 uv run pytest
 ```
 
+### Learn the cache in a notebook
+
+[`notebooks/cache-tutorial.ipynb`](notebooks/cache-tutorial.ipynb) is a tour of a built cache: the index, one entry and its arrays, the figures, the labels, and the training set. [guides/notebook-on-carc.md](guides/notebook-on-carc.md) opens it in JupyterLab on CARC. On your own computer:
+
+```sh
+uv sync --group notebook
+uv run python -m ipykernel install --user --name confhead --display-name confhead
+uv run jupyter lab notebooks/cache-tutorial.ipynb
+```
+
 ### Cache settings
 
 [`configs/nuscenes-mini.toml`](configs/nuscenes-mini.toml) holds every setting, and [`cache/config.py`](src/confhead/cache/config.py) says what each one does. `--set section.key=value` changes one setting for one run.
@@ -127,7 +137,7 @@ examples/carc-submit.sh configs/nuscenes-trainval.toml 16
 | [`cache`](src/confhead/cache/) | `CacheConfig`, `load_config`, `build`, `plan`, `verify`, and the `Cache` reader |
 | [`labels`](src/confhead/labels.py) | `LabelConfig`, `lidar_labels`: where the depth is wrong against lidar |
 | [`dataset`](src/confhead/dataset.py) | `ConfidenceDataset`, `HeadInputs`, `RadarConfig`: the head inputs and labels as a PyTorch `Dataset` |
-| [`plot`](src/confhead/plot.py) | `draw_points`, `entry_figure`: matplotlib figures of items and cache entries |
+| [`plot`](src/confhead/plot.py) | `draw_points`, `draw_map`, `entry_figure`: matplotlib figures of items and cache entries |
 
 ## Conventions
 
@@ -138,6 +148,7 @@ The rules that the code follows, and why, are in [design.md](design.md).
 - `src/confhead/`: the library. `depth_anything_v2/` is the vendored model.
 - `examples/`: scripts that use the library, and the CARC job scripts.
 - `guides/`: step-by-step guides.
+- `notebooks/`: tutorials that run on a built cache.
 - `configs/`: cache settings.
 - `results/`: the small summaries that the team reads.
 - `docs/`: the figure of this README.
