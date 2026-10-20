@@ -1,0 +1,151 @@
+# confhead
+
+## About
+
+Depth Anything V2 gives a depth for every pixel of a camera image, but it does not say which pixels to trust. Our CSCI 566 project trains a small head on top of the frozen model that predicts, per pixel, when that depth is wrong. Lidar supplies the answer key in training. Radar, which a deployed car has, is one of the inputs. See [Form B](../Prepreposal/Brainstorm/Project%20Scope%20Visual%20(Form%20B).md) and the [pre-proposal](../Prepreposal/Deliberable/CS566%20-%20Project%20Pre-proposal.pdf).
+
+`confhead` is the Python library for every part of that work. It reads nuScenes, runs the frozen model, and builds the cache that the head trains on.
+
+The confidence head trains on a few features downstream of the Depth Anything prediction:
+- DA2 decoder features
+- DA2 prediction (depth)
+- Temporal depth spread over the neighbor frames
+- lidar and radar points (labels and radar inputs)
+
+Changes to the head do not change these inputs, so the library calculates them once and caches them. Training and evaluation then run without a full DA2 forward pass for each step.
+
+![One cache entry: the image with its lidar, the predicted depth, the temporal spread, the features, the lidar labels, and the radar residual](docs/preview.png)
+
+One entry of the cache. Each block is one grid cell (here 132 x 74, at `grid.patch_multiple = 2`). The pedestrians move, so their temporal spread is high, and the lidar labels show where the depth is wrong by more than 10%.
+
+## Quickstart
+
+### Prerequisites
+
+- [uv](https://docs.astral.sh/uv/). It installs Python 3.12.
+- nuScenes v1.0-mini with its `sweeps/` folder, at `datasets/nuscenes/v1.0-mini` in the repository, or anywhere with `NUSCENES_DATAROOT` set.
+- The Depth Anything V2 ViT-B checkpoint, [`depth_anything_v2_vitb.pth`](https://huggingface.co/depth-anything/Depth-Anything-V2-Base/resolve/main/depth_anything_v2_vitb.pth).
+
+### Setup
+
+Run every command from this folder:
+
+```sh
+cd confhead
+uv sync
+export DEPTH_ANYTHING_CHECKPOINT=/path/to/depth_anything_v2_vitb.pth
+```
+
+### Use the library
+
+```python
+from confhead import Cache, ConfidenceDataset, HeadInputs, NuScenes, load_points
+
+nusc = NuScenes("datasets/nuscenes/v1.0-mini")
+item = nusc.items(scenes=["scene-0553"], cameras=["CAM_FRONT"])[0]
+lidar = load_points(item.lidar, item.view)   # (N, 5): u, v, z, dt, sweep
+
+train = ConfidenceDataset(Cache("outputs/cache/nuscenes-mini"), tag="train")
+sample = train[0]
+sample["x"]       # (64 + 4, 148, 264): features, depth, temporal spread, radar residual, radar validity
+sample["target"]  # (1, 148, 264): 1 where the AbsRel against lidar is above tau (0.10)
+sample["mask"]    # (1, 148, 264): 1 where a lidar label exists
+
+no_radar = ConfidenceDataset(Cache("outputs/cache/nuscenes-mini"), HeadInputs(radar=False), tag="train")
+```
+
+`Cache.rows()` and `Cache.entries()` filter by `tag` (train, val), `scene`, `channel`, `condition` (day, night), and `weather` (clear, rain).
+
+### Run the examples
+
+The scripts in [`examples/`](examples/) show the library at work. Each takes `--help`.
+
+List the scenes, and draw the lidar and radar on the six cameras of each scene's first keyframe into `outputs/overlays/`:
+
+```sh
+uv run examples/explore_nuscenes.py
+```
+
+Measure the lidar and radar pixel density of every camera image into [`results/projection-density.md`](results/projection-density.md):
+
+```sh
+uv run examples/projection_density.py
+```
+
+See what a cache build will do and how much disk it needs, then build it. A stopped build continues where it stopped. At the end, the script checks every entry and prints statistics:
+
+```sh
+uv run examples/build_cache.py --plan
+uv run examples/build_cache.py --limit 12
+uv run examples/build_cache.py
+```
+
+Draw cache entries as figures like the one above, and read one training batch:
+
+```sh
+uv run examples/preview_cache.py scene-0553_020_CAM_FRONT
+uv run examples/read_cache.py
+```
+
+Run the tests. The tests on real data run when the dataset is at its default place, and the build test runs when `DEPTH_ANYTHING_CHECKPOINT` is set:
+
+```sh
+uv run pytest
+```
+
+### Cache settings
+
+[`configs/nuscenes-mini.toml`](configs/nuscenes-mini.toml) holds every setting, and [`cache/config.py`](src/confhead/cache/config.py) says what each one does. `--set section.key=value` changes one setting for one run.
+
+The settings that change the content of an entry make a fingerprint. A build into a cache with another fingerprint stops and names the settings that differ. Use another `output.root`, or `--overwrite` to build every entry again.
+
+| Setting | Default | Effect |
+|---|---|---|
+| `model.tap` | `output_conv1` | The decoder layer to keep: `output_conv1` (64 channels), `refinenet1` or `refinenet2` (128) |
+| `grid.patch_multiple` | `4` | Grid of the dense maps: the 66 x 37 patch grid times this. 4 gives 264 x 148 and about 13 GB for mini; 2 gives 132 x 74 and 3.4 GB. |
+| `temporal.offsets` | `[-2, -1, 1, 2]` | The 12 Hz camera frames around the keyframe |
+| `temporal.align` | `lidar` | The points that give the keyframe its metric scale, for moving pixels between frames |
+| `points.radar_sweeps` | `5` | Radar sweeps per sensor, the keyframe sweep and the ones before it |
+| `run.precision` | `fp32` | `fp16` or `bf16` is faster on CUDA, and changes the fingerprint |
+
+### On CARC
+
+[`examples/carc-build.sbatch`](examples/carc-build.sbatch) runs the build as a job array. Each task builds one shard, so the shards run on different GPUs at the same time:
+
+```sh
+mkdir -p logs
+sbatch --account=<project> --array=0-7 examples/carc-build.sbatch
+```
+
+When every task has ended, run `uv run examples/build_cache.py` once to write the full index and check the cache.
+
+## API
+
+| Module | What it holds |
+|---|---|
+| [`nuscenes`](src/confhead/nuscenes.py) | `NuScenes`: the tables, the scenes with their condition and weather, and the camera `Item`s; the lidar and radar file readers |
+| [`items`](src/confhead/items.py) | `Item`, `View`, `PointFile`: one camera image with its neighbors and sweeps; `load_points` |
+| [`geometry`](src/confhead/geometry.py) | Frames, projection, pixel grids, sampling, rasterizing, and the scale-and-shift `Fit` |
+| [`depth`](src/confhead/depth.py) | `FrozenDepthAnything`: disparity and one decoder feature map; `preprocess` |
+| [`cache`](src/confhead/cache/) | `CacheConfig`, `load_config`, `build`, `plan`, `verify`, and the `Cache` reader |
+| [`labels`](src/confhead/labels.py) | `LabelConfig`, `lidar_labels`: where the depth is wrong against lidar |
+| [`dataset`](src/confhead/dataset.py) | `ConfidenceDataset`, `HeadInputs`, `RadarConfig`: the head inputs and labels as a PyTorch `Dataset` |
+| [`plot`](src/confhead/plot.py) | `draw_points`, `entry_figure`: matplotlib figures of items and cache entries |
+
+## Conventions
+
+The rules that the code follows, and why, are in [design.md](design.md).
+
+## Layout
+
+- `src/confhead/`: the library. `depth_anything_v2/` is the vendored model.
+- `examples/`: scripts that use the library, and the CARC job script.
+- `configs/`: cache settings.
+- `results/`: the small summaries that the team reads.
+- `docs/`: the figure of this README.
+- `outputs/`: caches, figures, and tables that the examples write. Not in git.
+
+## References
+
+- [Depth Anything V2](https://github.com/DepthAnything/Depth-Anything-V2) (Apache 2.0). `src/confhead/depth_anything_v2/` is a copy; the header of `dpt.py` says what changed.
+- [nuScenes](https://www.nuscenes.org/nuscenes). The loader reads the JSON tables with numpy and does not need the nuscenes-devkit.

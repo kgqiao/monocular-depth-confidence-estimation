@@ -1,6 +1,6 @@
 # Lidar and radar density in the camera images
 
-Written by `confhead report`. nuScenes v1.0-mini: 10 scenes (day 7, night 3), 404 keyframes, 2424 camera images of 1600 x 900.
+Written by `examples/projection_density.py`. nuScenes v1.0-mini: 10 scenes (day 7, night 3), 404 keyframes, 2424 camera images of 1600 x 900.
 
 Each image gets the keyframe lidar sweep and the keyframe returns of all five radars (the devkit's default filter: `invalid_state` 0, `ambig_state` 3, `dyn_prop` 0 to 6), with no earlier sweeps. Points count from 1 m to 80 m in depth along the optical axis. A pixel counts once, however many points land on it. All values are means per image.
 
