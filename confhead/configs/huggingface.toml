@@ -1,0 +1,13 @@
+# Where `confhead cache upload` backs up a cache, and where `confhead cache download`
+# restores it from. Each cache goes into a folder of the repository named after
+# its cache folder, so one repository holds several caches.
+# The token is not here: log in once with `uv run hf auth login`, or set $HF_TOKEN.
+
+[huggingface]
+repo_id = ""  # <user or org>/<name>, for example kgqiao/confhead-cache
+private = false  # a free account holds 100 GB of private storage, too little for trainval
+
+[shards]
+scenes_per_shard = 25  # about 10 GB per shard for trainval at grid.patch_multiple 2
+level = 3  # zstd level; higher levels compress the float16 features no better
+staging = ""  # where one shard waits on disk; empty: <cache>.staging beside the cache
