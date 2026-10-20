@@ -42,7 +42,7 @@ In [`configs/huggingface.toml`](../configs/huggingface.toml), set `repo_id` to t
 
 ```toml
 [huggingface]
-repo_id = "kgqiao/confhead-cache"
+repo_id = "nadayusc/confhead-cache"
 ```
 
 > [!IMPORTANT]
