@@ -29,6 +29,15 @@ def test_file_then_set_and_paths_resolve_against_the_file(tmp_path):
     assert cfg.source.dataroot == str((tmp_path / "data").resolve())
 
 
+def test_paths_expand_environment_variables(tmp_path, monkeypatch):
+    monkeypatch.setenv("CONFHEAD_TEST_ROOT", str(tmp_path))
+    p = write(tmp_path, '[source]\ndataroot = "$CONFHEAD_TEST_ROOT/nuscenes"\n[output]\nroot = "${CONFHEAD_TEST_ROOT}/cache"\n')
+    cfg = load_config(p, ["model.checkpoint=$CONFHEAD_TEST_ROOT/m.pth"])
+    assert cfg.source.dataroot == str((tmp_path / "nuscenes").resolve())
+    assert cfg.output.root == str((tmp_path / "cache").resolve())
+    assert cfg.model.checkpoint == str((tmp_path / "m.pth").resolve())
+
+
 def test_environment_fills_empty_paths(tmp_path, monkeypatch):
     monkeypatch.setenv("NUSCENES_DATAROOT", str(tmp_path))
     monkeypatch.setenv("DEPTH_ANYTHING_CHECKPOINT", str(tmp_path / "m.pth"))

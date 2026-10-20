@@ -1,28 +1,23 @@
 #!/bin/bash
-# Build the cache on CARC as a job array, one shard per array task. From the confhead folder:
+# Build the cache on one CARC GPU. examples/carc-submit.sh submits this as a job
+# array, one shard per task. Without --array it builds every entry, so a short
+# test run is, from the confhead folder:
 #
-#   mkdir -p logs
-#   sbatch --account=<project> --array=0-7 --export=ALL,CONFIG=configs/nuscenes-mini.toml examples/carc-build.sbatch
+#   sbatch --time=00:30:00 examples/carc-build.sbatch configs/nuscenes-trainval.toml --limit 50
 #
-# Each task builds every 8th item. A task that stops early continues where it was
-# when you submit it again. When every task has ended, run
-# `uv run examples/build_cache.py --config <the same config>` once to write the
-# index and check the cache. Extra arguments go to examples/build_cache.py,
-# for example `--set run.precision=fp16`.
-#SBATCH --job-name=confhead-cache
+# Arguments after the config go to examples/build_cache.py.
+#SBATCH --job-name=confhead-build
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
-#SBATCH --time=04:00:00
-#SBATCH --output=logs/confhead-cache-%A_%a.out
+#SBATCH --time=12:00:00
+#SBATCH --output=logs/confhead-build-%A_%a.out
 
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR}"
-CONFIG="${CONFIG:-configs/nuscenes-mini.toml}"
+CONFIG="${1:?usage: sbatch examples/carc-build.sbatch <config> [build_cache.py arguments]}"
+shift
 
 uv run examples/build_cache.py --config "${CONFIG}" \
-    --shard "${SLURM_ARRAY_TASK_ID}/${SLURM_ARRAY_TASK_COUNT}" \
-    --set run.device=cuda \
-    --set run.num_workers=$((SLURM_CPUS_PER_TASK - 1)) \
-    "$@"
+    --shard "${SLURM_ARRAY_TASK_ID:-0}/${SLURM_ARRAY_TASK_COUNT:-1}" "$@"
