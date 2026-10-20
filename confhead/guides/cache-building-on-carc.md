@@ -65,14 +65,26 @@ The `$USER` in a path changes to your CARC user name, so the same file works for
 
 ## 4. Check the plan
 
-The plan reads the dataset and tells you what the build will do. It does not use a GPU. It takes about a minute.
+The plan reads the dataset and tells you what the build will do. It does not use a GPU. The trainval tables need several GB of memory, so run the plan as a short CPU job, not on the login node:
 
 ```sh
 uv sync
-uv run examples/build_cache.py --config configs/nuscenes-trainval.toml --plan
+srun --account=$SBATCH_ACCOUNT --cpus-per-task=2 --mem=32G --time=00:30:00 \
+  uv run examples/build_cache.py --config configs/nuscenes-trainval.toml --plan
 ```
 
-Read the first lines of the output:
+> [!NOTE]
+> `srun` does not read `SBATCH_ACCOUNT`, so the command sets the account with `--account`.
+
+The job can wait in the queue before it starts. Then the plan takes a few minutes, and it prints a line after each step:
+
+```
+reading the v1.0-trainval tables and listing the files in /scratch1/<user>/nuscenes
+850 scenes on disk, 0 skipped, in ... s
+204894 items in ... s
+```
+
+Then read the first lines of the plan:
 
 ```
 scenes       850: scene-0001, scene-0002, scene-0003, ..., scene-1110
@@ -129,7 +141,7 @@ squeue --me
 tail -f logs/confhead-build-<job>_0.out
 ```
 
-Each build log prints the speed and the time left after every 25 items. To stop all tasks, use `scancel <job>`.
+Each build task first reads the tables, as the plan does, which takes a few minutes. Then its log prints the speed and the time left after every 25 items. To stop all tasks, use `scancel <job>`.
 
 ## 8. Read the check
 

@@ -26,7 +26,7 @@ from ..geometry import Fit, rescale_coords, sample_bilinear
 from ..items import Item, fit_to_points, load_points
 from ..nuscenes import NuScenes
 from .config import CacheConfig
-from .store import build_index, entry_done, open_for_build, write_entry
+from .store import build_index, done_keys, open_for_build, write_entry
 from .temporal import temporal_variation
 
 log = logging.getLogger("confhead.cache")
@@ -50,7 +50,11 @@ def select_items(cfg: CacheConfig, shard: tuple[int, int] = (0, 1)) -> tuple[lis
     if not cfg.source.dataroot:
         raise ValueError("Set source.dataroot or $NUSCENES_DATAROOT: the folder that holds "
                          f"{cfg.source.version}/, samples/ and sweeps/.")
+    t0 = time.perf_counter()
+    log.info("reading the %s tables and listing the files in %s", cfg.source.version, cfg.source.dataroot)
     nusc = NuScenes(cfg.source.dataroot, cfg.source.version)
+    log.info("%d scenes on disk, %d skipped, in %.0f s", len(nusc.scenes), len(nusc.skipped_scenes),
+             time.perf_counter() - t0)
     items = nusc.items(
         scenes=cfg.source.scenes or None,
         cameras=cfg.source.cameras,
@@ -58,6 +62,7 @@ def select_items(cfg: CacheConfig, shard: tuple[int, int] = (0, 1)) -> tuple[lis
         radar_sweeps=cfg.points.radar_sweeps,
         max_samples_per_scene=cfg.source.max_samples_per_scene,
     )
+    log.info("%d items in %.0f s", len(items), time.perf_counter() - t0)
     i, n = shard
     return items[i::n], [s.name for s in nusc.skipped_scenes]
 
@@ -224,7 +229,8 @@ def build(cfg: CacheConfig, shard: tuple[int, int] = (0, 1), limit: int = 0,
     root = open_for_build(cfg, overwrite)
     fingerprint = cfg.fingerprint()
     report = BuildReport(root=root, items=len(items))
-    todo = [it for it in items if overwrite or not entry_done(root, it.scene, it.key, fingerprint)]
+    already = set() if overwrite else done_keys(root, ((it.scene, it.key) for it in items), fingerprint)
+    todo = [it for it in items if it.key not in already]
     report.skipped = len(items) - len(todo)
     if limit:
         todo = todo[:limit]
