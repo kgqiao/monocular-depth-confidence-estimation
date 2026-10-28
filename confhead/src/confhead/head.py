@@ -9,6 +9,7 @@ back all that is needed to build the head's inputs from a cache.
 
 from __future__ import annotations
 
+import os
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any
@@ -56,9 +57,15 @@ def masked_bce(logits: torch.Tensor, target: torch.Tensor, mask: torch.Tensor,
 
 
 def save_head(path: str | Path, head: ConfidenceHead, inputs: HeadInputs, channels: list[str], **fields: Any) -> None:
-    """Write the head, the inputs it reads, and extra fields of tensors and plain values (epoch, history, ...)."""
+    """Write the head, the inputs it reads, and extra fields of tensors and plain values (epoch, history, ...).
+
+    The file is replaced in one step, so a job stopped while saving leaves the old checkpoint whole.
+    """
+    path = Path(path)
+    tmp = path.with_name(path.name + ".tmp")
     torch.save({"head": head.state_dict(), "in_channels": head.in_channels, "widths": list(head.widths),
-                "inputs": asdict(inputs), "channels": list(channels), **fields}, path)
+                "inputs": asdict(inputs), "channels": list(channels), **fields}, tmp)
+    os.replace(tmp, path)
 
 
 def load_head(path: str | Path, device: str | torch.device = "cpu") -> tuple[ConfidenceHead, HeadInputs, dict[str, Any]]:
