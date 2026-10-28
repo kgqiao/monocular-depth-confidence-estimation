@@ -1,6 +1,6 @@
 # Open the Notebooks on CARC
 
-Two notebooks run on the cache from [cache-building-on-carc.md](cache-building-on-carc.md). [`notebooks/cache-tutorial.ipynb`](../notebooks/cache-tutorial.ipynb) is a tour of the cache and the API that reads it. [`notebooks/train-head.ipynb`](../notebooks/train-head.ipynb) trains the confidence head and scores it. This guide opens them in JupyterLab on CARC. The tutorial needs no GPU, and the training needs one (step 4). Without the JupyterLab part, the same steps open them on your own computer.
+Three notebooks run on the cache from [cache-building-on-carc.md](cache-building-on-carc.md). [`notebooks/cache-tutorial.ipynb`](../notebooks/cache-tutorial.ipynb) is a tour of the cache and the API that reads it. [`notebooks/train-head.ipynb`](../notebooks/train-head.ipynb) trains the confidence head. [`notebooks/eval-template.ipynb`](../notebooks/eval-template.ipynb) loads a trained head and predicts with it, as a template for the eval team. This guide opens them in JupyterLab on CARC. The training needs a GPU (step 4), and the other two need none. Without the JupyterLab part, the same steps open them on your own computer.
 
 ## 1. Register the Kernel
 
@@ -28,7 +28,7 @@ Go to [ondemand.carc.usc.edu](https://ondemand.carc.usc.edu), open **Interactive
 | Field | Value |
 |---|---|
 | Account | your project account, the one in `SBATCH_ACCOUNT` |
-| Partition | `main`; the tutorial needs no GPU |
+| Partition | `main`; the tutorial and the eval template need no GPU |
 | CPUs | 4 |
 | Memory | 16 GB. The trainval index takes a few hundred MB; section 11 of the tutorial loads the nuScenes tables, which take several GB. |
 | Time | 2 hours |
@@ -57,7 +57,7 @@ Run the cells from the top. The *Setup* section finds the cache:
 | Number of GPUs | 1 |
 | Number of CPUs | 8. The notebook reads the cache with one loader process per CPU, less one. |
 | Memory (GB) | 32 |
-| Number of hours | the time that section 5 of the notebook estimates, plus an hour for the scoring |
+| Number of hours | the time that section 5 of the notebook estimates, plus an hour |
 
 Open `train-head.ipynb` with the **confhead** kernel and run the cells from the top. The device that section 1 prints must be `cuda`. Section 5 measures how fast the session reads the cache, and estimates the time of the run. If one epoch takes more than 2 hours, set `SAMPLES_PER_EPOCH` as the notebook says.
 
