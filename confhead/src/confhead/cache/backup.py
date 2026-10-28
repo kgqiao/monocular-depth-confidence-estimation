@@ -145,6 +145,13 @@ class _HashingWriter:
         self.f.flush()
 
 
+def _cpus() -> int:
+    """The CPUs this process may use: a Slurm job's share, not the whole node."""
+    if hasattr(os, "sched_getaffinity"):
+        return len(os.sched_getaffinity(0))
+    return os.cpu_count() or 1
+
+
 def write_shard(root: str | Path, shard: Shard, path: str | Path, level: int = 3) -> None:
     """Write the files of a shard as a zstd tar at `path`, and fill in its archive size and SHA-256."""
     import zstandard
@@ -155,7 +162,7 @@ def write_shard(root: str | Path, shard: Shard, path: str | Path, level: int = 3
     try:
         with open(tmp, "wb") as f:
             out = _HashingWriter(f)
-            with zstandard.ZstdCompressor(level=level, threads=-1).stream_writer(out, closefd=False) as z:
+            with zstandard.ZstdCompressor(level=level, threads=_cpus()).stream_writer(out, closefd=False) as z:
                 with tarfile.open(fileobj=z, mode="w|", format=tarfile.PAX_FORMAT) as tar:
                     for rel in shard.paths:
                         tar.add(root / rel, arcname=rel, recursive=False)

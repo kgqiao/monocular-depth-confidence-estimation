@@ -4,7 +4,7 @@
 
 Depth Anything V2 gives a depth for every pixel of a camera image, but it does not say which pixels to trust. Our CSCI 566 project trains a small head on top of the frozen model that predicts, per pixel, when that depth is wrong. Lidar supplies the answer key in training. Radar, which a deployed car has, is one of the inputs. See [Form B](../Docs/Prepreposal/Brainstorm/Project%20Scope%20Visual%20(Form%20B).md) and the [pre-proposal](../Docs/Prepreposal/Deliberable/CS566%20-%20Project%20Pre-proposal.pdf).
 
-`confhead` is the Python library for every part of that work. It reads nuScenes, runs the frozen model, and builds the cache that the head trains on.
+`confhead` is the Python library for every part of that work. It reads nuScenes, runs the frozen model, builds the cache that the head trains on, and holds the head and its scores.
 
 The confidence head trains on a few features downstream of the Depth Anything prediction:
 - DA2 decoder features
@@ -109,6 +109,25 @@ uv run python -m ipykernel install --user --name confhead --display-name confhea
 uv run jupyter lab notebooks/cache-tutorial.ipynb
 ```
 
+### Train the head in a notebook
+
+[`notebooks/train-head.ipynb`](notebooks/train-head.ipynb) trains the confidence head on a built cache, and keeps the checkpoint with the lowest loss on a dev split of the train scenes. Each run writes its settings and checkpoints to `outputs/runs/`, or to `/scratch1/$USER/confhead-runs/` on CARC. [`notebooks/eval-template.ipynb`](notebooks/eval-template.ipynb) loads a checkpoint with `load_head` and predicts `p_error` for val images: a starting point for the eval runner. [guides/notebook-on-carc.md](guides/notebook-on-carc.md) opens both on CARC. On your own computer, after the two commands above:
+
+```sh
+uv run jupyter lab notebooks/train-head.ipynb
+```
+
+A checkpoint holds the head and the `HeadInputs` of its training, so one call gives back what a prediction needs:
+
+```python
+import torch
+from confhead import Cache, ConfidenceDataset, load_head
+
+head, inputs, info = load_head("outputs/runs/<run>/best.pt")
+x = ConfidenceDataset(Cache("outputs/cache/nuscenes-mini"), inputs, tag="val")[0]["x"]
+p_error = torch.sigmoid(head(x[None]))  # (1, 1, h, w): the chance that the depth in each cell is wrong
+```
+
 ### Cache settings
 
 [`configs/nuscenes-mini.toml`](configs/nuscenes-mini.toml) holds every setting, and [`cache/config.py`](src/confhead/cache/config.py) says what each one does. `--set section.key=value` changes one setting for one run.
@@ -151,6 +170,7 @@ uv run confhead cache download nuscenes-trainval /scratch1/$USER/confhead-cache/
 | [`cli`](src/confhead/cli.py) | The `confhead` command: `cache info`, `cache upload`, `cache download` |
 | [`labels`](src/confhead/labels.py) | `LabelConfig`, `lidar_labels`: where the depth is wrong against lidar |
 | [`dataset`](src/confhead/dataset.py) | `ConfidenceDataset`, `HeadInputs`, `RadarConfig`: the head inputs and labels as a PyTorch `Dataset` |
+| [`head`](src/confhead/head.py) | `ConfidenceHead`, `masked_bce`, `save_head`, `load_head`: the head over the inputs, its loss on the labeled cells, and its checkpoints |
 | [`plot`](src/confhead/plot.py) | `draw_points`, `draw_map`, `entry_figure`: matplotlib figures of items and cache entries |
 
 ## Conventions
@@ -162,11 +182,11 @@ The rules that the code follows, and why, are in [design.md](design.md).
 - `src/confhead/`: the library, and the `confhead` command in `cli.py`. `depth_anything_v2/` is the vendored model.
 - `examples/`: scripts that use the library, and the CARC job scripts.
 - `guides/`: step-by-step guides.
-- `notebooks/`: tutorials that run on a built cache.
+- `notebooks/`: the tour of a built cache, the training of the head on it, and a template that loads the head and predicts.
 - `configs/`: cache settings, and the Hugging Face repository of the backup.
 - `results/`: the small summaries that the team reads.
 - `docs/`: the figure of this README.
-- `outputs/`: caches, figures, and tables that the examples write. Not in git.
+- `outputs/`: caches, figures, tables, and training runs that the examples and notebooks write. Not in git.
 
 ## References
 
