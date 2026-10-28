@@ -1,0 +1,10 @@
+# Train the confidence head on the v1.0-mini cache, on this computer.
+# Every setting and its default is in src/confhead/train.py. Relative paths
+# resolve against this folder.
+
+[data]
+cache = "../outputs/cache/nuscenes-mini"
+
+[output]
+runs = "../outputs/runs"
+name = "mini"
