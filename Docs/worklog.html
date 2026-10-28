@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Training Team Work Log</title>
+            <style>
+/* From extension vscode.github */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+.vscode-dark img[src$=\#gh-light-mode-only],
+.vscode-light img[src$=\#gh-dark-mode-only],
+.vscode-high-contrast:not(.vscode-high-contrast-light) img[src$=\#gh-light-mode-only],
+.vscode-high-contrast-light img[src$=\#gh-dark-mode-only] {
+	display: none;
+}
+
+</style>
+            
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+<style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+        <style>
+.task-list-item {
+    list-style-type: none;
+}
+
+.task-list-item-checkbox {
+    margin-left: -20px;
+    vertical-align: middle;
+    pointer-events: none;
+}
+</style>
+<style>
+:root {
+  --color-note: #0969da;
+  --color-tip: #1a7f37;
+  --color-warning: #9a6700;
+  --color-severe: #bc4c00;
+  --color-caution: #d1242f;
+  --color-important: #8250df;
+}
+
+</style>
+<style>
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-note: #2f81f7;
+    --color-tip: #3fb950;
+    --color-warning: #d29922;
+    --color-severe: #db6d28;
+    --color-caution: #f85149;
+    --color-important: #a371f7;
+  }
+}
+
+</style>
+<style>
+.markdown-alert {
+  padding: 0.5rem 1rem;
+  margin-bottom: 16px;
+  color: inherit;
+  border-left: .25em solid #888;
+}
+
+.markdown-alert>:first-child {
+  margin-top: 0
+}
+
+.markdown-alert>:last-child {
+  margin-bottom: 0
+}
+
+.markdown-alert .markdown-alert-title {
+  display: flex;
+  font-weight: 500;
+  align-items: center;
+  line-height: 1
+}
+
+.markdown-alert .markdown-alert-title .octicon {
+  margin-right: 0.5rem;
+  display: inline-block;
+  overflow: visible !important;
+  vertical-align: text-bottom;
+  fill: currentColor;
+}
+
+.markdown-alert.markdown-alert-note {
+  border-left-color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-note .markdown-alert-title {
+  color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-important {
+  border-left-color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-important .markdown-alert-title {
+  color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-warning {
+  border-left-color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-warning .markdown-alert-title {
+  color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-tip {
+  border-left-color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-tip .markdown-alert-title {
+  color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-caution {
+  border-left-color: var(--color-caution);
+}
+
+.markdown-alert.markdown-alert-caution .markdown-alert-title {
+  color: var(--color-caution);
+}
+
+</style>
+        
+        </head>
+        <body class="vscode-body vscode-light">
+            <span id="markdown-mermaid" aria-hidden="true" data-config="{&quot;darkModeTheme&quot;:&quot;vscode&quot;,&quot;lightModeTheme&quot;:&quot;vscode&quot;,&quot;maxTextSize&quot;:50000,&quot;clickDrag&quot;:&quot;alt&quot;,&quot;showControls&quot;:&quot;onHoverOrFocus&quot;,&quot;resizable&quot;:true,&quot;maxHeight&quot;:&quot;&quot;}"></span>
+				<h1 id="training-team-work-log">Training Team Work Log</h1>
+<p>A running record of what the training team has done. Add new entries at the bottom, under a date heading.</p>
+<h2 id="status">Status</h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>State</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>nuScenes v1.0 dataset on CARC</td>
+<td>Done</td>
+</tr>
+<tr>
+<td>Confidence head input cache (trainval)</td>
+<td>Done, checked</td>
+</tr>
+<tr>
+<td>Cache tutorial notebook</td>
+<td>In progress: not yet run on CARC</td>
+</tr>
+<tr>
+<td>Project wiki in <code>Docs/Wiki</code></td>
+<td>Done</td>
+</tr>
+<tr>
+<td>Cache backup on Hugging Face</td>
+<td>Upload job running</td>
+</tr>
+</tbody>
+</table>
+<p>Data locations on CARC:</p>
+<ul>
+<li>Dataset: <code>/scratch1/naday/nuscenes</code></li>
+<li>Cache: <code>/scratch1/naday/confhead-cache/nuscenes-trainval</code></li>
+</ul>
+<p>The dataset is more than 800 GB, so it cannot go into the PI's project folder. <code>/scratch1</code> also gives the fastest read access on CARC.</p>
+<h2 id="2026-10-19">2026-10-19</h2>
+<h3 id="downloaded-the-full-nuscenes-dataset">Downloaded the full nuScenes dataset</h3>
+<ul>
+<li>Downloaded nuScenes v1.0 (trainval and test) to <code>/scratch1/naday</code>. The download took 7 hours.</li>
+<li>Script: <code>utilities/dataset/download_nuscenes.py</code>, run as a job with <code>download_nuscenes.sbatch</code>. It is adapted from <a href="https://github.com/li-xl/nuscenes-download">li-xl/nuscenes-download</a>.</li>
+<li>Changes from the original script:
+<ul>
+<li>The nuScenes login comes from an env file, so no credentials go into git.</li>
+<li>A stopped download resumes, each archive must match its MD5, and extracted archives are skipped on a second run.</li>
+</ul>
+</li>
+<li>Checked that the downloaded archives are the parts of nuScenes the project needs. nuScenes offers several datasets, and only some of them apply.</li>
+</ul>
+<h3 id="built-the-confidence-head-input-cache">Built the confidence head input cache</h3>
+<ul>
+<li>Built the trainval cache on CARC with the <code>confhead</code> API. Config: <code>confhead/configs/nuscenes-trainval.toml</code>. Guide: <code>confhead/guides/cache-building-on-carc.md</code>.</li>
+<li>The build is complete. We checked the cache report a second time.</li>
+</ul>
+<h2 id="2026-10-20">2026-10-20</h2>
+<h3 id="started-a-cache-tutorial-notebook">Started a cache tutorial notebook</h3>
+<ul>
+<li><code>confhead/notebooks/cache-tutorial.ipynb</code> shows how to look at the cache and documents the cache reading API.</li>
+<li><code>confhead/guides/notebook-on-carc.md</code> tells how to open it on CARC.</li>
+<li>To do: run the notebook on CARC against the full cache.</li>
+</ul>
+<h3 id="added-project-wiki-pages">Added project wiki pages</h3>
+<ul>
+<li>Copied six project pages into <code>Docs/Wiki</code>, plus <code>Training.canvas</code> (an Obsidian canvas).</li>
+</ul>
+<h3 id="wrote-the-hugging-face-backup">Wrote the Hugging Face backup</h3>
+<ul>
+<li><code>confhead cache upload</code> splits the cache into shards, compresses each shard with zstd, and uploads it to a Hugging Face dataset repository. <code>confhead cache download</code> restores it.</li>
+<li>Purpose: a backup of the cache, and team access if access to <code>/scratch1/naday</code> is too limited.</li>
+<li>Config: <code>confhead/configs/huggingface.toml</code>. Guide: <code>confhead/guides/cache-backup-on-huggingface.md</code>.</li>
+</ul>
+<h3 id="started-the-hugging-face-upload-on-carc">Started the Hugging Face upload on CARC</h3>
+<ul>
+<li>Started the shard, compress, and upload job (<code>confhead/examples/carc-upload.sbatch</code>) at 2:44 PM.</li>
+<li>To do: when the job ends, confirm that all shards are on Hugging Face and that a download restores a complete cache.</li>
+</ul>
+<h2 id="2026-10-27">2026-10-27</h2>
+<ul>
+<li>Setup subdirectory for evals at root level</li>
+<li>Wrote initial rejection-auc, and ece metric functions.</li>
+<li>Wrote main function for initiating metric tests, and template for filling in further evals code</li>
+<li>Set up synthetic tests for metrics, starting with sparsification curves</li>
+<li>To Do: Finish functions, start data loading logic, bootstrapping, connection to access cache data</li>
+</ul>
+
+            
+            
+        </body>
+        </html>

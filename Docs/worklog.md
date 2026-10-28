@@ -57,3 +57,11 @@ The dataset is more than 800 GB, so it cannot go into the PI's project folder. `
 
 - Started the shard, compress, and upload job (`confhead/examples/carc-upload.sbatch`) at 2:44 PM.
 - To do: when the job ends, confirm that all shards are on Hugging Face and that a download restores a complete cache.
+
+## 2026-10-27
+
+- Setup subdirectory for evals at root level
+- Wrote initial rejection-auc, and ece metric functions.
+- Wrote main function for initiating metric tests, and template for filling in further evals code
+- Set up synthetic tests for metrics, starting with sparsification curves
+- To Do: Finish functions, start data loading logic, bootstrapping, connection to access cache data
