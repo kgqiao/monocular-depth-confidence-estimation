@@ -38,6 +38,7 @@ This page lists each place where the code of the CS566 project departs from the 
 | D11 | Weather tag | Dataset strategy: decide first how to count "Night, after rain". | Rain when the description holds "rain", so scene-1094 is night and rain (`confhead/src/confhead/nuscenes.py:104`). | Open: Q7. |
 | D12 | Label gate | Run 1: compute the positive-label rate on train; act when it is outside 0.05 to 0.70. | On mini, 37.2% at tau 0.10. | Inside the gate, but measured with the relative model and the lidar fit (D1). |
 | D13 | Images with no fit | Not covered. | 4 night images of scene-1077 have no lidar fit, so no labels and no temporal spread. | Open: Q8. |
+| D14 | Choice of checkpoint | Run 1, step 6: compute AUSE on dev after each epoch, and keep the checkpoint with the lowest dev AUSE. | `confhead/notebooks/train-head.ipynb` keeps the epoch with the lowest masked loss on dev, the loss it trains on, and computes no scores. On mini, the two rules disagree: dev AUSE was lowest at epoch 1 (the notebook at `c0e979a`), and the dev loss at epoch 8. | Decided: the eval team owns AUSE and the other scores, and scores the checkpoint that the dev loss chose. |
 
 ### Where the code follows the plans
 
