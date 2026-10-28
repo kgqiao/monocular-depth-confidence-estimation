@@ -1,6 +1,6 @@
 # Open the notebooks on CARC
 
-[`notebooks/cache-tutorial.ipynb`](../notebooks/cache-tutorial.ipynb) is a tour of the cache and the API that reads it. This guide opens it in JupyterLab on CARC, against the cache from [cache-building-on-carc.md](cache-building-on-carc.md). The same steps, without the JupyterLab part, open it on your own computer.
+Two notebooks run on the cache from [cache-building-on-carc.md](cache-building-on-carc.md). [`notebooks/cache-tutorial.ipynb`](../notebooks/cache-tutorial.ipynb) is a tour of the cache and the API that reads it. [`notebooks/train-head.ipynb`](../notebooks/train-head.ipynb) trains the confidence head and scores it. This guide opens them in JupyterLab on CARC. The tutorial needs no GPU, and the training needs one (step 4). The same steps, without the JupyterLab part, open them on your own computer.
 
 ## 1. Register the kernel
 
@@ -28,9 +28,9 @@ Go to [ondemand.carc.usc.edu](https://ondemand.carc.usc.edu), open **Interactive
 | Field | Value |
 |---|---|
 | Account | your project account, the one in `SBATCH_ACCOUNT` |
-| Partition | `main`; the notebook needs no GPU |
+| Partition | `main`; the tutorial needs no GPU |
 | CPUs | 4 |
-| Memory | 16 GB. The trainval index takes a few hundred MB; section 11 of the notebook loads the nuScenes tables, which take several GB. |
+| Memory | 16 GB. The trainval index takes a few hundred MB; section 11 of the tutorial loads the nuScenes tables, which take several GB. |
 | Time | 2 hours |
 
 Click **Launch**. When the session starts, click **Connect to Jupyter**.
@@ -46,6 +46,23 @@ Run the cells from the top. The *Setup* section finds the cache:
 - With no change, it opens your own cache, `/scratch1/$USER/confhead-cache/nuscenes-trainval`.
 - To open a cache that a teammate built, set `CACHE_ROOT` in the second code cell to their path, for example `"/scratch1/<user>/confhead-cache/nuscenes-trainval"`. The images come from their dataset, which the cache remembers.
 
+## 4. Train the head on a GPU
+
+`train-head.ipynb` needs a GPU session. Start JupyterLab as in step 2, with these fields changed:
+
+| Field | Value |
+|---|---|
+| Partition | `gpu` |
+| GPU Type | any; the head is small |
+| Number of GPUs | 1 |
+| Number of CPUs | 8. The notebook reads the cache with one loader process per CPU, less one. |
+| Memory (GB) | 32 |
+| Number of hours | the time that section 5 of the notebook estimates, plus an hour for the scoring |
+
+Open `train-head.ipynb` with the **confhead** kernel and run the cells from the top. The settings cell prints the device, which must be `cuda`. Section 5 measures how fast the session reads the cache, and estimates the time of the run. If one epoch takes more than 2 hours, set `SAMPLES_PER_EPOCH` as the notebook says.
+
+Each run writes its files to `/scratch1/$USER/confhead-runs/<run>`, and the notebook prints the folder. If the session ends before the training does, start a new session, set `RUN_NAME` in the settings cell to the name of the run folder, and run the cells from the top again. The training continues after the last epoch that finished.
+
 ## On your own computer
 
 Steps 1 and 3 are the same. Instead of step 2:
@@ -54,7 +71,7 @@ Steps 1 and 3 are the same. Instead of step 2:
 uv run jupyter lab notebooks/cache-tutorial.ipynb
 ```
 
-With no trainval cache on the machine, the notebook opens the mini cache under `outputs/cache/`, which `examples/build_cache.py` builds from nuScenes v1.0-mini.
+With no trainval cache on the machine, each notebook opens the mini cache under `outputs/cache/`, which `examples/build_cache.py` builds from nuScenes v1.0-mini. Open `train-head.ipynb` from JupyterLab the same way. On the mini cache, a Mac with an Apple GPU runs the whole training notebook in about a minute.
 
 ## If something goes wrong
 
@@ -64,4 +81,5 @@ With no trainval cache on the machine, the notebook opens the mini cache under `
 | `ModuleNotFoundError`, for example `No module named 'matplotlib'` or `'confhead'` | The notebook runs on another kernel, such as CARC's default Python. Choose **confhead** at the top right. |
 | `FileNotFoundError: no cache found` | Set `CACHE_ROOT` to the cache path. The path must hold `index.json`; if it does not, the check job of the build has not run yet. |
 | `entry.image()` cannot find the image | The dataset is not where the cache was built from. Set `DATAROOT` in the second code cell. |
-| The kernel dies in section 11 | The session has too little memory for the trainval tables. Start a JupyterLab session with more, or skip the section. |
+| The kernel dies in section 11 of the tutorial | The session has too little memory for the trainval tables. Start a JupyterLab session with more, or skip the section. |
+| `train-head.ipynb` prints `device cpu` | The session has no GPU. Start one on the `gpu` partition, with 1 in **Number of GPUs**. |
