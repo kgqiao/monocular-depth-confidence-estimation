@@ -1,15 +1,24 @@
-"""The confidence head: a small CNN over the inputs of `ConfidenceDataset`, and its loss.
+"""The confidence head: a small CNN over the inputs of `ConfidenceDataset`, its loss, and its checkpoints.
 
 The head outputs one logit per grid cell, the log-odds that the model's depth
 there is wrong by more than tau. It standardizes each channel of x first, with
 statistics of the train split held as buffers, so a checkpoint carries them.
+A checkpoint also holds the HeadInputs of the training, so `load_head` gives
+back all that is needed to build the head's inputs from a cache.
 """
 
 from __future__ import annotations
 
+from dataclasses import asdict
+from pathlib import Path
+from typing import Any
+
 import torch
 import torch.nn.functional as F
 from torch import nn
+
+from .dataset import HeadInputs, RadarConfig
+from .labels import LabelConfig
 
 
 class ConfidenceHead(nn.Module):
@@ -44,3 +53,24 @@ def masked_bce(logits: torch.Tensor, target: torch.Tensor, mask: torch.Tensor,
     weight = None if pos_weight is None else torch.tensor(pos_weight, device=logits.device)
     loss = F.binary_cross_entropy_with_logits(logits, target, reduction="none", pos_weight=weight)
     return (loss * mask).sum() / mask.sum().clamp(min=1)
+
+
+def save_head(path: str | Path, head: ConfidenceHead, inputs: HeadInputs, channels: list[str], **fields: Any) -> None:
+    """Write the head, the inputs it reads, and extra fields of tensors and plain values (epoch, history, ...)."""
+    torch.save({"head": head.state_dict(), "in_channels": head.in_channels, "widths": list(head.widths),
+                "inputs": asdict(inputs), "channels": list(channels), **fields}, path)
+
+
+def load_head(path: str | Path, device: str | torch.device = "cpu") -> tuple[ConfidenceHead, HeadInputs, dict[str, Any]]:
+    """The head of a checkpoint, in eval mode on `device`; the HeadInputs of its training; the other fields.
+
+    `ConfidenceDataset(cache, inputs, ...)` builds the head's inputs. Its `channel_names`
+    must equal the checkpoint's "channels".
+    """
+    fields = torch.load(path, map_location="cpu")
+    head = ConfidenceHead(fields.pop("in_channels"), tuple(fields.pop("widths")))
+    head.load_state_dict(fields.pop("head"))
+    saved = fields.pop("inputs")
+    inputs = HeadInputs(**{**saved, "labels": LabelConfig(**saved["labels"]),
+                           "radar_cfg": RadarConfig(**saved["radar_cfg"])})
+    return head.to(device).eval(), inputs, fields

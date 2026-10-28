@@ -111,10 +111,21 @@ uv run jupyter lab notebooks/cache-tutorial.ipynb
 
 ### Train the head in a notebook
 
-[`notebooks/train-head.ipynb`](notebooks/train-head.ipynb) trains the confidence head on a built cache. It chooses the checkpoint on a dev split of the train scenes, and scores it on val against the temporal spread. Each run writes its settings, checkpoints, and scores to `outputs/runs/`, or to `/scratch1/$USER/confhead-runs/` on CARC. [guides/notebook-on-carc.md](guides/notebook-on-carc.md) opens it on a CARC GPU. On your own computer, after the two commands above:
+[`notebooks/train-head.ipynb`](notebooks/train-head.ipynb) trains the confidence head on a built cache, and keeps the checkpoint with the lowest loss on a dev split of the train scenes. Each run writes its settings and checkpoints to `outputs/runs/`, or to `/scratch1/$USER/confhead-runs/` on CARC. [`notebooks/eval-template.ipynb`](notebooks/eval-template.ipynb) loads a checkpoint with `load_head` and predicts `p_error` for val images: a starting point for the eval runner. [guides/notebook-on-carc.md](guides/notebook-on-carc.md) opens both on CARC. On your own computer, after the two commands above:
 
 ```sh
 uv run jupyter lab notebooks/train-head.ipynb
+```
+
+A checkpoint holds the head and the `HeadInputs` of its training, so one call gives back what a prediction needs:
+
+```python
+import torch
+from confhead import Cache, ConfidenceDataset, load_head
+
+head, inputs, info = load_head("outputs/runs/<run>/best.pt")
+x = ConfidenceDataset(Cache("outputs/cache/nuscenes-mini"), inputs, tag="val")[0]["x"]
+p_error = torch.sigmoid(head(x[None]))  # (1, 1, h, w): the chance that the depth in each cell is wrong
 ```
 
 ### Cache settings
@@ -159,8 +170,7 @@ uv run confhead cache download nuscenes-trainval /scratch1/$USER/confhead-cache/
 | [`cli`](src/confhead/cli.py) | The `confhead` command: `cache info`, `cache upload`, `cache download` |
 | [`labels`](src/confhead/labels.py) | `LabelConfig`, `lidar_labels`: where the depth is wrong against lidar |
 | [`dataset`](src/confhead/dataset.py) | `ConfidenceDataset`, `HeadInputs`, `RadarConfig`: the head inputs and labels as a PyTorch `Dataset` |
-| [`head`](src/confhead/head.py) | `ConfidenceHead`, `masked_bce`: the head over the inputs, and its loss on the labeled cells |
-| [`metrics`](src/confhead/metrics.py) | `auroc`, `sparsification`, `ause_aurg`: the scores of a confidence map against the lidar error |
+| [`head`](src/confhead/head.py) | `ConfidenceHead`, `masked_bce`, `save_head`, `load_head`: the head over the inputs, its loss on the labeled cells, and its checkpoints |
 | [`plot`](src/confhead/plot.py) | `draw_points`, `draw_map`, `entry_figure`: matplotlib figures of items and cache entries |
 
 ## Conventions
@@ -172,7 +182,7 @@ The rules that the code follows, and why, are in [design.md](design.md).
 - `src/confhead/`: the library, and the `confhead` command in `cli.py`. `depth_anything_v2/` is the vendored model.
 - `examples/`: scripts that use the library, and the CARC job scripts.
 - `guides/`: step-by-step guides.
-- `notebooks/`: the tour of a built cache, and the training of the head on it.
+- `notebooks/`: the tour of a built cache, the training of the head on it, and a template that loads the head and predicts.
 - `configs/`: cache settings, and the Hugging Face repository of the backup.
 - `results/`: the small summaries that the team reads.
 - `docs/`: the figure of this README.
