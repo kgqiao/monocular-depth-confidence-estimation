@@ -87,7 +87,7 @@ After step 2, `ls -ld` shows a mode like `drwx--x---+`. The `+` marks an ACL, an
 On a login node:
 
 ```sh
-git clone https://github.com/kgqiao/Vision-Project-CSCI-566.git ~/Vision-Project-CSCI-566
+git clone https://github.com/kgqiao/monocular-depth-confidence-estimation.git ~/Vision-Project-CSCI-566
 ```
 
 ## Next steps
