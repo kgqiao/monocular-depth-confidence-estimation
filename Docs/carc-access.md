@@ -44,6 +44,44 @@ scp carc:~/results.csv .
 | `/project2/yzhao010_1531` | The course project folder, shared with the course. |
 | `/scratch1/<usc-id>` | Your scratch folder: the fastest storage, for large data. The nuScenes dataset and the cache are in `/scratch1/naday`. |
 
+## Share your scratch folder
+
+Only you can open your scratch folder. The course group `yzhao010_1531` has about 170 members, so group permissions would share the folder with the whole course. Use ACLs instead: they give access to named users only. The commands below name all five team members (`naday`, `tawde`, `kgqiao`, `ncbao`, `ajarteag`), so you can paste them as they are. The entry that names you has no effect.
+
+1. Check that the folder is private:
+
+   ```sh
+   ls -ld /scratch1/$USER
+   ```
+
+   The mode must be `drwx------`. If it is not, run `chmod go-rwx /scratch1/$USER`.
+
+2. Let the team pass through the folder. With `x` and no `r`, they can open paths inside it but cannot list it:
+
+   ```sh
+   setfacl -m u:naday:x,u:tawde:x,u:kgqiao:x,u:ncbao:x,u:ajarteag:x /scratch1/$USER
+   ```
+
+3. Give the team read access to each folder you share. The command visits every file, so run it as a job:
+
+   ```sh
+   sbatch --partition=main --cpus-per-task=1 --mem=2G --time=12:00:00 \
+     --job-name=share-scratch --output=$HOME/share-scratch-%j.out \
+     --wrap="setfacl -R -m u:naday:rX,u:tawde:rX,u:kgqiao:rX,u:ncbao:rX,u:ajarteag:rX /scratch1/$USER/nuscenes"
+   ```
+
+   `X` gives execute permission to folders only. Files you add later do not get these permissions, so run the job again after you add data.
+
+4. Ask a teammate to check:
+
+   ```sh
+   namei -l /scratch1/<usc-id>/nuscenes
+   ```
+
+   It prints the permissions of each folder on the path. Access stops at the first folder that lacks `x` for them.
+
+After step 2, `ls -ld` shows a mode like `drwx--x---+`. The `+` marks an ACL, and the group position now shows the ACL mask, an upper limit on the named-user entries. The course group still has no access: `getfacl /scratch1/$USER` shows `group::---`. Avoid `chmod g-...` on shared folders, because it lowers the mask and removes the team's access.
+
 ## Get the code
 
 On a login node:
