@@ -15,7 +15,6 @@ between confidence and accuracy in any single bin.
 binary outcome (1 for correct, 0 for incorrect).
 
 
-
 **Selective Classification & Rejection Metrics**: Can it filter bad predictions?
 
 (These metrics would measure which examples are too low confidence to predict or handoff as
