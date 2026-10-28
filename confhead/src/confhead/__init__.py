@@ -9,6 +9,7 @@ Modules:
     labels      lidar error labels
     dataset     the head inputs and the PyTorch dataset over a cache
     head        the confidence head, its masked loss, and its checkpoints
+    train       the training settings, the dev split, and one training run
     plot        figures of items and cache entries
     cli         the confhead command
 """
@@ -20,8 +21,10 @@ from .head import ConfidenceHead, load_head
 from .items import Item, load_points
 from .labels import LabelConfig
 from .nuscenes import NuScenes
+from .train import TrainConfig, Training, load_train_config
 
 __all__ = [
     "Cache", "CacheConfig", "ConfidenceDataset", "ConfidenceHead", "FrozenDepthAnything", "HeadInputs", "Item",
-    "LabelConfig", "NuScenes", "RadarConfig", "build", "load_config", "load_head", "load_points",
+    "LabelConfig", "NuScenes", "RadarConfig", "TrainConfig", "Training", "build", "load_config", "load_head",
+    "load_points", "load_train_config",
 ]

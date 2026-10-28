@@ -59,9 +59,11 @@ Run the cells from the top. The *Setup* section finds the cache:
 | Memory (GB) | 32 |
 | Number of hours | the time that section 5 of the notebook estimates, plus an hour |
 
-Open `train-head.ipynb` with the **confhead** kernel and run the cells from the top. The device that section 1 prints must be `cuda`. Section 5 measures how fast the session reads the cache, and estimates the time of the run. If one epoch takes more than 2 hours, set `SAMPLES_PER_EPOCH` as the notebook says.
+Open `train-head.ipynb` with the **confhead** kernel and run the cells from the top. The device that section 1 prints must be `cuda`. Section 5 measures how fast the session reads the cache, and estimates the time of the run. If one epoch takes more than 2 hours, set `cfg.train.samples_per_epoch` as the notebook says.
 
-Each run writes its files to `/scratch1/$USER/confhead-runs/<run>`, and the notebook prints the folder. If the session ends before the training does, start a new session. Set `RUN_NAME` in the settings cell to the name of the run folder, and run the cells from the top again: the training continues after the last epoch that finished.
+Each run writes its files to `/scratch1/$USER/confhead-runs/<run>`, and the notebook prints the folder. If the session ends before the training does, start a new session. Set `cfg.output.name` in the settings cell to the name of the run folder, and run the cells from the top again: the training continues after the last epoch that finished.
+
+For a run longer than a session, [training-on-carc.md](training-on-carc.md) runs the same training as a batch job, with no session to keep open.
 
 ## On Your Own Computer
 

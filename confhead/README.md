@@ -93,6 +93,13 @@ uv run examples/preview_cache.py scene-0553_020_CAM_FRONT
 uv run examples/read_cache.py
 ```
 
+Train the head on the mini cache with no notebook open, into `outputs/runs/mini/`. `--estimate` trains nothing: it prints the splits, the input statistics, and the time of one epoch. A run folder that holds `last.pt` continues after its last epoch:
+
+```sh
+uv run examples/train_head.py --estimate
+uv run examples/train_head.py
+```
+
 Run the tests. The tests on real data run when the dataset is at its default place, and the build test runs when `DEPTH_ANYTHING_CHECKPOINT` is set:
 
 ```sh
@@ -111,7 +118,7 @@ uv run jupyter lab notebooks/cache-tutorial.ipynb
 
 ### Train the head in a notebook
 
-[`notebooks/train-head.ipynb`](notebooks/train-head.ipynb) trains the confidence head on a built cache, and keeps the checkpoint with the lowest loss on a dev split of the train scenes. Each run writes its settings and checkpoints to `outputs/runs/`, or to `/scratch1/$USER/confhead-runs/` on CARC. [`notebooks/eval-template.ipynb`](notebooks/eval-template.ipynb) loads a checkpoint with `load_head` and predicts `p_error` for val images: a starting point for the eval runner. [guides/notebook-on-carc.md](guides/notebook-on-carc.md) opens both on CARC. On your own computer, after the two commands above:
+[`notebooks/train-head.ipynb`](notebooks/train-head.ipynb) trains the confidence head on a built cache, and keeps the checkpoint with the lowest loss on a dev split of the train scenes. It runs the steps of `Training` from `confhead.train` one by one, and `examples/train_head.py` runs the same `Training` in one call. Each run writes its settings and checkpoints to `outputs/runs/`, or to `/scratch1/$USER/confhead-runs/` on CARC. [`notebooks/eval-template.ipynb`](notebooks/eval-template.ipynb) loads a checkpoint with `load_head` and predicts `p_error` for val images: a starting point for the eval runner. [guides/notebook-on-carc.md](guides/notebook-on-carc.md) opens both on CARC. On your own computer, after the two commands above:
 
 ```sh
 uv run jupyter lab notebooks/train-head.ipynb
@@ -151,6 +158,12 @@ The settings that change the content of an entry make a fingerprint. A build int
 examples/carc-submit.sh configs/nuscenes-trainval.toml 16
 ```
 
+[guides/training-on-carc.md](guides/training-on-carc.md) trains the head on that cache as a batch job on one GPU, with [`configs/train-trainval.toml`](configs/train-trainval.toml). A job that stops at its time limit continues when you submit it again:
+
+```sh
+sbatch examples/carc-train.sbatch configs/train-trainval.toml
+```
+
 [guides/cache-backup-on-huggingface.md](guides/cache-backup-on-huggingface.md) backs up a built cache to a Hugging Face dataset repository as compressed shards, and restores it:
 
 ```sh
@@ -171,6 +184,7 @@ uv run confhead cache download nuscenes-trainval /scratch1/$USER/confhead-cache/
 | [`labels`](src/confhead/labels.py) | `LabelConfig`, `lidar_labels`: where the depth is wrong against lidar |
 | [`dataset`](src/confhead/dataset.py) | `ConfidenceDataset`, `HeadInputs`, `RadarConfig`: the head inputs and labels as a PyTorch `Dataset` |
 | [`head`](src/confhead/head.py) | `ConfidenceHead`, `masked_bce`, `save_head`, `load_head`: the head over the inputs, its loss on the labeled cells, and its checkpoints |
+| [`train`](src/confhead/train.py) | `TrainConfig`, `load_train_config`, `Training`, `dev_scenes`: the training settings, the dev split by scene, and one training run with its run folder |
 | [`plot`](src/confhead/plot.py) | `draw_points`, `draw_map`, `entry_figure`: matplotlib figures of items and cache entries |
 
 ## Conventions
@@ -183,7 +197,7 @@ The rules that the code follows, and why, are in [design.md](design.md).
 - `examples/`: scripts that use the library, and the CARC job scripts.
 - `guides/`: step-by-step guides.
 - `notebooks/`: the tour of a built cache, the training of the head on it, and a template that loads the head and predicts.
-- `configs/`: cache settings, and the Hugging Face repository of the backup.
+- `configs/`: cache settings, training settings, and the Hugging Face repository of the backup.
 - `results/`: the small summaries that the team reads.
 - `docs/`: the figure of this README.
 - `outputs/`: caches, figures, tables, and training runs that the examples and notebooks write. Not in git.
