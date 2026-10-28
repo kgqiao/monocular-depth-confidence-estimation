@@ -39,6 +39,8 @@ Click **Launch**. When the session starts, click **Connect to Jupyter**.
 
 In the file browser on the left, go to `Vision-Project-CSCI-566/confhead/notebooks` and open `cache-tutorial.ipynb`. If JupyterLab asks for a kernel, choose **confhead**. The kernel name is also at the top right of the notebook; click it to change it.
 
+![The Select Kernel dialog of JupyterLab, with confhead chosen above Python 3.14 (default)](select-kernel-example.png)
+
 Run the cells from the top. The *Setup* section finds the cache:
 
 - With no change, it opens your own cache, `/scratch1/$USER/confhead-cache/nuscenes-trainval`.
@@ -59,7 +61,7 @@ With no trainval cache on the machine, the notebook opens the mini cache under `
 | Problem | What to do |
 |---|---|
 | **confhead** is not in the kernel list | Do step 1 again. Then refresh the JupyterLab page: the list loads when the page opens. |
-| `ModuleNotFoundError: No module named 'confhead'` | The notebook runs on another kernel. Choose **confhead** at the top right. |
+| `ModuleNotFoundError`, for example `No module named 'matplotlib'` or `'confhead'` | The notebook runs on another kernel, such as CARC's default Python. Choose **confhead** at the top right. |
 | `FileNotFoundError: no cache found` | Set `CACHE_ROOT` to the cache path. The path must hold `index.json`; if it does not, the check job of the build has not run yet. |
 | `entry.image()` cannot find the image | The dataset is not where the cache was built from. Set `DATAROOT` in the second code cell. |
 | The kernel dies in section 11 | The session has too little memory for the trainval tables. Start a JupyterLab session with more, or skip the section. |
