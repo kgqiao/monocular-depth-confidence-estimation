@@ -11,6 +11,7 @@ A running record of what the training team has done. Add new entries at the bott
 | Cache tutorial notebook | In progress: not yet run on CARC |
 | Project wiki in `Docs/Wiki` | Done |
 | Cache backup on Hugging Face | Upload job running |
+| Confidence head training, Run 1 (trainval) | Training job running |
 
 Data locations on CARC:
 
@@ -57,3 +58,27 @@ The dataset is more than 800 GB, so it cannot go into the PI's project folder. `
 
 - Started the shard, compress, and upload job (`confhead/examples/carc-upload.sbatch`) at 2:44 PM.
 - To do: when the job ends, confirm that all shards are on Hugging Face and that a download restores a complete cache.
+
+## 2026-10-28
+
+### Estimated the cost of training on trainval
+
+- Ran the estimate as job 13527183 (log `confhead/logs/confhead-train-13527183.out`):
+
+  ```
+  sbatch --time=01:00:00 examples/carc-train.sbatch configs/train-trainval.toml --estimate
+  ```
+
+- Data: 631 train scenes (110,929 images, all used) and 69 dev scenes (3,000 of 12,150 images used). The train split has 76 night and 125 rain scenes.
+- Labels: 25.1% of cells carry a lidar label. Of those, 37.6% have an AbsRel above `tau` = 0.10, which is inside the 5% to 70% gate. The class weight is 1.658.
+- Speed: the cache loads 28 images/s and a training step takes 1,007 images/s, so loading sets the pace. One epoch takes about 66 minutes, and 8 epochs about 8.8 hours. That fits in the 12-hour limit of `carc-train.sbatch`.
+
+### Started the first training job
+
+- Started Run 1 on the full trainval cache, writing to `/scratch1/naday/confhead-runs/run1`:
+
+  ```
+  sbatch examples/carc-train.sbatch configs/train-trainval.toml
+  ```
+
+- To do: when the job ends, check the dev loss of each epoch and that the run folder holds the trained head.
