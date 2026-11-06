@@ -115,6 +115,22 @@ best     epoch <n> of 8, dev loss <loss>: /scratch1/<user>/confhead-runs/run1/be
 
 [`notebooks/eval-template.ipynb`](../notebooks/eval-template.ipynb) loads `best.pt` with `load_head` and predicts `p_error` for val images.
 
+## 7. Upload the Run
+
+[`examples/upload_run.py`](../examples/upload_run.py) sends the four files of a run folder to the model repository [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead) in one commit. They go into a folder named after the run folder, so each run and ablation has its own folder. The files are small, so the script runs on the login node. Log in first as in step 2 of [cache-backup-on-huggingface.md](cache-backup-on-huggingface.md), then:
+
+```sh
+uv run examples/upload_run.py /scratch1/$USER/confhead-runs/run1
+```
+
+The script refuses a run that has not trained every epoch; pass `--partial` to upload it anyway. Uploading the same run again replaces its files. Every upload also rewrites the model card from the `config.json` and `history.json` of each run in the repository, so the card lists the settings and losses of every run. Run the script with no run folder to rewrite the card alone, or with `--print-card` to see it without uploading. `--repo` names another repository.
+
+To download a head:
+
+```sh
+uv run hf download nadayusc/confhead run1/best.pt --local-dir .
+```
+
 ## Run an Ablation
 
 Give each ablation its own `output.name`. Several jobs can run at once, each on its own GPU:
