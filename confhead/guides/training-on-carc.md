@@ -123,7 +123,7 @@ best     epoch <n> of 8, dev loss <loss>: /scratch1/<user>/confhead-runs/run1/be
 uv run examples/upload_run.py /scratch1/$USER/confhead-runs/run1
 ```
 
-The script refuses a run that has not trained every epoch; pass `--partial` to upload it anyway. Uploading the same run again replaces its files. When the repository has no model card, the script also writes one. `--repo` names another repository.
+The script refuses a run that has not trained every epoch; pass `--partial` to upload it anyway. Uploading the same run again replaces its files. Every upload also rewrites the model card from the `config.json` and `history.json` of each run in the repository, so the card lists the settings and losses of every run. Run the script with no run folder to rewrite the card alone, or with `--print-card` to see it without uploading. `--repo` names another repository.
 
 To download a head:
 
