@@ -1,0 +1,157 @@
+\begin{thebibliography}{19}
+\providecommand{\natexlab}[1]{#1}
+
+\bibitem[{Alibeigi et~al.(2023)Alibeigi, Ljungbergh, Tonderski, Hess, Lilja,
+  Lindstr{\"o}m, Motorniuk, Fu, Widahl, and Petersson}]{alibeigi2023zod}
+M.~Alibeigi, W.~Ljungbergh, A.~Tonderski, G.~Hess, A.~Lilja, C.~Lindstr{\"o}m,
+  D.~Motorniuk, J.~Fu, J.~Widahl, and C.~Petersson. 2023.
+\newblock \href {https://arxiv.org/abs/2305.02008} {Zenseact open dataset: A
+  large-scale and diverse multimodal dataset for autonomous driving}.
+\newblock In \emph{Proceedings of the IEEE/CVF International Conference on
+  Computer Vision (ICCV)}.
+
+\bibitem[{Bijelic et~al.(2020)Bijelic, Gruber, Mannan, Kraus, Ritter,
+  Dietmayer, and Heide}]{bijelic2020seeing}
+M.~Bijelic, T.~Gruber, F.~Mannan, F.~Kraus, W.~Ritter, K.~Dietmayer, and
+  F.~Heide. 2020.
+\newblock \href {https://arxiv.org/abs/1902.08913} {Seeing through fog without
+  seeing fog: Deep multimodal sensor fusion in unseen adverse weather}.
+\newblock In \emph{Proceedings of the IEEE/CVF Conference on Computer Vision
+  and Pattern Recognition (CVPR)}.
+
+\bibitem[{Caesar et~al.(2020)Caesar, Bankiti, Lang, Vora, Liong, Xu, Krishnan,
+  Pan, Baldan, and Beijbom}]{caesar2020nuscenes}
+H.~Caesar, V.~Bankiti, A.~H. Lang, S.~Vora, V.~E. Liong, Q.~Xu, A.~Krishnan,
+  Y.~Pan, G.~Baldan, and O.~Beijbom. 2020.
+\newblock \href {https://arxiv.org/abs/1903.11027} {{nuScenes}: A multimodal
+  dataset for autonomous driving}.
+\newblock In \emph{Proceedings of the IEEE/CVF Conference on Computer Vision
+  and Pattern Recognition (CVPR)}.
+
+\bibitem[{Gal and Ghahramani(2016)}]{gal2016dropout}
+Y.~Gal and Z.~Ghahramani. 2016.
+\newblock \href {https://arxiv.org/abs/1506.02142} {Dropout as a {Bayesian}
+  approximation: Representing model uncertainty in deep learning}.
+\newblock In \emph{Proceedings of the International Conference on Machine
+  Learning (ICML)}.
+
+\bibitem[{Gasperini et~al.(2023)Gasperini, Morbitzer, Jung, Navab, and
+  Tombari}]{gasperini2023md4all}
+S.~Gasperini, N.~Morbitzer, H.~Jung, N.~Navab, and F.~Tombari. 2023.
+\newblock \href {https://arxiv.org/abs/2308.09711} {Robust monocular depth
+  estimation under challenging conditions}.
+\newblock In \emph{Proceedings of the IEEE/CVF International Conference on
+  Computer Vision (ICCV)}.
+
+\bibitem[{Hornauer and Belagiannis(2022)}]{hornauer2022gradient}
+J.~Hornauer and V.~Belagiannis. 2022.
+\newblock \href {https://arxiv.org/abs/2208.02005} {Gradient-based uncertainty
+  for monocular depth estimation}.
+\newblock In \emph{Proceedings of the European Conference on Computer Vision
+  (ECCV)}.
+
+\bibitem[{Ilg et~al.(2018)Ilg, {\c{C}}i{\c{c}}ek, Galesso, Klein, Makansi,
+  Hutter, and Brox}]{ilg2018uncertainty}
+E.~Ilg, {\"O}.~{\c{C}}i{\c{c}}ek, S.~Galesso, A.~Klein, O.~Makansi, F.~Hutter,
+  and T.~Brox. 2018.
+\newblock \href {https://arxiv.org/abs/1802.07095} {Uncertainty estimates and
+  multi-hypotheses networks for optical flow}.
+\newblock In \emph{Proceedings of the European Conference on Computer Vision
+  (ECCV)}.
+
+\bibitem[{Kendall and Gal(2017)}]{kendall2017uncertainties}
+A.~Kendall and Y.~Gal. 2017.
+\newblock \href {https://arxiv.org/abs/1703.04977} {What uncertainties do we
+  need in {Bayesian} deep learning for computer vision?}
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}.
+
+\bibitem[{Lakshminarayanan et~al.(2017)Lakshminarayanan, Pritzel, and
+  Blundell}]{lakshminarayanan2017ensembles}
+B.~Lakshminarayanan, A.~Pritzel, and C.~Blundell. 2017.
+\newblock \href {https://arxiv.org/abs/1612.01474} {Simple and scalable
+  predictive uncertainty estimation using deep ensembles}.
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}.
+
+\bibitem[{Lin et~al.(2020)Lin, Dai, and Van~Gool}]{lin2020radardepth}
+J.-T. Lin, D.~Dai, and L.~Van~Gool. 2020.
+\newblock \href {https://arxiv.org/abs/2010.00058} {Depth estimation from
+  monocular images and sparse radar data}.
+\newblock In \emph{IEEE/RSJ International Conference on Intelligent Robots and
+  Systems (IROS)}.
+
+\bibitem[{Ma et~al.(2024)Ma, Mei, Yang, Wen, Xu, Zhang, Shi, Liu, and
+  Zuo}]{ma2024licrocc}
+Y.~Ma, J.~Mei, X.~Yang, L.~Wen, W.~Xu, J.~Zhang, B.~Shi, Y.~Liu, and X.~Zuo.
+  2024.
+\newblock \href {https://arxiv.org/abs/2407.16197} {{LiCROcc}: Teach radar for
+  accurate semantic occupancy prediction using {LiDAR} and camera}.
+\newblock \emph{arXiv preprint arXiv:2407.16197}.
+
+\bibitem[{Poggi et~al.(2020)Poggi, Aleotti, Tosi, and
+  Mattoccia}]{poggi2020uncertainty}
+M.~Poggi, F.~Aleotti, F.~Tosi, and S.~Mattoccia. 2020.
+\newblock \href {https://arxiv.org/abs/2005.06209} {On the uncertainty of
+  self-supervised monocular depth estimation}.
+\newblock In \emph{Proceedings of the IEEE/CVF Conference on Computer Vision
+  and Pattern Recognition (CVPR)}.
+
+\bibitem[{Ranftl et~al.(2021)Ranftl, Bochkovskiy, and Koltun}]{ranftl2021dpt}
+R.~Ranftl, A.~Bochkovskiy, and V.~Koltun. 2021.
+\newblock \href {https://arxiv.org/abs/2103.13413} {Vision transformers for
+  dense prediction}.
+\newblock In \emph{Proceedings of the IEEE/CVF International Conference on
+  Computer Vision (ICCV)}.
+
+\bibitem[{Ranftl et~al.(2022)Ranftl, Lasinger, Hafner, Schindler, and
+  Koltun}]{ranftl2020midas}
+R.~Ranftl, K.~Lasinger, D.~Hafner, K.~Schindler, and V.~Koltun. 2022.
+\newblock \href {https://arxiv.org/abs/1907.01341} {Towards robust monocular
+  depth estimation: Mixing datasets for zero-shot cross-dataset transfer}.
+\newblock \emph{IEEE Transactions on Pattern Analysis and Machine Intelligence
+  (TPAMI)}.
+
+\bibitem[{Schramm et~al.(2024)Schramm, V{\"o}disch, Petek, Kiran, Yogamani,
+  Burgard, and Valada}]{schramm2024bevcar}
+J.~Schramm, N.~V{\"o}disch, K.~Petek, B.~R. Kiran, S.~Yogamani, W.~Burgard, and
+  A.~Valada. 2024.
+\newblock \href {https://arxiv.org/abs/2403.11761} {{BEVCar}: Camera-radar
+  fusion for {BEV} map and object segmentation}.
+\newblock In \emph{IEEE/RSJ International Conference on Intelligent Robots and
+  Systems (IROS)}, pages 1435--1442.
+
+\bibitem[{Tian et~al.(2023)Tian, Jiang, Yun, Mao, Yang, Wang, Wang, and
+  Zhao}]{tian2023occ3d}
+X.~Tian, T.~Jiang, L.~Yun, Y.~Mao, H.~Yang, Y.~Wang, Y.~Wang, and H.~Zhao.
+  2023.
+\newblock \href {https://arxiv.org/abs/2304.14365} {{Occ3D}: A large-scale {3D}
+  occupancy prediction benchmark for autonomous driving}.
+\newblock In \emph{Advances in Neural Information Processing Systems (NeurIPS),
+  Datasets and Benchmarks Track}.
+
+\bibitem[{Wolters et~al.(2025)Wolters, Gilg, Teepe, Herzog, Laouichi, Hofmann,
+  and Rigoll}]{wolters2025hydra}
+P.~Wolters, J.~Gilg, T.~Teepe, F.~Herzog, A.~Laouichi, M.~Hofmann, and
+  G.~Rigoll. 2025.
+\newblock \href {https://arxiv.org/abs/2403.07746} {Unleashing {HyDRa}: Hybrid
+  fusion, depth consistency and radar for unified {3D} perception}.
+\newblock \emph{arXiv preprint arXiv:2403.07746}.
+
+\bibitem[{Yang et~al.(2024{\natexlab{a}})Yang, Kang, Huang, Xu, Feng, and
+  Zhao}]{yang2024depthanything}
+L.~Yang, B.~Kang, Z.~Huang, X.~Xu, J.~Feng, and H.~Zhao. 2024{\natexlab{a}}.
+\newblock \href {https://arxiv.org/abs/2401.10891} {Depth anything: Unleashing
+  the power of large-scale unlabeled data}.
+\newblock In \emph{Proceedings of the IEEE/CVF Conference on Computer Vision
+  and Pattern Recognition (CVPR)}.
+
+\bibitem[{Yang et~al.(2024{\natexlab{b}})Yang, Kang, Huang, Zhao, Xu, Feng, and
+  Zhao}]{yang2024depthanythingv2}
+L.~Yang, B.~Kang, Z.~Huang, Z.~Zhao, X.~Xu, J.~Feng, and H.~Zhao.
+  2024{\natexlab{b}}.
+\newblock \href {https://arxiv.org/abs/2406.09414} {{Depth Anything V2}}.
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}.
+
+\end{thebibliography}
