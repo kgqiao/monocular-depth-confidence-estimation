@@ -70,5 +70,7 @@ The dataset is more than 800 GB, so it cannot go into the PI's project folder. `
 
 ## 2026-11-14
 
-- Moved evals folder under src/ folder
-- 
+- Move evals/ to confhead/src/evals/. `uv run` puts confhead/src on the import path, so `from evals.metrics import ...` now resolves, and tests/test_metrics.py no longer stops pytest at collection.
+- metrics.py: np.trapz -> np.trapezoid (np.trapz is gone in the project's NumPy 2.5.4)
+- run_evals.py: remove a stray line continuation that was a SyntaxError
+- Checked with `uv run pytest -q`: no collection error; 66 passed, 5 skipped. The 4 failures are in test_backup.py and happen on Windows only.

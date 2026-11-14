@@ -228,8 +228,10 @@
 </ul>
 <h2 id="2026-11-14">2026-11-14</h2>
 <ul>
-<li>Moved evals folder under src/ folder</li>
-<li></li>
+<li>Move evals/ to confhead/src/evals/. <code>uv run</code> puts confhead/src on the import path, so <code>from evals.metrics import ...</code> now resolves, and tests/test_metrics.py no longer stops pytest at collection.</li>
+<li><a href="http://metrics.py">metrics.py</a>: np.trapz -&gt; np.trapezoid (np.trapz is gone in the project's NumPy 2.5.4)</li>
+<li>run_evals.py: remove a stray line continuation that was a SyntaxError</li>
+<li>Checked with <code>uv run pytest -q</code>: no collection error; 66 passed, 5 skipped. The 4 failures are in test_backup.py and happen on Windows only.</li>
 </ul>
 
             
