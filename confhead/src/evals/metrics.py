@@ -122,14 +122,14 @@ def compute_sparsification_curves(true_errors: np.ndarray, uncertainty_scores: n
     sorted_errors_oracle = true_errors[oracle_order] # Reorder true errors in order of descending oracle order (ideal baseline)
 
     # Define the fractions of data to remove (avoid 1.0 to prevent dividing by 0)
-    fractions = np.linspace(0, 1 - (1/n), num_steps)
+    fractions = np.linspace(0, 0.99, num_steps)
 
     # Initilaize sparsification curve and oracle curve
     sparsification_curve = []
     oracle_curve = []
 
     for frac in fractions: # for every fraction
-        cutoff = int(np.floor(frac * n))
+        cutoff = int(np.round(frac * n))
         # Calculate mean error on the remaining (most confident) samples, add to each curve
         sparsification_curve.append(np.mean(sorted_errors_uncertainty[cutoff:])) 
         oracle_curve.append(np.mean(sorted_errors_oracle[cutoff:]))
