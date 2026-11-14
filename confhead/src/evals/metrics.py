@@ -75,7 +75,7 @@ def compute_ece(is_correct: np.ndarray, confidence_scores: np.ndarray, n_bins: i
     return ece
 
 
-def compute_sparsification_curves(true_errors: np.ndarray, uncertainty_scores: np.ndarray):
+def compute_sparsification_curves(true_errors: np.ndarray, uncertainty_scores: np.ndarray, num_steps = 50):
     """
     Computes the sparsification curve, oracle curve, and random curve.
     
@@ -83,6 +83,8 @@ def compute_sparsification_curves(true_errors: np.ndarray, uncertainty_scores: n
         true_errors: 1D array of absolute errors per cell (e.g., abs_rel).
         uncertainty_scores: 1D array of predicted uncertainty scores per cell 
                             (higher means less trustworthy).
+        num_steps = 50: practical default that evaluates curve every ~2% of 
+                        removed data, balances smooth plotting and fast execution
                             
     Returns:
         fractions: 1D array of 100 fractions from 0.0 to 0.99.
@@ -91,9 +93,17 @@ def compute_sparsification_curves(true_errors: np.ndarray, uncertainty_scores: n
         random_curve: The baseline flat curve at the global mean error.
     """
 
-    n_cells = len(true_errors)
-    if n_cells == 0:
+    #Convert to arrays true errors and uncertainty scores, validate that arrays exist
+    true_errors = np.asarray(true_errors)
+    uncertainty_scores = np.asarray(uncertainty_scores)
+    n = len(true_errors)
+    if n == 0:
         raise ValueError("Input arrays cannot be empty.")
+
+    # Sort indices from highest uncertainty/error to lowest
+    uncertainty_order = np.argsort(uncertainty_scores)[::-1]
+    oracle_order = np.argsort(true_errors)[::-1]
+
 
 
     # 1. Define the 100 fractions from 0 to 0.99 (fraction of data REMOVED)
@@ -111,6 +121,20 @@ def compute_sparsification_curves(true_errors: np.ndarray, uncertainty_scores: n
     random_curve = np.full_like(fractions, global_mean_error)
 
 
+    ## Return fractions
+
+
+    # return method curve
+
+
+
+    # return oracle curve
+
+
+    # return random curve
+
+
+
 
 
 def calculate_ause_and_aurg(fractions: np.ndarray, method_curve: np.ndarray, 
@@ -120,9 +144,11 @@ def calculate_ause_and_aurg(fractions: np.ndarray, method_curve: np.ndarray,
     AURG (Area Under the Gain Curve) using trapezoidal integration.
     """
     # AUSE: Area between method's curve and oracle curve (lower is better, 0 is perfect)
-    ause = np.trapz(method_curve - oracle_curve, x=fractions)
+    ause = np.trapezoid(method_curve - oracle_curve, x=fractions)
     
     # AURG: Area between random curve and method's curve (higher is better, 0 is random)
-    aurg = np.trapz(random_curve - method_curve, x=fractions)
+    aurg = np.trapezoid(random_curve - method_curve, x=fractions)
     
     return float(ause), float(aurg)
+
+

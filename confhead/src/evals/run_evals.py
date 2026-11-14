@@ -31,7 +31,7 @@ def main():
 
 
     #4. Calculate metrics using metric functions in /metrics.py
-    auc = calculate_rejection_auc(is_correct, confidence_scores)\
+    auc = calculate_rejection_auc(is_correct, confidence_scores)
     ece = compute_ece(is_correct, confidence_scores)
 
     print(f"--- Results ---")
