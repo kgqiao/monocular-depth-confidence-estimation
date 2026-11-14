@@ -1,5 +1,13 @@
 """Core math functions listed here.
 
+1. Sparsification Curve 
+
+2. AUSE (area between the head’s curve and the oracle’s): how far the head is from flagging perfectly. 
+0 means it always drops the truly worst cells first.
+3. AURG (area between the random curve and the head’s): how much better the head is than dropping cells at random. 
+0 means the head adds nothing. Its units are roughly “average error saved” across all cutoffs.
+
+
 **Calibration Metrics**: Do the scores match reality?
 
 1. Expected Calibration Error (ECE): bins predictions by confidence level and calculates weighted average
@@ -51,7 +59,10 @@ import numpy as np
 
 #Fill in variables of is_correct, confidence scores
 def calculate_rejection_auc(is_correct: np.ndarray, confidence_scores: np.ndarray) -> float:
-    """Calculates Area Under the Rejection ROC Curve."""
+    """Calculates Area Under the Rejection ROC Curve (AUROC)
+
+    Treats each labeled pixel as yes/no: is the depth correct?
+    """
     from sklearn.metrics import roc_auc_score
 
     rejection_auc = float(roc_auc_score(is_correct, confidence_scores))
@@ -77,6 +88,9 @@ def compute_ece(is_correct: np.ndarray, confidence_scores: np.ndarray, n_bins: i
 
 def compute_sparsification_curves(true_errors: np.ndarray, uncertainty_scores: np.ndarray, num_steps = 50):
     """
+    Finds the gap between the head (sparsification curve) and the baseline (oracle curve) = aka the head's mistakes
+    Gap between the random and head is what the head gained. 
+
     Computes the sparsification curve, oracle curve, and random curve.
     
     Args:
@@ -100,40 +114,35 @@ def compute_sparsification_curves(true_errors: np.ndarray, uncertainty_scores: n
     if n == 0:
         raise ValueError("Input arrays cannot be empty.")
 
-    # Sort indices from highest uncertainty/error to lowest
+    # Sort indices from highest uncertainty error to lowest
     uncertainty_order = np.argsort(uncertainty_scores)[::-1]
     oracle_order = np.argsort(true_errors)[::-1]
 
+    sorted_errors_uncertainty = true_errors[uncertainty_order] # Re Order true errors in order of descending uncertainty scores
+    sorted_errors_oracle = true_errors[oracle_order] # Reorder true errors in order of descending oracle order (ideal baseline)
 
+    # Define the fractions of data to remove (avoid 1.0 to prevent dividing by 0)
+    fractions = np.linspace(0, 1 - (1/n), num_steps)
 
-    # 1. Define the 100 fractions from 0 to 0.99 (fraction of data REMOVED)
-    fractions = np.linspace(0.0, 0.99, 100)
+    # Initilaize sparsification curve and oracle curve
+    sparsification_curve = []
+    oracle_curve = []
 
+    for frac in fractions: # for every fraction
+        cutoff = int(np.floor(frac * n))
+        # Calculate mean error on the remaining (most confident) samples, add to each curve
+        sparsification_curve.append(np.mean(sorted_errors_uncertainty[cutoff:])) 
+        oracle_curve.append(np.mean(sorted_errors_oracle[cutoff:]))
 
-    # Pre-calculate the exact indices corresponding to each fraction remaining
-    # If fraction removed is f, fraction remaining is (1 - f)
-    rem_counts = np.round(n_cells * (1.0 - fractions)).astype(int)
-    # Ensure we keep at least 1 cell to avoid division by zero at 0.99
-    rem_counts = np.maximum(rem_counts, 1)
-
-    # 2. Random Baseline Curve (Flat line at the overall mean error)
+    # Create Random Baseline Curve (Flat line at the overall mean error)
     global_mean_error = np.mean(true_errors)
     random_curve = np.full_like(fractions, global_mean_error)
 
+    # Convert sparsification curve and oracle curve into arrays
+    sparsification_curve = np.array(sparsification_curve)
+    oracle_curve = np.array(oracle_curve)
 
-    ## Return fractions
-
-
-    # return method curve
-
-
-
-    # return oracle curve
-
-
-    # return random curve
-
-
+    return fractions, sparsification_curve, oracle_curve, random_curve
 
 
 
