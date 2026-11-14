@@ -29,13 +29,13 @@ On Occ3D-nuScenes the grid covers 40 m to each side of the ego vehicle and -1 m 
 
 Occ3D is the benchmark named in our stretch goal: weight the camera-to-voxel lift of an occupancy network by our confidence map and measure mIoU on Occ3D. Its task takes camera images as input and its labels come from lidar, as ours do, but its labels are aggregated over many frames, voxelized, and carry semantic classes, while ours are per-image AbsRel values at single projected lidar returns.
 
-- [main.tex:350](../latex/main.tex:350): the stretch goal, "weighting the camera-to-voxel lift of an occupancy network by the confidence map and measuring mIoU on Occ3D", conditional on items 1-5 being done by the week of November 30
-- [main.tex:123](../latex/main.tex:123): the stub for this paper, "the occupancy benchmark for the stretch goal; what mIoU measures there"
-- [main.tex:174](../latex/main.tex:174): our labels; AbsRel at each lidar return within 1-80 m placed on the grid, target AbsRel > 0.10
+- [plan.tex:47](../latex/sections/plan.tex:47): the stretch goal, "weighting the camera-to-voxel lift of an occupancy network by the confidence map and measuring mIoU on Occ3D", conditional on items 1-5 being done by the week of November 30
+- [literature-review.tex:57](../latex/sections/literature-review.tex:57): the stub for this paper, "the occupancy benchmark for the stretch goal; what mIoU measures there"
+- [progress.tex:34](../latex/sections/progress.tex:34): our labels; AbsRel at each lidar return within 1-80 m placed on the grid, target AbsRel > 0.10
 - p. 3, §3.1, ¶1, lines 2-3: the benchmark input is surround-view camera images (no lidar or radar at input in the task definition)
 - p. 4, §3.3.1, paragraph "Multi-frame aggregation", lines 1-7: points are aggregated across frames, dynamic objects in box coordinates and the static scene in global coordinates, giving "a single-frame dense point cloud"
 - p. 5, §3.3.2, paragraph "Camera visibility mask", lines 4-5: evaluation restricted to observed voxels, which is the region a camera-lift change such as ours can be scored on
-- [main.tex:117](../latex/main.tex:117) and [main.tex:119](../latex/main.tex:119): the HyDRa and LiCROcc paragraphs already quote occupancy mIoU numbers; this paper supplies the definition for the Occ3D one (44.4 for HyDRa, against 28.53 for the best model in this paper's own Table 3)
+- [literature-review.tex:51](../latex/sections/literature-review.tex:51) and [literature-review.tex:53](../latex/sections/literature-review.tex:53): the HyDRa and LiCROcc paragraphs already quote occupancy mIoU numbers; this paper supplies the definition for the Occ3D one (44.4 for HyDRa, against 28.53 for the best model in this paper's own Table 3)
 
 ### notes for the writer
 

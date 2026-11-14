@@ -30,8 +30,8 @@ We freeze the relative ViT-B checkpoint and read its DPT decoder features, so be
 
 - p. 8, §7.1, ¶1, line 1: "we use DPT [55] as our depth decoder, built on DINOv2 encoders" (the decoder our `output_conv1` tap sits in)
 - p. 8, §7.1, ¶1, lines 1-2: trained at 518×518, shorter side resized to 518 (our input is 924 × 518)
-- [main.tex:151](../latex/main.tex:151): backbone paragraph; frozen relative ViT-B, output is disparity with unknown scale and shift, two per-image least-squares fits (lidar and radar)
-- [main.tex:199](../latex/main.tex:199): deviations table row D1; proposal "Metric checkpoint (vkitti), in meters, no fit" versus implemented "Relative ViT-B with per-image lidar and radar fits", status "Decided; lidar leakage noted"
+- [progress.tex:11](../latex/sections/progress.tex:11): backbone paragraph; frozen relative ViT-B, output is disparity with unknown scale and shift, two per-image least-squares fits (lidar and radar)
+- [progress.tex:59](../latex/sections/progress.tex:59): deviations table row D1; proposal "Metric checkpoint (vkitti), in meters, no fit" versus implemented "Relative ViT-B with per-image lidar and radar fits", status "Decided; lidar leakage noted"
 - Absence claim, not quotable: the words "uncertainty" and "confidence" do not appear as a model output anywhere in pp. 1-30. The only related step is training-time: p. 6, §5.2, ¶1, lines 2-4 ignore the top 10% largest-loss regions of each pseudo-labeled sample as likely noisy.
 
 ### notes for the writer
@@ -59,4 +59,4 @@ We freeze the relative ViT-B checkpoint and read its DPT decoder features, so be
   - MiDaS ([1907.01341](../../Papers/1907.01341.pdf)) p. 5, paragraph "Scale- and shift-invariant losses", lines 1-2: prediction in "disparity space (inverse depth up to scale and shift)"
   - MiDaS p. 5, Eq. 2 and the text around it: scale and shift aligned by "a least-squares criterion", solved in closed form
   - MiDaS p. 6, paragraph "Final loss", lines 1-3 and Eq. 11-12: the gradient matching term, which "biases discontinuities to be sharp"
-  - [main.tex:151](../latex/main.tex:151): our two per-image least-squares fits of disparity to inverse depth (lidar for labels and the temporal channel, radar for the radar residual)
+  - [progress.tex:11](../latex/sections/progress.tex:11): our two per-image least-squares fits of disparity to inverse depth (lidar for labels and the temporal channel, radar for the radar residual)

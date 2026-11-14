@@ -31,10 +31,10 @@ Both of the paper's estimators are part of the depth network and are trained wit
 - p. 5, §3.1, the sentence after Eq. 6, line 2: the variance is a second output of the same network that predicts depth, "with its head split to predict both"
 - p. 6, §4, ¶3, lines 2-3: epistemic uncertainty needs dropout inside the depth network; "places dropout with p =" 0.2 after each convolutional layer
 - p. 9, §5.3, ¶1, lines 2-6: cost; "The aleatoric uncertainty models add negligible compute", while dropout sampling "often results in a 50× slow-down for 50 Monte Carlo samples"
-- p. 8, §5.1, ¶1, lines 2-3: the paper evaluates uncertainty by "removing pixels with uncertainty larger than various" percentile thresholds and plotting the error of the rest (Figure 2), the same idea as the sparsification protocol in [main.tex:107](../latex/main.tex:107)
-- [main.tex:97](../latex/main.tex:97): "Most work on uncertainty for depth changes the depth model: it adds a variance output, trains several models, or samples a stochastic one. Our setting forbids that, since the backbone is frozen"
-- [main.tex:99](../latex/main.tex:99): the `\todo{}` stub for this paper, ending "Our head is a classifier on the error, which sidesteps the choice."
-- [main.tex:64](../latex/main.tex:64) and [main.tex:176](../latex/main.tex:176): our head outputs "the probability that the depth there is wrong by more than a threshold"; "The loss is binary cross-entropy over labeled cells only"
+- p. 8, §5.1, ¶1, lines 2-3: the paper evaluates uncertainty by "removing pixels with uncertainty larger than various" percentile thresholds and plotting the error of the rest (Figure 2), the same idea as the sparsification protocol in [literature-review.tex:41](../latex/sections/literature-review.tex:41)
+- [literature-review.tex:31](../latex/sections/literature-review.tex:31): "Most work on uncertainty for depth changes the depth model: it adds a variance output, trains several models, or samples a stochastic one. Our setting forbids that, since the backbone is frozen"
+- [literature-review.tex:33](../latex/sections/literature-review.tex:33): the `\todo{}` stub for this paper, ending "Our head is a classifier on the error, which sidesteps the choice."
+- [introduction.tex:9](../latex/sections/introduction.tex:9) and [progress.tex:36](../latex/sections/progress.tex:36): our head outputs "the probability that the depth there is wrong by more than a threshold"; "The loss is binary cross-entropy over labeled cells only"
 
 ### notes for the writer
 
