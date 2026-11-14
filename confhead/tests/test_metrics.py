@@ -13,7 +13,6 @@ import pytest
 from evals.metrics import compute_sparsification_curves, calculate_ause_and_aurg
 
 
-
 def test_sparsification_metrics_synthetic():
     np.random.seed(42)
     n_samples = 10000
