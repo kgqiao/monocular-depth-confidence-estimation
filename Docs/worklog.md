@@ -65,3 +65,10 @@ The dataset is more than 800 GB, so it cannot go into the PI's project folder. `
 - Wrote main function for initiating metric tests, and template for filling in further evals code
 - Set up synthetic tests for metrics, starting with sparsification curves
 - To Do: Finish functions, start data loading logic, bootstrapping, connection to access cache data
+
+
+
+## 2026-11-14
+
+- Moved evals folder under src/ folder
+- 
