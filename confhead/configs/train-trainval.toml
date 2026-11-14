@@ -1,0 +1,51 @@
+# Train the confidence head on the v1.0-trainval cache on CARC, as a batch job.
+# Every setting and its default is in src/confhead/train.py. Paths expand $USER.
+# guides/training-on-carc.md says how to run it, and how to name an ablation.
+
+[data]
+cache = "/scratch1/$USER/confhead-cache/nuscenes-trainval"
+
+# The channel groups of x. Turn a group off for an ablation.
+[inputs]
+features = true
+depth = true
+temporal = true
+radar = true
+
+[inputs.labels]
+align = "lidar"
+tau = 0.1
+min_depth = 1.0
+max_depth = 80.0
+
+[inputs.radar_cfg]
+align = "radar"
+radius = 1
+max_sweeps = 0
+min_depth = 1.0
+max_depth = 80.0
+
+[head]
+widths = [64, 64, 32]
+
+# The Run 1 plan. If an epoch takes more than 2 hours, set samples_per_epoch to half the train images.
+[train]
+epochs = 8
+batch_size = 8
+lr = 0.001
+weight_decay = 0.0001
+samples_per_epoch = 0
+dev_fraction = 0.1
+dev_limit = 3000
+stats_sample = 256
+seed = 0
+
+# A run folder that holds last.pt continues after its last epoch.
+[output]
+runs = "/scratch1/$USER/confhead-runs"
+name = "run1"
+
+# num_workers matches --cpus-per-task=8 in examples/carc-train.sbatch, less one for the main process.
+[run]
+device = "cuda"
+num_workers = 7

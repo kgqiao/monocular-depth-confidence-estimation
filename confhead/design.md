@@ -16,6 +16,14 @@
 - **The temporal spread corrects for ego motion.** Each grid cell is lifted to 3D with the keyframe depth and moved into each neighbor camera. The neighbor's depth there is moved back into the keyframe, and the spread is std / mean of the inverse depths. A static scene gives 0, whatever the motion. Moving objects, occlusions, and unstable depth give more. Occlusions are not removed: around thin poles in the side cameras, the spread is high from parallax alone.
 - **A fingerprint guards the cache.** The settings that change what an entry holds make a fingerprint. An entry with the current fingerprint is never built again, and a build into a cache with other settings stops. Each entry's `.json` is written after its `.npz`, so it marks a complete entry.
 
+## The training
+
+- **The library holds the run, and the notebook and the script call it.** `confhead.train.Training` holds every step: the dev split, the input statistics, the head, the timing, and the loop with its checkpoints. The notebook calls the steps one by one to show them, and `examples/train_head.py` calls `fit` once for a batch job. So the two train the same way, and a fix in one reaches the other.
+- **Settings load as for the cache.** A TOML file and `section.key=value` overrides fill a `TrainConfig`, and a nested setting takes more dots: `inputs.labels.tau`. The notebook sets the same fields in Python.
+- **Dev is drawn from the train scenes, by scene, per condition and weather.** The images of one scene are correlated, so a split by image would let dev see train. Val stays for the eval team, and the checkpoint is chosen by the dev loss, because the eval team owns AUSE.
+- **A run continues after its last epoch.** `last.pt` holds the optimizer and the schedule after each epoch. The batch order of an epoch depends only on the seed and the epoch number, and the weights are drawn right after the seed is set. So a run that stops and continues, and a run through the notebook's steps, train the same as one call of `fit`. A checkpoint is replaced in one step, so a job stopped while saving leaves the last one whole.
+- **A run folder refuses other settings.** A continued run compares its settings with `config.json`, and its cache with the fingerprint there. Only the paths, the device, and the loader processes may change. Even `train.epochs` is refused, because the cosine schedule spans the epochs of the first start.
+
 ## The backup
 
 - **Shards of whole scenes, in name order.** 204,894 entries are 410,000 files, and a Hugging Face repository works best below 100,000. A shard of 25 scenes is about 10 GB for trainval. A scene keeps its shard when other scenes change, so a later upload sends only the shards with changed scenes.
