@@ -30,9 +30,9 @@ Our backbone is one stock Depth Anything V2 checkpoint that we keep frozen, so w
 
 - p. 5, Algorithm 1, steps 2-3: M randomly initialised networks, each trained (what the method requires)
 - p. 3, §2.1, ¶2, lines 2-3: "Let M denote the number of NNs in the ensemble"
-- [main.tex:97](../latex/main.tex:97): §2.2 opening; uncertainty work for depth "adds a variance output, trains several models, or samples a stochastic one", and "Our setting forbids that, since the backbone is frozen"
-- [main.tex:151](../latex/main.tex:151): backbone paragraph; "The stock relative Depth Anything V2 ViT-B checkpoint", frozen, run once per image
-- [main.tex:103](../latex/main.tex:103): the \todo stub for this paper: "the strong but expensive baseline; not applicable to a single frozen checkpoint"
+- [literature-review.tex:31](../latex/sections/literature-review.tex:31): §2.2 opening; uncertainty work for depth "adds a variance output, trains several models, or samples a stochastic one", and "Our setting forbids that, since the backbone is frozen"
+- [progress.tex:11](../latex/sections/progress.tex:11): backbone paragraph; "The stock relative Depth Anything V2 ViT-B checkpoint", frozen, run once per image
+- [literature-review.tex:37](../latex/sections/literature-review.tex:37): the \todo stub for this paper: "the strong but expensive baseline; not applicable to a single frozen checkpoint"
 
 ### notes for the writer
 

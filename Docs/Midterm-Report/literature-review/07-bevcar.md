@@ -29,16 +29,16 @@ The paper divides the nuScenes validation set into day (4,449 samples), rain (96
 We plan to report every result per BEVCar condition group and to adopt BEVCar's released scene lists and its rule for rainy night scenes, replacing our current keyword rule that counts such a scene as both night and rain. BEVCar uses radar as an input that improves a BEV segmentation output; our report uses radar as an input to a head that predicts where a frozen depth model is wrong.
 
 - p. 5, §IV-A, paragraph "Dataset and Metrics", lines 9-12 (left column): the split and its release, "categorize the validation scenes into day (4,449 samples), rain"
-- p. 5, §IV-A, paragraph "Implementation Details", lines 11-12 (right column): "we aggregate five radar sweeps as input" (our radar residual also uses 5 sweeps, [main.tex:166](../latex/main.tex:166))
-- [main.tex:121](../latex/main.tex:121): the stub for this paper; "the source of the day/rain/night split of the nuScenes val scenes (111/24/15 scenes)"
-- [main.tex:319](../latex/main.tex:319): plan item; adopt "the 111 day, 24 rain, and 15 night val scenes (4,449, 968, and 602 keyframes) from BEVCar's released lists"
-- [main.tex:209](../latex/main.tex:209) and [main.tex:324](../latex/main.tex:324): deviation D11; current substring rule makes a "night, after rain" scene both night and rain; planned resolution "adopt the BEVCar rule for rainy night scenes"
-- [main.tex:274](../latex/main.tex:274) and [main.tex:294](../latex/main.tex:294): results are scored "per BEVCar condition group"; [main.tex:113](../latex/main.tex:113): we use radar for a confidence map "rather than a better depth map"
+- p. 5, §IV-A, paragraph "Implementation Details", lines 11-12 (right column): "we aggregate five radar sweeps as input" (our radar residual also uses 5 sweeps, [progress.tex:26](../latex/sections/progress.tex:26))
+- [literature-review.tex:55](../latex/sections/literature-review.tex:55): the stub for this paper; "the source of the day/rain/night split of the nuScenes val scenes (111/24/15 scenes)"
+- [plan.tex:16](../latex/sections/plan.tex:16): plan item; adopt "the 111 day, 24 rain, and 15 night val scenes (4,449, 968, and 602 keyframes) from BEVCar's released lists"
+- [progress.tex:69](../latex/sections/progress.tex:69) and [plan.tex:21](../latex/sections/plan.tex:21): deviation D11; current substring rule makes a "night, after rain" scene both night and rain; planned resolution "adopt the BEVCar rule for rainy night scenes"
+- [results.tex:57](../latex/sections/results.tex:57) and [results.tex:77](../latex/sections/results.tex:77): results are scored "per BEVCar condition group"; [literature-review.tex:47](../latex/sections/literature-review.tex:47): we use radar for a confidence map "rather than a better depth map"
 
 ### notes for the writer
 
 - The scene counts 111/24/15 are not in the paper. It gives only sample counts (4,449 / 968 / 602) and never says how a rainy night scene is assigned. Absence claim, not quotable: the words "111", "after rain" and any assignment rule do not appear on pp. 1-8. Both facts must be taken from, and cited to, the released split files at http://bevcar.cs.uni-freiburg.de (p. 1, Abstract, lines 20-23). What the paper does support: 4,449 + 968 + 602 = 6,019, the full validation set (p. 5, same paragraph, lines 9-12), so the three groups do not overlap and each rainy night scene sits in exactly one group. That is our arithmetic, not a statement in the paper, and it does not say which group.
-- BEVCar's rain count (968) differs from the md4all count in the stub at [main.tex:131](../latex/main.tex:131) (1,088); day and night agree. The paper does not mention md4all or explain the difference, so do not present the two splits as the same.
+- BEVCar's rain count (968) differs from the md4all count in the stub at [literature-review.tex:65](../latex/sections/literature-review.tex:65) (1,088); day and night agree. The paper does not mention md4all or explain the difference, so do not present the two splits as the same.
 - `references.bib` gives IROS 2024, pp. 1435-1442. The PDF is the arXiv version ("arXiv:2403.11761v2 [cs.RO] 25 Jul 2024", p. 1 margin) and names no venue or page range, so the venue cannot be verified from this file. Also, the paper calls the 6,019 units "samples", not keyframes, and its radar benefit is shown for vehicle segmentation; map mIoU still falls in rain and at night for every method (p. 7, same paragraph, lines 8-10: "decreases during rain and even further at night").
 
 ## post-review discussion with writer
