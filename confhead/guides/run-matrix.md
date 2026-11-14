@@ -47,6 +47,18 @@ Radar coverage (0b), all 149,410 cache entries, training settings (`radius` 1, e
 
 Stage 4 runs on the best inputs of stages 1 to 3. Stage 5 uses the best config of all stages.
 
+## See the Runs in Trackio
+
+[`examples/log_runs_to_trackio.py`](../examples/log_runs_to_trackio.py) replays the `history.json` of finished runs into [trackio](https://huggingface.co/docs/trackio), so that the loss curves of all runs draw on the same charts, and the settings of each run can group and filter them. It does not change training. A run that is already in the project is skipped.
+
+```sh
+# local dashboard: replay run folders, then open it with `uv run --with trackio trackio show --project confhead`
+uv run --with trackio examples/log_runs_to_trackio.py /scratch1/$USER/confhead-runs/m1-seed1
+
+# every run of a Hugging Face model repository, to a shared Space (needs a login with write access)
+uv run --with trackio examples/log_runs_to_trackio.py --hf-repo nadayusc/confhead --space-id <user>/<space>
+```
+
 ## Reading the Table
 
 - The best dev loss is a health check, not a ranking. Eval's AUSE and AURG decide which config wins. A gap smaller than the difference between `run1` and `run-v1-radar` (0.0004) is a tie.
