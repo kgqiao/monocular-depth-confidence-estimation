@@ -1,6 +1,6 @@
 # Training Runs and Their Configs
 
-This guide lists the confidence-head training runs and says what each setting of a run means. It is written for the eval team, who score the heads. The steps to train a run are in [training-on-carc.md](training-on-carc.md).
+This guide lists the confidence-head training runs and says what each setting of a run means. It is written for the eval team, who score the heads. The steps to train a run are in [training-on-carc.md](training-on-carc.md). [`results/model_checkpoints.md`](../results/model_checkpoints.md) lists every run so far, including the stage 1 ablations, with a link to each checkpoint.
 
 ## What a Run Is
 
