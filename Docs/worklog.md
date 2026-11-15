@@ -93,8 +93,73 @@ The dataset is more than 800 GB, so it cannot go into the PI's project folder. `
 
 ## 2026-11-14
 
+### Revised and fixed various small on evals, testing
+
 - Move evals/ to confhead/src/evals/. `uv run` puts confhead/src on the import path, so `from evals.metrics import ...` now resolves, and tests/test_metrics.py no longer stops pytest at collection.
 - metrics.py: np.trapz -> np.trapezoid (np.trapz is gone in the project's NumPy 2.5.4)
 - run_evals.py: remove a stray line continuation that was a SyntaxError
 - Checked with `uv run pytest -q`: no collection error; 66 passed, 5 skipped. The 4 failures are in test_backup.py and happen on Windows only.
 
+### Finished the sparsification curves and their tests
+
+- `compute_sparsification_curves` now returns four values: fractions, method curve, oracle curve, and the random curve (the mean error at every fraction), which `calculate_ause_and_aurg` needs.
+- `tests/test_metrics.py`: a perfect score gives AUSE 0, a random score gives AURG near 0, a reversed score gives a negative AURG, and a constant error gives flat curves. 4 passed.
+
+### Started the rejection AUROC and ECE fixes
+
+- Added scikit-learn (1.9.1) with `uv add scikit-learn`; `calculate_rejection_auc` imports it as `sklearn`.
+- To do: return NaN from `calculate_rejection_auc` when every pixel is correct or every pixel is wrong (`roc_auc_score` raises then, and per-image scoring will hit such images); count a confidence of exactly 1.0 in the last ECE bin; tests in `tests/test_calibration.py`.
+
+
+### Evals team set future checklist items
+
+Varad:
+- Download all three trained models as of today from Nathan A and Nathan B
+- Setup BEVCar's lists of which test scenes are day, rain, or night into file for scoring script
+- Build flip comparison py file, start on CARC (mirror image, run depth model, flip result, use where two depths diagree as a no-training confidence score)
+
+Katherine:
+- Finish the AUROC, ECE tests
+- Write scoring code to load trained model #1 to run on test images, score each image with metrics, save results 
+- Run scoring script on all test images on CARC, after 50 image test run succeeds
+
+DUE BY TUE 17th
+
+--- Finish training all models 
+
+Nathan A/B:
+- Have all models trained finished by Sat Nov 21st
+
+
+
+----- Run scoring on all models + condition splits, write analyses
+
+Katherine:
+- Run scoring script on all test images for all 3 trained models downloaded (and any new models)
+- Add all results to run_matrix.md
+- Write analysis and make charts based on three models' scores (sparsification curves, comparing models with oracle and random)
+
+Varad:
+- Count how many pixels with a LIDAR answer each of day/rain/night has, utilizes scene list, goes into table
+- Build day/rain/night results table from scores from all models, scene lists, flip scores. Show which differences are real
+
+Katherine:
+- Create frame selector to rank whole images by confidence. Check whether dropping the whole images lowers the error of the rest. 
+
+Varad:
+- Show use of confidence (i.e. weigh depth by it) with one number that improves (maybe team decides which taht is?)
+
+Due by 24th
+
+
+---- Writing final report
+
+Katherine:
+- Add to final report: charts, main results table of every model
+
+Varad:
+- Add to final report: day/rain/night results, comparisons with simple scores, lidar data counts, limits\
+
+Alejandro/everyone:
+- Finalize and wrap up report
+- Prepare for project clinic on Nov 30
