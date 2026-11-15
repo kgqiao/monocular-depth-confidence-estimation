@@ -45,7 +45,14 @@ States: `done`, `running`, `submitted` (job sent, result not read yet), `todo`, 
 
 Radar coverage (0b), all 149,410 cache entries, training settings (`radius` 1, every sweep): the radar validity channel marks 3.4% of the grid cells (6.2% at radius 2, 1.7% with the keyframe sweep only). Only 4.8% of the lidar-labeled cells have a valid radar cell on them. The radar fit fails on 17.0% of images (32% on the two back-side cameras), and those images get an all-zero radar residual and mask. So the dev loss, which is computed on labeled cells, can barely move with radar. Stage 2 is still worth a few runs: start with `m2-radar-lidar-fit`, which removes the fit failures, then `m2-radius2`. Compare the loss on the labeled cells that have radar, not the mean dev loss.
 
-Stage 1 (all seven runs trained 8 of 8 epochs; dev loss only, Eval's scores decide): the decoder features carry most of the signal. Without them the loss is 0.6167 against 0.5566 with all inputs (+0.060), and the features alone (0.5646) are only 0.008 worse than all inputs. The temporal spread helps a little (removing it costs +0.0067, above the 0.0004 repeat noise). The depth channel adds almost nothing (removing it costs +0.0008). One channel alone (0.6394 depth, 0.6778 temporal) is far worse than any run with the features. `m1-seed1` (0.5885) is not comparable on dev loss, because the seed also picks other dev scenes; its use is Eval's score on val.
+Stage 1: all seven runs trained 8 of 8 epochs. This is dev loss only; Eval's scores decide. Every difference below is against `run-v1-radar` (0.5566, all inputs). The repeat noise is known from one pair only: `run1` against `run-v1-radar` differ by 0.0004. In every run the best epoch is the last, so the loss was still falling.
+
+- The decoder features carry most of the signal. Without them the loss is 0.6167 (+0.0601). The features alone (0.5646, with radar off too) are 0.0080 worse than all inputs.
+- The temporal spread helps a little: removing it costs +0.0063.
+- The depth channel is close to noise: removing it costs +0.0008, about twice the one repeat gap.
+- Radar made no difference on dev loss: `run-v0-no-radar` 0.5562 against 0.5566.
+- One channel alone (0.6394 depth, 0.6778 temporal) is far worse than any run with the features.
+- `m1-seed1` (0.5885) is not comparable on dev loss, because the seed also picks other dev scenes. Its use is Eval's score on val.
 
 The runs and their files are in [`nathancbao/confhead`](https://huggingface.co/nathancbao/confhead) on Hugging Face (public). Its `EVAL_GUIDE.md` tells the Eval team which run is which and what to score first.
 
@@ -57,7 +64,7 @@ Stage 4 runs on the best inputs of stages 1 to 3. Stage 5 uses the best config o
 
 The charts of all runs are in a static Space: [`nathancbao/confhead-charts`](https://huggingface.co/spaces/nathancbao/confhead-charts) (public, read only). It is a snapshot: after new runs finish, replay them and sync again (below).
 
-What works from a free Hugging Face account: the replay into the local store, and a static Space made from that store. What does not: a live trackio Space (`--space-id`). trackio deploys a Gradio Space for that, and Hugging Face answers `402 Payment Required` because Gradio Spaces need a PRO subscription. Static Spaces are free, but they cannot be private.
+What works from a free Hugging Face account: the replay into the local store, and a static Space made from that store. What does not: a live trackio Space (`--space-id`). trackio deploys a Gradio Space for that, and on a free account Hugging Face answered `402 Payment Required`. Its error message says that hosting Gradio and Docker Spaces on free hardware needs a PRO subscription and that static Spaces are free; we did not test a PRO account. Static Spaces cannot be private.
 
 ```sh
 # 1. replay run folders, or every run of a Hugging Face model repository, into the local store
