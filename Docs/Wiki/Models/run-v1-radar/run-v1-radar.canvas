@@ -1,0 +1,721 @@
+{
+	"nodes": [
+		{
+			"id": "daadc6c12b0189b6",
+			"type": "group",
+			"x": 2270,
+			"y": 865,
+			"width": 400,
+			"height": 395,
+			"label": "Labels (from lidar, never an input)",
+			"color": "3"
+		},
+		{
+			"id": "dcf04987002ec22d",
+			"type": "group",
+			"x": 2270,
+			"y": -70,
+			"width": 400,
+			"height": 895,
+			"label": "Head input x: 68 channels in this run",
+			"color": "4"
+		},
+		{
+			"id": "08954b07b9ccd812",
+			"type": "group",
+			"x": 1790,
+			"y": -70,
+			"width": 400,
+			"height": 1330,
+			"label": "Load time (ConfidenceDataset, per run)"
+		},
+		{
+			"id": "3db6f78d21c6c66e",
+			"type": "group",
+			"x": 1310,
+			"y": -70,
+			"width": 400,
+			"height": 1330,
+			"label": "confcache entry (nuscenes-trainval)",
+			"color": "5"
+		},
+		{
+			"id": "6b812b08e0524048",
+			"type": "group",
+			"x": 450,
+			"y": -70,
+			"width": 780,
+			"height": 1330,
+			"label": "Cache build (once per image, same for every run)"
+		},
+		{
+			"id": "96568a9ba1b6eb48",
+			"type": "group",
+			"x": -30,
+			"y": -70,
+			"width": 400,
+			"height": 1330,
+			"label": "nuScenes (raw data)"
+		},
+		{
+			"id": "3a7c476e51f36bd5",
+			"type": "text",
+			"text": "# `run-v1-radar`\n\nNothing. This is **the baseline**: every input on, default settings. It repeats `run1`.\n\n**On:** decoder features (64), depth (1), temporal spread (1), radar (2)\n\n**Head input:** 68 channels",
+			"x": 0,
+			"y": -520,
+			"width": 860,
+			"height": 380
+		},
+		{
+			"id": "3f5af811cef1ab31",
+			"type": "text",
+			"text": "## Question\n\nWhat does the head reach with all inputs? Every ablation is measured against this run.\n\n**Flags added to the default config:** none (the default `configs/train-trainval.toml`)\n\n**Checkpoint:** `nathancbao/confhead/run-v1-radar` on Hugging Face",
+			"x": 920,
+			"y": -520,
+			"width": 800,
+			"height": 380
+		},
+		{
+			"id": "183c0829ffae09ed",
+			"type": "text",
+			"text": "## Result\n\nBest dev loss **0.5566**. Every other canvas reports its loss as a difference from this number. `run1` has the same settings and reached 0.5562, so 0.0004 is the repeat noise.\n\nDev loss only shows that a run learned. The Eval team's AUSE and AURG on the val split decide which run is best.",
+			"x": 1780,
+			"y": -520,
+			"width": 860,
+			"height": 380
+		},
+		{
+			"id": "d1b23c0d2be82e62",
+			"type": "text",
+			"text": "## Legend\n\nRead left to right: raw data, cache build, cache, load time, head.\n\n- Orange: raw nuScenes data\n- Purple: a computation\n- Cyan: an array stored in the confcache\n- Green: a channel the head reads in this run\n- Red: switched off, or changed, in this run\n- Yellow: labels and output",
+			"x": 2700,
+			"y": -520,
+			"width": 880,
+			"height": 380
+		},
+		{
+			"id": "4ffe9dc4e0d0514d",
+			"type": "text",
+			"text": "**Camera keyframe image**\n\n`[3, 900, 1600]`\n\nOne of 6 cameras.",
+			"x": 0,
+			"y": 0,
+			"width": 340,
+			"height": 300,
+			"color": "2"
+		},
+		{
+			"id": "c767e4c1965c14a7",
+			"type": "text",
+			"text": "**Neighbor frames and camera poses**\n\nFrames at offsets -2, -1, +1, +2 (12 Hz)",
+			"x": 0,
+			"y": 340,
+			"width": 340,
+			"height": 130,
+			"color": "2"
+		},
+		{
+			"id": "9d86f82cb3826b37",
+			"type": "text",
+			"text": "**Radar points**\n\n5 radars, the last 5 sweeps each, about 94 points per image.\n\nDepth in meters, but no elevation.",
+			"x": 0,
+			"y": 510,
+			"width": 340,
+			"height": 300,
+			"color": "2"
+		},
+		{
+			"id": "34ff5d9f6fb50209",
+			"type": "text",
+			"text": "**Lidar points**\n\nDepth in meters. The ground truth: it makes the labels and is never an input of the head.",
+			"x": 0,
+			"y": 900,
+			"width": 340,
+			"height": 300,
+			"color": "2"
+		},
+		{
+			"id": "e9fa3344556ba87d",
+			"type": "text",
+			"text": "**Frozen Depth Anything V2 (ViT-B)**\n\nDINOv2 encoder, then DPT decoder, on the image resized to 924 x 518.\n\nNever trained here.",
+			"x": 480,
+			"y": 0,
+			"width": 340,
+			"height": 300,
+			"color": "6"
+		},
+		{
+			"id": "34a4ce465c698299",
+			"type": "text",
+			"text": "**Tap `output_conv1`**\n\nLast decoder feature map, 64 channels. Area-averaged to the grid.",
+			"x": 860,
+			"y": 0,
+			"width": 340,
+			"height": 130,
+			"color": "6"
+		},
+		{
+			"id": "061bf1be0041ec09",
+			"type": "text",
+			"text": "**Disparity output**\n\nRelative inverse depth, no units. Area-averaged to the grid.",
+			"x": 860,
+			"y": 170,
+			"width": 340,
+			"height": 130,
+			"color": "6"
+		},
+		{
+			"id": "adbbc286a2f92147",
+			"type": "text",
+			"text": "**DA2 on the 4 neighbor frames**\n\n4 extra passes per image",
+			"x": 480,
+			"y": 340,
+			"width": 340,
+			"height": 130,
+			"color": "6"
+		},
+		{
+			"id": "cb8f754580ad2b79",
+			"type": "text",
+			"text": "**`temporal_variation`**\n\nFollow each cell's 3D point into the neighbors; std / mean of its inverse depth across frames.",
+			"x": 860,
+			"y": 340,
+			"width": 340,
+			"height": 130,
+			"color": "6"
+		},
+		{
+			"id": "153ca42e55942514",
+			"type": "text",
+			"text": "**Project radar into the camera**\n\nEach point becomes (u, v, z) and takes DA2's disparity at its pixel.",
+			"x": 480,
+			"y": 510,
+			"width": 340,
+			"height": 300,
+			"color": "6"
+		},
+		{
+			"id": "1f37d729fe403c97",
+			"type": "text",
+			"text": "**Radar fit**\n\nLeast squares for a scale and a shift that map DA2's disparity to 1 / z of the radar points.\n\nFails on 17% of images.",
+			"x": 860,
+			"y": 510,
+			"width": 340,
+			"height": 300,
+			"color": "6"
+		},
+		{
+			"id": "7bafcf18d6ca3125",
+			"type": "text",
+			"text": "**Project lidar into the camera**\n\nEach point becomes (u, v, z) and takes DA2's disparity at its pixel.",
+			"x": 480,
+			"y": 900,
+			"width": 340,
+			"height": 300,
+			"color": "6"
+		},
+		{
+			"id": "6ac001289967496b",
+			"type": "text",
+			"text": "**Lidar fit**\n\nLeast squares for a scale and a shift that map DA2's disparity to 1 / z of the lidar points.",
+			"x": 860,
+			"y": 900,
+			"width": 340,
+			"height": 300,
+			"color": "6"
+		},
+		{
+			"id": "37c1816555774728",
+			"type": "text",
+			"text": "`features`\n\n`[64, 148, 264]` float16",
+			"x": 1340,
+			"y": 0,
+			"width": 340,
+			"height": 130,
+			"color": "5"
+		},
+		{
+			"id": "9ac5c3f7e2d6464b",
+			"type": "text",
+			"text": "`disparity_grid`\n\n`[148, 264]` float32",
+			"x": 1340,
+			"y": 170,
+			"width": 340,
+			"height": 130,
+			"color": "5"
+		},
+		{
+			"id": "0016f1353f251d27",
+			"type": "text",
+			"text": "`temporal_relstd`\n\n`[148, 264]` float16",
+			"x": 1340,
+			"y": 340,
+			"width": 340,
+			"height": 130,
+			"color": "5"
+		},
+		{
+			"id": "0f3af79edd7c290b",
+			"type": "text",
+			"text": "`radar`\n\n`[N, 6]`: u, v, z, dt, sweep, disparity",
+			"x": 1340,
+			"y": 510,
+			"width": 340,
+			"height": 130,
+			"color": "5"
+		},
+		{
+			"id": "608ea4839bbdf15a",
+			"type": "text",
+			"text": "`meta.fit_radar`\n\nscale, shift",
+			"x": 1340,
+			"y": 680,
+			"width": 340,
+			"height": 130,
+			"color": "5"
+		},
+		{
+			"id": "27657b3eb02e5f8d",
+			"type": "text",
+			"text": "`lidar`\n\n`[N, 6]`: u, v, z, dt, sweep, disparity",
+			"x": 1340,
+			"y": 900,
+			"width": 340,
+			"height": 130,
+			"color": "5"
+		},
+		{
+			"id": "995b8492c79b186d",
+			"type": "text",
+			"text": "`meta.fit_lidar`\n\nscale, shift",
+			"x": 1340,
+			"y": 1070,
+			"width": 340,
+			"height": 130,
+			"color": "5"
+		},
+		{
+			"id": "f46b631028d55f10",
+			"type": "text",
+			"text": "**`normalized_disparity`**\n\nDisparity over its image mean. No fit, no meters.",
+			"x": 1820,
+			"y": 170,
+			"width": 340,
+			"height": 130,
+			"color": "6"
+		},
+		{
+			"id": "ba77ccc2962880f8",
+			"type": "text",
+			"text": "**`radar_channels`**\n\nAt each radar point: |fitted depth - z| / z.\n\nEach point fills 3 x 3 cells; every other cell is 0.",
+			"x": 1820,
+			"y": 510,
+			"width": 340,
+			"height": 300,
+			"color": "6"
+		},
+		{
+			"id": "c08f4da8851ac89c",
+			"type": "text",
+			"text": "**`lidar_labels`**\n\nAt each lidar point: abs_rel = |fitted depth - z| / z.\n\ntarget = 1 where abs_rel > tau (0.1). About 9% of cells hold a lidar point.",
+			"x": 1820,
+			"y": 900,
+			"width": 340,
+			"height": 300,
+			"color": "6"
+		},
+		{
+			"id": "f12fc2f16564fd14",
+			"type": "text",
+			"text": "`feature_0` to `feature_63` (64)\n\nWhat DA2 has worked out about each cell before it commits to a depth.",
+			"x": 2300,
+			"y": 0,
+			"width": 340,
+			"height": 130,
+			"color": "4"
+		},
+		{
+			"id": "627f9a4e6b60bb90",
+			"type": "text",
+			"text": "`depth` (1)\n\nDA2's own prediction: the scene layout, near against far.",
+			"x": 2300,
+			"y": 170,
+			"width": 340,
+			"height": 130,
+			"color": "4"
+		},
+		{
+			"id": "4c8e859209ace23f",
+			"type": "text",
+			"text": "`temporal_relstd` (1)\n\nHow much DA2's depth of the same 3D point disagrees across frames.",
+			"x": 2300,
+			"y": 340,
+			"width": 340,
+			"height": 130,
+			"color": "4"
+		},
+		{
+			"id": "434f0f5a01e5597d",
+			"type": "text",
+			"text": "`radar_residual` (1)\n\nHow far DA2's depth is from radar's.",
+			"x": 2300,
+			"y": 510,
+			"width": 340,
+			"height": 130,
+			"color": "4"
+		},
+		{
+			"id": "0d25f42cbfe84098",
+			"type": "text",
+			"text": "`radar_valid` (1)\n\n1 where the residual is a measurement.",
+			"x": 2300,
+			"y": 680,
+			"width": 340,
+			"height": 130,
+			"color": "4"
+		},
+		{
+			"id": "bd40613b3d75d118",
+			"type": "text",
+			"text": "`target` `[1, 148, 264]`\n\n1 where DA2's depth is off by more than 10%.",
+			"x": 2300,
+			"y": 900,
+			"width": 340,
+			"height": 130,
+			"color": "3"
+		},
+		{
+			"id": "d101e18d9bce66c3",
+			"type": "text",
+			"text": "`mask` `[1, 148, 264]`\n\n1 where the cell holds a lidar point.",
+			"x": 2300,
+			"y": 1070,
+			"width": 340,
+			"height": 130,
+			"color": "3"
+		},
+		{
+			"id": "98f16030c1592ba6",
+			"type": "text",
+			"text": "## ConfidenceHead\n\n`x: [B, 68, 148, 264]`\n\n1. Standardize each channel with the mean and std of the train split\n2. conv 3x3 to 64, ReLU\n3. conv 3x3 to 64, ReLU\n4. conv 3x3 to 32, ReLU\n5. conv 1x1 to 1 logit per cell\n\nThe only part that is trained.",
+			"x": 2780,
+			"y": 0,
+			"width": 340,
+			"height": 810,
+			"color": "6"
+		},
+		{
+			"id": "ac2f6e8a49bf3424",
+			"type": "text",
+			"text": "## p_error\n\n`[B, 1, 148, 264]`\n\nPer grid cell: the probability that DA2's depth is wrong by more than 10%. One cell covers about 6 x 6 image pixels.",
+			"x": 3240,
+			"y": 170,
+			"width": 340,
+			"height": 300,
+			"color": "3"
+		},
+		{
+			"id": "3ded4313e79a1d0e",
+			"type": "text",
+			"text": "**Masked BCE loss**\n\nOver the labeled cells only. Positive cells are weighted by negatives / positives.",
+			"x": 2780,
+			"y": 900,
+			"width": 340,
+			"height": 300,
+			"color": "6"
+		},
+		{
+			"id": "d533db7775aaa895",
+			"type": "text",
+			"text": "**Training settings**\n\nAdamW, lr 0.001, cosine schedule, weight decay 0.0001\n\n8 epochs, batch 8, seed 0\n\nDev: 10% of the train scenes, picked by the seed",
+			"x": 3240,
+			"y": 900,
+			"width": 340,
+			"height": 300
+		}
+	],
+	"edges": [
+		{
+			"id": "819d8a55a21398e5",
+			"fromNode": "f12fc2f16564fd14",
+			"fromSide": "right",
+			"toNode": "98f16030c1592ba6",
+			"toSide": "left",
+			"color": "4"
+		},
+		{
+			"id": "ac2a746519d75a55",
+			"fromNode": "627f9a4e6b60bb90",
+			"fromSide": "right",
+			"toNode": "98f16030c1592ba6",
+			"toSide": "left",
+			"color": "4"
+		},
+		{
+			"id": "a68154684f863c3f",
+			"fromNode": "4c8e859209ace23f",
+			"fromSide": "right",
+			"toNode": "98f16030c1592ba6",
+			"toSide": "left",
+			"color": "4"
+		},
+		{
+			"id": "6f980090849593e6",
+			"fromNode": "434f0f5a01e5597d",
+			"fromSide": "right",
+			"toNode": "98f16030c1592ba6",
+			"toSide": "left",
+			"color": "4"
+		},
+		{
+			"id": "d4a850e1e762e724",
+			"fromNode": "0d25f42cbfe84098",
+			"fromSide": "right",
+			"toNode": "98f16030c1592ba6",
+			"toSide": "left",
+			"color": "4"
+		},
+		{
+			"id": "19a164a7a69d7e3b",
+			"fromNode": "4ffe9dc4e0d0514d",
+			"fromSide": "right",
+			"toNode": "e9fa3344556ba87d",
+			"toSide": "left"
+		},
+		{
+			"id": "a93176339fa1e5de",
+			"fromNode": "e9fa3344556ba87d",
+			"fromSide": "right",
+			"toNode": "34a4ce465c698299",
+			"toSide": "left"
+		},
+		{
+			"id": "303da4c076e7191a",
+			"fromNode": "e9fa3344556ba87d",
+			"fromSide": "right",
+			"toNode": "061bf1be0041ec09",
+			"toSide": "left"
+		},
+		{
+			"id": "7ea6271df944f26a",
+			"fromNode": "c767e4c1965c14a7",
+			"fromSide": "right",
+			"toNode": "adbbc286a2f92147",
+			"toSide": "left"
+		},
+		{
+			"id": "a7db789d5719221b",
+			"fromNode": "adbbc286a2f92147",
+			"fromSide": "right",
+			"toNode": "cb8f754580ad2b79",
+			"toSide": "left"
+		},
+		{
+			"id": "e62bff46f4d216b7",
+			"fromNode": "061bf1be0041ec09",
+			"fromSide": "bottom",
+			"toNode": "cb8f754580ad2b79",
+			"toSide": "top"
+		},
+		{
+			"id": "581bc90925ee055e",
+			"fromNode": "9d86f82cb3826b37",
+			"fromSide": "right",
+			"toNode": "153ca42e55942514",
+			"toSide": "left"
+		},
+		{
+			"id": "33798a293090c330",
+			"fromNode": "153ca42e55942514",
+			"fromSide": "right",
+			"toNode": "1f37d729fe403c97",
+			"toSide": "left"
+		},
+		{
+			"id": "e58173e5432c7f62",
+			"fromNode": "34ff5d9f6fb50209",
+			"fromSide": "right",
+			"toNode": "7bafcf18d6ca3125",
+			"toSide": "left"
+		},
+		{
+			"id": "ad038fcdfe0690a4",
+			"fromNode": "7bafcf18d6ca3125",
+			"fromSide": "right",
+			"toNode": "6ac001289967496b",
+			"toSide": "left"
+		},
+		{
+			"id": "ab01cd505b3856c5",
+			"fromNode": "6ac001289967496b",
+			"fromSide": "top",
+			"toNode": "cb8f754580ad2b79",
+			"toSide": "bottom",
+			"label": "lidar fit"
+		},
+		{
+			"id": "74fd93eca7cdf3dc",
+			"fromNode": "34a4ce465c698299",
+			"fromSide": "right",
+			"toNode": "37c1816555774728",
+			"toSide": "left"
+		},
+		{
+			"id": "80cef3b1b33b64b3",
+			"fromNode": "061bf1be0041ec09",
+			"fromSide": "right",
+			"toNode": "9ac5c3f7e2d6464b",
+			"toSide": "left"
+		},
+		{
+			"id": "344712a5ceb75e1b",
+			"fromNode": "cb8f754580ad2b79",
+			"fromSide": "right",
+			"toNode": "0016f1353f251d27",
+			"toSide": "left"
+		},
+		{
+			"id": "2787dfc3feaeb942",
+			"fromNode": "1f37d729fe403c97",
+			"fromSide": "right",
+			"toNode": "0f3af79edd7c290b",
+			"toSide": "left"
+		},
+		{
+			"id": "5340205628a916ab",
+			"fromNode": "1f37d729fe403c97",
+			"fromSide": "right",
+			"toNode": "608ea4839bbdf15a",
+			"toSide": "left"
+		},
+		{
+			"id": "2a9847b562035602",
+			"fromNode": "6ac001289967496b",
+			"fromSide": "right",
+			"toNode": "27657b3eb02e5f8d",
+			"toSide": "left"
+		},
+		{
+			"id": "8ad42cc6adf27b31",
+			"fromNode": "6ac001289967496b",
+			"fromSide": "right",
+			"toNode": "995b8492c79b186d",
+			"toSide": "left"
+		},
+		{
+			"id": "431789f3446cf9a1",
+			"fromNode": "37c1816555774728",
+			"fromSide": "right",
+			"toNode": "f12fc2f16564fd14",
+			"toSide": "left",
+			"label": "as is"
+		},
+		{
+			"id": "a0e787bf6d0d47f8",
+			"fromNode": "0016f1353f251d27",
+			"fromSide": "right",
+			"toNode": "4c8e859209ace23f",
+			"toSide": "left",
+			"label": "as is"
+		},
+		{
+			"id": "6a0c1980bb01c94e",
+			"fromNode": "9ac5c3f7e2d6464b",
+			"fromSide": "right",
+			"toNode": "f46b631028d55f10",
+			"toSide": "left"
+		},
+		{
+			"id": "765fd1f622263cb7",
+			"fromNode": "f46b631028d55f10",
+			"fromSide": "right",
+			"toNode": "627f9a4e6b60bb90",
+			"toSide": "left"
+		},
+		{
+			"id": "0941cce0c8a6f687",
+			"fromNode": "0f3af79edd7c290b",
+			"fromSide": "right",
+			"toNode": "ba77ccc2962880f8",
+			"toSide": "left"
+		},
+		{
+			"id": "7316edb7c440a7fd",
+			"fromNode": "608ea4839bbdf15a",
+			"fromSide": "right",
+			"toNode": "ba77ccc2962880f8",
+			"toSide": "left"
+		},
+		{
+			"id": "0bef0ca83068ae8d",
+			"fromNode": "ba77ccc2962880f8",
+			"fromSide": "right",
+			"toNode": "434f0f5a01e5597d",
+			"toSide": "left"
+		},
+		{
+			"id": "af576e025ad475de",
+			"fromNode": "ba77ccc2962880f8",
+			"fromSide": "right",
+			"toNode": "0d25f42cbfe84098",
+			"toSide": "left"
+		},
+		{
+			"id": "ee97659beaa17351",
+			"fromNode": "27657b3eb02e5f8d",
+			"fromSide": "right",
+			"toNode": "c08f4da8851ac89c",
+			"toSide": "left"
+		},
+		{
+			"id": "902096d429597471",
+			"fromNode": "995b8492c79b186d",
+			"fromSide": "right",
+			"toNode": "c08f4da8851ac89c",
+			"toSide": "left"
+		},
+		{
+			"id": "3db1ac8a529da5c3",
+			"fromNode": "c08f4da8851ac89c",
+			"fromSide": "right",
+			"toNode": "bd40613b3d75d118",
+			"toSide": "left"
+		},
+		{
+			"id": "523775fd84ec56a9",
+			"fromNode": "c08f4da8851ac89c",
+			"fromSide": "right",
+			"toNode": "d101e18d9bce66c3",
+			"toSide": "left"
+		},
+		{
+			"id": "8f3368983dfb3f17",
+			"fromNode": "bd40613b3d75d118",
+			"fromSide": "right",
+			"toNode": "3ded4313e79a1d0e",
+			"toSide": "left"
+		},
+		{
+			"id": "3d5740ef8821a40a",
+			"fromNode": "d101e18d9bce66c3",
+			"fromSide": "right",
+			"toNode": "3ded4313e79a1d0e",
+			"toSide": "left"
+		},
+		{
+			"id": "c02e2b0b2b137792",
+			"fromNode": "98f16030c1592ba6",
+			"fromSide": "right",
+			"toNode": "ac2f6e8a49bf3424",
+			"toSide": "left",
+			"label": "sigmoid"
+		},
+		{
+			"id": "b9f7632ca0f17a92",
+			"fromNode": "98f16030c1592ba6",
+			"fromSide": "bottom",
+			"toNode": "3ded4313e79a1d0e",
+			"toSide": "top",
+			"label": "logits"
+		}
+	]
+}
