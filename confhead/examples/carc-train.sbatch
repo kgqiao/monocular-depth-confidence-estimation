@@ -6,7 +6,8 @@
 #
 # Arguments after the config go to examples/train_head.py. A run folder that
 # holds last.pt continues after its last epoch, so submit the same command again
-# to finish a run that reached its time limit.
+# to finish a run that reached its time limit. The job uploads the run folder to
+# Hugging Face after each epoch (train_head.py --upload); --estimate uploads nothing.
 #SBATCH --job-name=confhead-train
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
@@ -20,4 +21,4 @@ cd "${SLURM_SUBMIT_DIR}"
 CONFIG="${1:?usage: sbatch examples/carc-train.sbatch <config> [train_head.py arguments]}"
 shift
 
-uv run examples/train_head.py --config "${CONFIG}" "$@"
+uv run examples/train_head.py --config "${CONFIG}" --upload "$@"
