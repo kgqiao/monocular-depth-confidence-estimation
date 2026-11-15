@@ -55,14 +55,20 @@ Stage 4 runs on the best inputs of stages 1 to 3. Stage 5 uses the best config o
 
 [`examples/log_runs_to_trackio.py`](../examples/log_runs_to_trackio.py) replays the `history.json` of finished runs into [trackio](https://huggingface.co/docs/trackio), so that the loss curves of all runs draw on the same charts, and the settings of each run can group and filter them. It does not change training. A run that is already in the project is skipped.
 
-What works and what does not: the replay into the local store works (tested on `run1`, `run-v0-no-radar`, `run-v1-radar`). Sending runs to a Space does not work from a free Hugging Face account: trackio deploys a Gradio Space, and Hugging Face answers `402 Payment Required` because Gradio Spaces need a PRO subscription (static Spaces are free). The `--space-id` form below needs an account that can host one, or a Space that already exists and that you can write to.
+The charts of all runs are in a static Space: [`nathancbao/confhead-charts`](https://huggingface.co/spaces/nathancbao/confhead-charts) (public, read only). It is a snapshot: after new runs finish, replay them and sync again (below).
+
+What works from a free Hugging Face account: the replay into the local store, and a static Space made from that store. What does not: a live trackio Space (`--space-id`). trackio deploys a Gradio Space for that, and Hugging Face answers `402 Payment Required` because Gradio Spaces need a PRO subscription. Static Spaces are free, but they cannot be private.
 
 ```sh
-# local dashboard: replay run folders, then open it with `uv run --with trackio trackio show --project confhead`
+# 1. replay run folders, or every run of a Hugging Face model repository, into the local store
 uv run --with trackio examples/log_runs_to_trackio.py /scratch1/$USER/confhead-runs/m1-seed1
+uv run --with trackio examples/log_runs_to_trackio.py --hf-repo nathancbao/confhead
 
-# every run of a Hugging Face model repository, to a shared Space (needs a login with write access)
-uv run --with trackio examples/log_runs_to_trackio.py --hf-repo nadayusc/confhead --space-id <user>/<space>
+# 2. open the local dashboard
+uv run --with trackio trackio show --project confhead
+
+# 3. refresh the static Space from the local store (needs a login with write access to the Space)
+uv run --with "trackio[spaces]" python -c "import trackio; trackio.sync(project='confhead', space_id='<user>/<space>', sdk='static', force=True)"
 ```
 
 ## Reading the Table
