@@ -110,12 +110,17 @@ The dataset is more than 800 GB, so it cannot go into the PI's project folder. `
 - Added scikit-learn (1.9.1) with `uv add scikit-learn`; `calculate_rejection_auc` imports it as `sklearn`.
 - To do: return NaN from `calculate_rejection_auc` when every pixel is correct or every pixel is wrong (`roc_auc_score` raises then, and per-image scoring will hit such images); count a confidence of exactly 1.0 in the last ECE bin; tests in `tests/test_calibration.py`.
 
+### Bev 
+- Bevcar work today - Checked with `uv run pytest -q`: no collection error; 66 passed, 5 skipped. The 4 failures are in test_backup.py and happen on Windows only.
+- Created confhead/src/evals/bevcar_splits.py — new file with the three scene name lists (DAY_SCENES, RAIN_SCENES, NIGHT_SCENES) and the BEVCAR_CONDITION lookup dict
+- Modified confhead/src/evals/run_evals.py — added defaultdict accumulator, wired in BEVCAR_CONDITION.get(scene_name) inside the data loop, and added the per-condition metrics loop after it
+- Created confhead/examples/compare_condition_tags.py — audit script to compare cache keyword tags vs BEVCar lists on CARC
+- Created confhead/examples/label_count_table.py — script to count scenes, keyframes, labeled cells, and AbsRel > tau per BEVCar group
 
 ### Evals team set future checklist items
 
 Varad:
 - Download all three trained models as of today from Nathan A and Nathan B
-- Setup BEVCar's lists of which test scenes are day, rain, or night into file for scoring script
 - Build flip comparison py file, start on CARC (mirror image, run depth model, flip result, use where two depths diagree as a no-training confidence score)
 
 Katherine:
