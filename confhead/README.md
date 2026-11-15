@@ -164,6 +164,12 @@ examples/carc-submit.sh configs/nuscenes-trainval.toml 16
 sbatch examples/carc-train.sbatch configs/train-trainval.toml
 ```
 
+The job uploads the run to the Hugging Face model repository [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead) after each epoch, and the model card there lists the settings and losses of every run. [guides/tracking-runs.md](guides/tracking-runs.md) draws the loss curves of every run in a Trackio dashboard on your own computer:
+
+```sh
+uv run --group tracking examples/sync_trackio.py
+```
+
 [guides/cache-backup-on-huggingface.md](guides/cache-backup-on-huggingface.md) backs up a built cache to a Hugging Face dataset repository as compressed shards, and restores it:
 
 ```sh
@@ -200,7 +206,7 @@ The rules that the code follows, and why, are in [design.md](design.md).
 - `configs/`: cache settings, training settings, and the Hugging Face repository of the backup.
 - `results/`: the small summaries that the team reads.
 - `docs/`: the figure of this README.
-- `outputs/`: caches, figures, tables, and training runs that the examples and notebooks write. Not in git.
+- `outputs/`: caches, figures, tables, training runs, and the Trackio database that the examples and notebooks write. Not in git.
 
 ## References
 
