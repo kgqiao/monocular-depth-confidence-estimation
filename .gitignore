@@ -4,3 +4,4 @@ datasets/
 .ipynb_checkpoints/
 logs/
 *.out
+.obsidian/

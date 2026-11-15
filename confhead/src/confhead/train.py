@@ -6,6 +6,7 @@
     best.pt       the head of the epoch with the lowest dev loss
     last.pt       the head of the last epoch, with the optimizer and the schedule
     history.json  the train and dev loss of each epoch
+    steps.json    the mean train loss five times per epoch
 
 A run folder that holds last.pt continues after its last epoch, and refuses
 other settings. The batch order of an epoch depends only on the seed and the
@@ -24,7 +25,7 @@ import tomllib
 from collections import defaultdict
 from dataclasses import asdict, dataclass, field, fields, is_dataclass, replace
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import numpy as np
 import torch
@@ -69,6 +70,7 @@ class LoopConfig:
 class OutputConfig:
     runs: str = "outputs/runs"  # the folder of all runs
     name: str = ""  # the run folder; empty: the cache name and the time
+    group: str = ""  # the family of runs this one belongs to, for the dashboard; for example baseline or inputs
 
 
 @dataclass
@@ -405,10 +407,11 @@ class Training:
             raise ValueError(f"{self.dir} is a run with other settings: {'; '.join(changes)}. "
                              "Use another output.name for a new run")
 
-    def fit(self) -> list[dict[str, Any]]:
+    def fit(self, on_epoch: Callable[[list[dict[str, Any]]], None] | None = None) -> list[dict[str, Any]]:
         """Train to `train.epochs`, after the last epoch of the run folder's last.pt if it has one.
 
-        Returns the history: one dict per epoch with its train and dev loss.
+        Returns the history: one dict per epoch with its train and dev loss. `on_epoch`
+        takes the history after each epoch, once the run folder holds that epoch.
         """
         cfg, device = self.cfg, self.device
         self.dir.mkdir(parents=True, exist_ok=True)
@@ -451,6 +454,9 @@ class Training:
                      self.dir, len(sampler), len(self.dev_idx), len(train_loader), device, self.num_workers)
             log.info("positive rate %.1f%%, class weight %.3f", 100 * self.stats.positive_rate, pos_weight)
         best_loss = min((h["dev_loss"] for h in history), default=float("inf"))
+        steps_path = self.dir / "steps.json"
+        steps = json.loads(steps_path.read_text()) if history and steps_path.is_file() else []
+        steps = [s for s in steps if s["epoch"] <= len(history)]
         extra = {"pos_weight": pos_weight, "cache": self._cache_info(), "git": git_commit()}
 
         log_every = max(1, len(train_loader) // 5)
@@ -467,6 +473,8 @@ class Training:
                 scheduler.step()
                 losses.append(loss.item())
                 if step % log_every == 0:
+                    steps.append({"step": epoch * len(train_loader) + step, "epoch": epoch + 1,
+                                  "train_loss": float(np.mean(losses[-log_every:]))})
                     rate = step * cfg.train.batch_size / (time.perf_counter() - t0)
                     eta = (len(train_loader) - step) * cfg.train.batch_size / rate / 60
                     log.info("epoch %d step %d/%d: loss %.4f, %.0f images/s, eta %.1f min", epoch + 1, step,
@@ -483,6 +491,9 @@ class Training:
             save_head(last, head, cfg.inputs, self.channels, epoch=epoch + 1, history=history,
                       optimizer=optimizer.state_dict(), scheduler=scheduler.state_dict(), **extra)
             (self.dir / "history.json").write_text(json.dumps(history, indent=1) + "\n")
+            steps_path.write_text(json.dumps(steps, indent=1) + "\n")
             log.info("epoch %d: train loss %.4f, dev loss %.4f, %.1f min%s", epoch + 1, record["train_loss"],
                      record["dev_loss"], record["minutes"], ", best so far" if is_best else "")
+            if on_epoch is not None:
+                on_epoch(history)
         return history
