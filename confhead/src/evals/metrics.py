@@ -61,6 +61,18 @@ import numpy as np
 def calculate_rejection_auc(is_correct: np.ndarray, confidence_scores: np.ndarray) -> float:
     """Calculates Area Under the Rejection ROC Curve (AUROC)
 
+    The share of (correct pixel, wrong pixel) pairs where the correct pixel's confidence is higher.
+    0.5 = random
+    1.0 = every wrong pixel scored below every correct one
+    < 0.5 = inputs flipped
+
+    Args:
+        is_correct: 1 if pixel's depth is correct, else 0 (is_correct = 1 - target)
+        confidence_scores: higher = more trusted (confidence = 1 - p_error)
+
+    Pass only the pixels that are labeled.
+    If every pixel is correct or every pixel is wrong (aka no pairs to conmpare), return NaN
+
     Treats each labeled pixel as yes/no: is the depth correct?
     """
     from sklearn.metrics import roc_auc_score
@@ -70,20 +82,43 @@ def calculate_rejection_auc(is_correct: np.ndarray, confidence_scores: np.ndarra
 
 
 def compute_ece(is_correct: np.ndarray, confidence_scores: np.ndarray, n_bins: int = 10) -> float:
-    """Calculates Expected Calibration Error (ECE)."""
-    bins = np.linspace(0, 1, n_bins + 1)
+    """Calculates Expected Calibration Error (ECE).
+    
+    1. Groups pixels into n_bins by confidence. 
+    2. In each bin, compare the average confidence with the share that's actually correct. 
+    3. Average those gaps weighted by how many pixels are in the bins (i.e. 0 = perfect)
+
+    Args:     
+        is_correct: 1 if pixel's depth is correct, else 0 (is_correct = 1 - target)
+        confidence_scores: higher = more trusted (confidence = 1 - p_error)
+        n_bins: number of equal-width bins. Each bin includes its left edge and excludes its right edge. 
+    
+    - Pass only the pixels that are labeled.
+    - Train weighted wrong pixels by pos_weight = 1.66, so that p_error runs high and ECE is shifted to account for this.
+    """
+    bins = np.linspace(0, 1, n_bins + 1) # bin edges: 0, 0.1,..., 1.0
     ece = 0.0
     n_samples = len(confidence_scores)
 
     for i in range(n_bins):
-        mask = (confidence_scores >= bins[i]) & (confidence_scores < bins[i+1])
+        if i == n_bins - 1:
+            upper = confidence_scores <= bins[i + 1] # last bin includes 1.0 (11 edges results in 10 bins)
+        else:
+            upper = confidence_scores < bins[i + 1] # last bin does NOT include 1.0
+
+        mask = (confidence_scores > bins[i]) & upper # which pixels fall in this bin
+        
         bin_size = np.sum(mask)
         if bin_size > 0:
-            bin_acc = np.mean(is_correct[mask])
-            bin_conf = np.mean(confidence_scores[mask])
+            # Calculate pixels in the bin that actually happened (bin_acc) vs what the model claimed (bin_conf)
+            bin_acc = np.mean(is_correct[mask]) # Share actually correct pixels
+            bin_conf = np.mean(confidence_scores[mask]) # What model said
+
+            # Calculate addition of ECE, wherein (bin_size / n_samples)  means bins with more pixels count more
+            # Empty bins are skipped as to avoid division by zero
             ece += (bin_size / n_samples) * np.abs(bin_acc - bin_conf)
             
-    return ece
+    return float(ece)
 
 
 def compute_sparsification_curves(true_errors: np.ndarray, uncertainty_scores: np.ndarray, num_steps = 50):

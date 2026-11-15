@@ -8,6 +8,7 @@ dependencies = [
     "matplotlib>=3.9",
     "numpy>=2.0",
     "pillow>=10.0",
+    "scikit-learn>=1.9.1",
     "torch>=2.4",
     "zstandard>=0.23",
 ]
