@@ -1,6 +1,8 @@
 # Track the Runs in Trackio
 
-This guide draws the loss curves of every training run in a [Trackio](https://github.com/gradio-app/trackio) dashboard on your own computer. The training jobs on CARC upload each run to the Hugging Face model repository [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead), as [training-on-carc.md](training-on-carc.md) describes. That repository is the only record of a run. The Trackio database is rebuilt from it at every sync, so you can delete the database at any time and lose nothing.
+This guide draws the loss curves of the training runs in a [Trackio](https://github.com/gradio-app/trackio) dashboard on your own computer. The training jobs on CARC upload each run to a Hugging Face model repository, as [training-on-carc.md](training-on-carc.md) describes. The runs are in two repositories: `run1` in [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead), the default, and the ablation runs in [`nathancbao/confhead`](https://huggingface.co/nathancbao/confhead). [`results/model_checkpoints.md`](../results/model_checkpoints.md) lists them all.
+
+Each sync reads one repository and rebuilds the Trackio database from it, so you can delete the database at any time and lose nothing. To see the ablation runs, add `--repo nathancbao/confhead`. A read-only snapshot of those runs is also online in the static Space [`nathancbao/confhead-charts`](https://huggingface.co/spaces/nathancbao/confhead-charts); [run-matrix.md](run-matrix.md#see-the-runs-in-trackio) says how it was made.
 
 ## How the Sync Works
 
@@ -40,4 +42,4 @@ TRACKIO_DIR=outputs/trackio uv run --group tracking trackio show --project confh
 
 - Trackio is in the `tracking` dependency group of `pyproject.toml`, pinned to one version, so the CARC jobs do not install it.
 - Set `TRACKIO_DIR` to keep the database somewhere other than `outputs/trackio`.
-- `--repo` syncs from another model repository, and `--project` names another Trackio project.
+- `--repo` syncs from another model repository, such as `nathancbao/confhead`, and `--project` names another Trackio project. A sync replaces the whole project, so give each repository its own `--project` to keep both on hand.

@@ -7,10 +7,10 @@ This table lists the training runs we plan, what each one changes from the defau
 Add the flags of the row and name the run with `output.name`:
 
 ```sh
-sbatch examples/carc-train.sbatch configs/train-trainval.toml --set inputs.temporal=false --set output.name=m1-no-temporal
+sbatch examples/carc-train.sbatch configs/train-trainval.toml --repo nathancbao/confhead --set inputs.temporal=false --set output.name=m1-no-temporal
 ```
 
-Then upload it with [`examples/upload_run.py`](../examples/upload_run.py) and fill in the row.
+`--repo` sends the uploads to [`nathancbao/confhead`](https://huggingface.co/nathancbao/confhead), where the other ablation runs are; it needs a login with write access to that repository. Without `--repo`, the job uploads to `nadayusc/confhead`. To upload a finished run by hand, use [`examples/upload_run.py`](../examples/upload_run.py) with the same `--repo`. Then fill in the row here and add the run to [`results/model_checkpoints.md`](../results/model_checkpoints.md).
 
 ## The Runs
 

@@ -9,7 +9,7 @@ This guide trains the confidence head on the v1.0-trainval cache, as a batch job
 - The trainval cache, built with [cache-building-on-carc.md](cache-building-on-carc.md). The config expects it in `/scratch1/$USER/confhead-cache/nuscenes-trainval`.
 - The repository cloned on CARC, and uv, as in the cache guide.
 - `SBATCH_ACCOUNT` set to your CARC project account, as in step 1 of the cache guide.
-- A Hugging Face login with write access to [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead), as in step 2 of [cache-backup-on-huggingface.md](cache-backup-on-huggingface.md). The job uploads the run after each epoch.
+- A Hugging Face login with write access to the model repository the job uploads to, as in step 2 of [cache-backup-on-huggingface.md](cache-backup-on-huggingface.md). The job uploads the run after each epoch to [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead), or to the repository that `--repo` names. The ablation runs go to [`nathancbao/confhead`](https://huggingface.co/nathancbao/confhead) (see step 7).
 
 Run every command on a CARC login node, from the `confhead` folder:
 
@@ -72,7 +72,7 @@ sbatch examples/carc-train.sbatch configs/train-trainval.toml
 
 The job has 12 hours, set by `#SBATCH --time` in [`examples/carc-train.sbatch`](../examples/carc-train.sbatch). If the estimate is longer, the job stops at the limit and step 5 continues it. You can also submit with a longer `--time`, up to the limit of the partition.
 
-After each epoch, and once more at the end, the job uploads the run folder to [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead), as step 7 describes. A failed upload prints a warning, and the training goes on.
+After each epoch, and once more at the end, the job uploads the run folder to the model repository, as step 7 describes. A failed upload prints a warning, and the training goes on.
 
 ## 4. Watch the Job
 
@@ -124,7 +124,9 @@ best     epoch <n> of 8, dev loss <loss>: /scratch1/<user>/confhead-runs/run1/be
 
 ## 7. Upload the Run
 
-The job uploads the files of the run folder to the model repository [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead), in a folder named after the run folder, so each run and ablation has its own folder. Each upload also rewrites the model card from the `config.json` and `history.json` of every run in the repository, so the card lists the settings and losses of every run. When two jobs upload at once, the later commit is refused, reads the repository again, and retries, so neither run drops off the card.
+The job uploads the files of the run folder to a model repository, in a folder named after the run folder, so each run and ablation has its own folder. The repository is [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead) unless you pass `--repo` after the config. The ablation runs of [run-matrix.md](run-matrix.md) are in [`nathancbao/confhead`](https://huggingface.co/nathancbao/confhead), so pass `--repo nathancbao/confhead` for a new one, with a login that has write access to it. [`results/model_checkpoints.md`](../results/model_checkpoints.md) lists the runs of both repositories.
+
+Each upload also rewrites the model card from the `config.json` and `history.json` of every run in the repository, so the card lists the settings and losses of every run in that repository. When two jobs upload at once, the later commit is refused, reads the repository again, and retries, so neither run drops off the card.
 
 [`examples/upload_run.py`](../examples/upload_run.py) does the same upload by hand, for example when the job could not reach Hugging Face. The files are small, so it runs on the login node:
 
@@ -138,6 +140,7 @@ To download a head:
 
 ```sh
 uv run hf download nadayusc/confhead run1/best.pt --local-dir .
+uv run hf download nathancbao/confhead m1-no-temporal/best.pt --local-dir .
 ```
 
 ## Run an Ablation
