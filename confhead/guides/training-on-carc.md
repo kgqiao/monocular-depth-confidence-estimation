@@ -9,6 +9,7 @@ This guide trains the confidence head on the v1.0-trainval cache, as a batch job
 - The trainval cache, built with [cache-building-on-carc.md](cache-building-on-carc.md). The config expects it in `/scratch1/$USER/confhead-cache/nuscenes-trainval`.
 - The repository cloned on CARC, and uv, as in the cache guide.
 - `SBATCH_ACCOUNT` set to your CARC project account, as in step 1 of the cache guide.
+- A Hugging Face login with write access to [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead), as in step 2 of [cache-backup-on-huggingface.md](cache-backup-on-huggingface.md). The job uploads the run after each epoch.
 
 Run every command on a CARC login node, from the `confhead` folder:
 
@@ -71,6 +72,8 @@ sbatch examples/carc-train.sbatch configs/train-trainval.toml
 
 The job has 12 hours, set by `#SBATCH --time` in [`examples/carc-train.sbatch`](../examples/carc-train.sbatch). If the estimate is longer, the job stops at the limit and step 5 continues it. You can also submit with a longer `--time`, up to the limit of the partition.
 
+After each epoch, and once more at the end, the job uploads the run folder to [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead), as step 7 describes. A failed upload prints a warning, and the training goes on.
+
 ## 4. Watch the Job
 
 ```sh
@@ -78,11 +81,14 @@ squeue --me
 tail -f logs/confhead-train-<job>.out
 ```
 
-The log prints a line five times per epoch, with the loss, the speed, and the time left in the epoch. After each epoch it prints the train and dev loss:
+The log prints a line five times per epoch, with the loss, the speed, and the time left in the epoch. After each epoch it prints the train and dev loss, and the commit of the upload:
 
 ```
 epoch 1: train loss ..., dev loss ..., ... min, best so far
+uploaded epoch 1 of 8: https://huggingface.co/nadayusc/confhead/commit/...
 ```
+
+The model card of the repository shows the epochs each run has finished. On your own computer, [tracking-runs.md](tracking-runs.md) draws the loss curves of every run.
 
 To stop the job, use `scancel <job>`.
 
@@ -112,18 +118,21 @@ best     epoch <n> of 8, dev loss <loss>: /scratch1/<user>/confhead-runs/run1/be
 | `best.pt` | the head of the epoch with the lowest dev loss |
 | `last.pt` | the head of the last epoch, with the optimizer and the schedule, to continue the run |
 | `history.json` | the train and dev loss of each epoch |
+| `steps.json` | the mean train loss five times per epoch |
 
 [`notebooks/eval-template.ipynb`](../notebooks/eval-template.ipynb) loads `best.pt` with `load_head` and predicts `p_error` for val images.
 
 ## 7. Upload the Run
 
-[`examples/upload_run.py`](../examples/upload_run.py) sends the four files of a run folder to the model repository [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead) in one commit. They go into a folder named after the run folder, so each run and ablation has its own folder. The files are small, so the script runs on the login node. Log in first as in step 2 of [cache-backup-on-huggingface.md](cache-backup-on-huggingface.md), then:
+The job uploads the files of the run folder to the model repository [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead), in a folder named after the run folder, so each run and ablation has its own folder. Each upload also rewrites the model card from the `config.json` and `history.json` of every run in the repository, so the card lists the settings and losses of every run. When two jobs upload at once, the later commit is refused, reads the repository again, and retries, so neither run drops off the card.
+
+[`examples/upload_run.py`](../examples/upload_run.py) does the same upload by hand, for example when the job could not reach Hugging Face. The files are small, so it runs on the login node:
 
 ```sh
 uv run examples/upload_run.py /scratch1/$USER/confhead-runs/run1
 ```
 
-The script refuses a run that has not trained every epoch; pass `--partial` to upload it anyway. Uploading the same run again replaces its files. Every upload also rewrites the model card from the `config.json` and `history.json` of each run in the repository, so the card lists the settings and losses of every run. Run the script with no run folder to rewrite the card alone, or with `--print-card` to see it without uploading. `--repo` names another repository.
+The script refuses a run that has not trained every epoch; pass `--partial` to upload it anyway. Uploading the same run again replaces its files. Run the script with no run folder to rewrite the card alone, or with `--print-card` to see it without uploading. `--repo` names another repository.
 
 To download a head:
 
@@ -133,12 +142,14 @@ uv run hf download nadayusc/confhead run1/best.pt --local-dir .
 
 ## Run an Ablation
 
-Give each ablation its own `output.name`. Several jobs can run at once, each on its own GPU:
+Give each ablation its own `output.name`, and each family of ablations its own `output.group`, which groups its runs on the dashboard. Several jobs can run at once, each on its own GPU:
 
 ```sh
-sbatch examples/carc-train.sbatch configs/train-trainval.toml --set inputs.radar=false --set output.name=run1-no-radar
-sbatch examples/carc-train.sbatch configs/train-trainval.toml --set inputs.radar_cfg.align=lidar --set output.name=run1-radar-lidar-fit
+sbatch examples/carc-train.sbatch configs/train-trainval.toml --set inputs.radar=false --set output.name=run1-no-radar --set output.group=radar
+sbatch examples/carc-train.sbatch configs/train-trainval.toml --set inputs.radar_cfg.align=lidar --set output.name=run1-radar-lidar-fit --set output.group=radar
 ```
+
+Never reuse a run name for other settings: an upload under the same name replaces the files of the earlier run.
 
 These two runs are the radar ablation of action 3 in [`Docs/training-next-actions.md`](../../Docs/training-next-actions.md). The labels do not change with the inputs, so the eval team can compare the runs directly.
 
@@ -150,4 +161,5 @@ These two runs are the radar ablation of action 3 in [`Docs/training-next-action
 | `... is a run with other settings: ...` | Undo the change that the message names, or set another `output.name`. |
 | `unknown setting ...` | The setting is spelled wrong. The message lists the settings of that section. |
 | `torch ... has no kernels for <GPU>` | The installed torch does not support this GPU. Run `git pull` and `uv sync` on the login node, then submit again. |
+| `upload of ... failed: ...` | The job could not reach Hugging Face, or the login has no write access. The training goes on. Upload the run by hand from the login node, as in step 7. |
 | `... the class weight needs both classes` | The sample of train images holds no label above `tau`, or none below it. Check `inputs.labels.tau`. |

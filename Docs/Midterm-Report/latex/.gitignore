@@ -1,0 +1,12 @@
+# LaTeX build outputs. Build locally as you like; none of this is committed.
+# The PDF for reading is ../midterm-report.pdf, refreshed on the midterm-report branch.
+main.pdf
+main.bbl
+*.aux
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
