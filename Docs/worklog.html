@@ -170,6 +170,10 @@
 <td>Cache backup on Hugging Face</td>
 <td>Upload job running</td>
 </tr>
+<tr>
+<td>Confidence head training, Run 1 (trainval)</td>
+<td>Training job running</td>
+</tr>
 </tbody>
 </table>
 <p>Data locations on CARC:</p>
@@ -226,12 +230,106 @@
 <li>Set up synthetic tests for metrics, starting with sparsification curves</li>
 <li>To Do: Finish functions, start data loading logic, bootstrapping, connection to access cache data</li>
 </ul>
+<h2 id="2026-10-28">2026-10-28</h2>
+<h3 id="estimated-the-cost-of-training-on-trainval">Estimated the cost of training on trainval</h3>
+<ul>
+<li>
+<p>Ran the estimate as job 13527183 (log <code>confhead/logs/confhead-train-13527183.out</code>):</p>
+<pre><code>sbatch --time=01:00:00 examples/carc-train.sbatch configs/train-trainval.toml --estimate
+</code></pre>
+</li>
+<li>
+<p>Data: 631 train scenes (110,929 images, all used) and 69 dev scenes (3,000 of 12,150 images used). The train split has 76 night and 125 rain scenes.</p>
+</li>
+<li>
+<p>Labels: 25.1% of cells carry a lidar label. Of those, 37.6% have an AbsRel above <code>tau</code> = 0.10, which is inside the 5% to 70% gate. The class weight is 1.658.</p>
+</li>
+<li>
+<p>Speed: the cache loads 28 images/s and a training step takes 1,007 images/s, so loading sets the pace. One epoch takes about 66 minutes, and 8 epochs about 8.8 hours. That fits in the 12-hour limit of <code>carc-train.sbatch</code>.</p>
+</li>
+</ul>
+<h3 id="started-the-first-training-job">Started the first training job</h3>
+<ul>
+<li>
+<p>Started Run 1 on the full trainval cache, writing to <code>/scratch1/naday/confhead-runs/run1</code>:</p>
+<pre><code>sbatch examples/carc-train.sbatch configs/train-trainval.toml
+</code></pre>
+</li>
+<li>
+<p>To do: when the job ends, check the dev loss of each epoch and that the run folder holds the trained head.</p>
+</li>
+</ul>
 <h2 id="2026-11-14">2026-11-14</h2>
+<h3 id="revised-and-fixed-various-small-on-evals-testing">Revised and fixed various small on evals, testing</h3>
 <ul>
 <li>Move evals/ to confhead/src/evals/. <code>uv run</code> puts confhead/src on the import path, so <code>from evals.metrics import ...</code> now resolves, and tests/test_metrics.py no longer stops pytest at collection.</li>
 <li><a href="http://metrics.py">metrics.py</a>: np.trapz -&gt; np.trapezoid (np.trapz is gone in the project's NumPy 2.5.4)</li>
 <li>run_evals.py: remove a stray line continuation that was a SyntaxError</li>
 <li>Checked with <code>uv run pytest -q</code>: no collection error; 66 passed, 5 skipped. The 4 failures are in test_backup.py and happen on Windows only.</li>
+</ul>
+<h3 id="finished-the-sparsification-curves-and-their-tests">Finished the sparsification curves and their tests</h3>
+<ul>
+<li><code>compute_sparsification_curves</code> now returns four values: fractions, method curve, oracle curve, and the random curve (the mean error at every fraction), which <code>calculate_ause_and_aurg</code> needs.</li>
+<li><code>tests/test_metrics.py</code>: a perfect score gives AUSE 0, a random score gives AURG near 0, a reversed score gives a negative AURG, and a constant error gives flat curves. 4 passed.</li>
+</ul>
+<h3 id="started-the-rejection-auroc-and-ece-fixes">Started the rejection AUROC and ECE fixes</h3>
+<ul>
+<li>Added scikit-learn (1.9.1) with <code>uv add scikit-learn</code>; <code>calculate_rejection_auc</code> imports it as <code>sklearn</code>.</li>
+<li>To do: return NaN from <code>calculate_rejection_auc</code> when every pixel is correct or every pixel is wrong (<code>roc_auc_score</code> raises then, and per-image scoring will hit such images); count a confidence of exactly 1.0 in the last ECE bin; tests in <code>tests/test_calibration.py</code>.</li>
+</ul>
+<h3 id="evals-team-set-future-checklist-items">Evals team set future checklist items</h3>
+<p>Varad:</p>
+<ul>
+<li>Download all three trained models as of today from Nathan A and Nathan B</li>
+<li>Setup BEVCar's lists of which test scenes are day, rain, or night into file for scoring script</li>
+<li>Build flip comparison py file, start on CARC (mirror image, run depth model, flip result, use where two depths diagree as a no-training confidence score)</li>
+</ul>
+<p>Katherine:</p>
+<ul>
+<li>Finish the AUROC, ECE tests</li>
+<li>Write scoring code to load trained model #1 to run on test images, score each image with metrics, save results</li>
+<li>Run scoring script on all test images on CARC, after 50 image test run succeeds</li>
+</ul>
+<p>DUE BY TUE 17th</p>
+<p>--- Finish training all models</p>
+<p>Nathan A/B:</p>
+<ul>
+<li>Have all models trained finished by Sat Nov 21st</li>
+</ul>
+<p>----- Run scoring on all models + condition splits, write analyses</p>
+<p>Katherine:</p>
+<ul>
+<li>Run scoring script on all test images for all 3 trained models downloaded (and any new models)</li>
+<li>Add all results to run_matrix.md</li>
+<li>Write analysis and make charts based on three models' scores (sparsification curves, comparing models with oracle and random)</li>
+</ul>
+<p>Varad:</p>
+<ul>
+<li>Count how many pixels with a LIDAR answer each of day/rain/night has, utilizes scene list, goes into table</li>
+<li>Build day/rain/night results table from scores from all models, scene lists, flip scores. Show which differences are real</li>
+</ul>
+<p>Katherine:</p>
+<ul>
+<li>Create frame selector to rank whole images by confidence. Check whether dropping the whole images lowers the error of the rest.</li>
+</ul>
+<p>Varad:</p>
+<ul>
+<li>Show use of confidence (i.e. weigh depth by it) with one number that improves (maybe team decides which taht is?)</li>
+</ul>
+<p>Due by 24th</p>
+<p>---- Writing final report</p>
+<p>Katherine:</p>
+<ul>
+<li>Add to final report: charts, main results table of every model</li>
+</ul>
+<p>Varad:</p>
+<ul>
+<li>Add to final report: day/rain/night results, comparisons with simple scores, lidar data counts, limits\</li>
+</ul>
+<p>Alejandro/everyone:</p>
+<ul>
+<li>Finalize and wrap up report</li>
+<li>Prepare for project clinic on Nov 30</li>
 </ul>
 
             
