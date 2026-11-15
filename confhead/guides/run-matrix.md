@@ -18,9 +18,8 @@ States: `done`, `running`, `submitted` (job sent, result not read yet), `todo`, 
 
 | Stage | Run | Question | Flags added to the default config | State | Best dev loss | AUSE | AURG |
 |---|---|---|---|---|---|---|---|
-| 0 | `run1` | all inputs | none | done | 0.5562 | | |
 | 0 | `run-v0-no-radar` | no radar | `--set inputs.radar=false` | done | 0.5562 | | |
-| 0 | `run-v1-radar` | repeat of `run1` | none | done | 0.5566 | | |
+| 0 | `run-v1-radar` | all inputs (the baseline) | none | done | 0.5566 | | |
 | 0b | radar coverage | how much of each image does radar cover? | no training: `examples/radar_coverage.py` | done | | | |
 | 1 | `m1-no-temporal` | what does the temporal spread add? | `--set inputs.temporal=false` | done | 0.5629 | | |
 | 1 | `m1-no-depth` | what does the depth channel add? | `--set inputs.depth=false` | done | 0.5574 | | |
@@ -45,7 +44,7 @@ States: `done`, `running`, `submitted` (job sent, result not read yet), `todo`, 
 
 Radar coverage (0b), all 149,410 cache entries, training settings (`radius` 1, every sweep): the radar validity channel marks 3.4% of the grid cells (6.2% at radius 2, 1.7% with the keyframe sweep only). Only 4.8% of the lidar-labeled cells have a valid radar cell on them. The radar fit fails on 17.0% of images (32% on the two back-side cameras), and those images get an all-zero radar residual and mask. So the dev loss, which is computed on labeled cells, can barely move with radar. Stage 2 is still worth a few runs: start with `m2-radar-lidar-fit`, which removes the fit failures, then `m2-radius2`. Compare the loss on the labeled cells that have radar, not the mean dev loss.
 
-Stage 1: all seven runs trained 8 of 8 epochs. This is dev loss only; Eval's scores decide. Every difference below is against `run-v1-radar` (0.5566, all inputs). The repeat noise is known from one pair only: `run1` against `run-v1-radar` differ by 0.0004. In every run the best epoch is the last, so the loss was still falling.
+Stage 1: all seven runs trained 8 of 8 epochs. This is dev loss only; Eval's scores decide. Every difference below is against `run-v1-radar` (0.5566, all inputs). The repeat noise is known from one pair only: the same settings trained twice (`run1` in `nadayusc/confhead`, and `run-v1-radar`) differ by 0.0004. In every run the best epoch is the last, so the loss was still falling.
 
 - The decoder features carry most of the signal. Without them the loss is 0.6167 (+0.0601). The features alone (0.5646, with radar off too) are 0.0080 worse than all inputs.
 - The temporal spread helps a little: removing it costs +0.0063.
