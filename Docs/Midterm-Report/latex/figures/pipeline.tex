@@ -1,0 +1,76 @@
+% Pipeline of the confidence head, condensed from Docs/Wiki/Models/run1/run1.canvas.
+% Needs tikz with the libraries positioning and arrows.meta (loaded in main.tex).
+\begin{tikzpicture}[
+    font=\scriptsize,
+    box/.style={draw=black!45, rounded corners=1.5pt, align=center, text width=2.55cm,
+                minimum height=0.82cm, inner sep=2pt},
+    raw/.style={box, fill=orange!18},
+    calc/.style={box, fill=violet!12},
+    cache/.style={box, fill=cyan!15},
+    chan/.style={box, fill=green!18},
+    lab/.style={box, fill=yellow!30},
+    head/.style={box, fill=black!6},
+    arr/.style={-{Stealth[length=1.6mm]}, draw=black!60, line width=0.4pt},
+    colhead/.style={font=\scriptsize\bfseries, align=center, text width=2.9cm},
+  ]
+  % Columns: x = 0, 3.25, 6.5, 9.75, 13. Rows: y = 0, -1.05, -2.1, -3.15, -4.45.
+  \node[colhead] at (0, 0.85)     {nuScenes data};
+  \node[colhead] at (3.25, 0.85)  {Cache build\\(once per image)};
+  \node[colhead] at (6.5, 0.85)   {Cache entry};
+  \node[colhead] at (9.75, 0.85)  {Head input\\(set per run)};
+  \node[colhead] at (13, 0.85)    {Trained};
+
+  % Raw data
+  \node[raw] (rimg) at (0, -0.525) {Camera keyframe\\$900 \times 1600$, 6 cameras};
+  \node[raw] (rnbr) at (0, -2.1)   {Neighbor frames\\$\pm 1, \pm 2$ at 12\,Hz};
+  \node[raw] (rrad) at (0, -3.15)  {Radar points\\5 sweeps, no elevation};
+  \node[raw] (rlid) at (0, -4.45)  {Lidar points\\never an input};
+
+  % Cache build
+  \node[calc, minimum height=1.87cm] (da2) at (3.25, -0.525) {Frozen Depth\\Anything V2 ViT-B\\at $924 \times 518$};
+  \node[calc] (btmp) at (3.25, -2.1)  {4 extra passes; follow each cell's 3D point};
+  \node[calc] (brad) at (3.25, -3.15) {Project to camera;\\radar fit};
+  \node[calc] (blid) at (3.25, -4.45) {Project to camera;\\lidar fit};
+
+  % Cache entry
+  \node[cache] (cfeat) at (6.5, 0)     {Decoder features\\\texttt{output\_conv1}, fp16};
+  \node[cache] (cdisp) at (6.5, -1.05) {Disparity grid};
+  \node[cache] (ctmp)  at (6.5, -2.1)  {Temporal spread};
+  \node[cache] (crad)  at (6.5, -3.15) {Radar points, fit\\(scale, shift)};
+  \node[cache] (clid)  at (6.5, -4.45) {Lidar points, fit\\(scale, shift)};
+
+  % Head input and labels
+  \node[chan] (ifeat) at (9.75, 0)     {Features (64)};
+  \node[chan] (idep)  at (9.75, -1.05) {Depth (1)\\disparity / image mean};
+  \node[chan] (itmp)  at (9.75, -2.1)  {Temporal spread (1)};
+  \node[chan] (irad)  at (9.75, -3.15) {Radar residual and validity (2)};
+  \node[lab]  (ilab)  at (9.75, -4.45) {Target $\mathbf{1}[\mathrm{AbsRel} > \tau]$ and label mask};
+
+  % Head and loss
+  \node[head, minimum height=3.97cm] (head) at (13, -1.575)
+    {\textbf{Confidence head}\\[2pt]standardize channels\\$3 \times 3$ conv, 64\\$3 \times 3$ conv, 64\\$3 \times 3$ conv, 32\\$1 \times 1$ conv\\[2pt]$p_\mathrm{error}$ per grid cell};
+  \node[lab] (loss) at (13, -4.45) {Masked BCE on labeled cells};
+
+  % Edges
+  \draw[arr] (rimg) -- (da2);
+  \draw[arr] (da2.east |- cfeat) -- (cfeat);
+  \draw[arr] (da2.east |- cdisp) -- (cdisp);
+  \draw[arr] (rnbr) -- (btmp);
+  \draw[arr] (rrad) -- (brad);
+  \draw[arr] (rlid) -- (blid);
+  \draw[arr] (btmp) -- (ctmp);
+  \draw[arr] (brad) -- (crad);
+  \draw[arr] (blid) -- (clid);
+  \draw[arr, dashed] (blid.west) -- ++(-0.22, 0) |- (btmp.west);
+  \draw[arr] (cfeat) -- (ifeat);
+  \draw[arr] (cdisp) -- (idep);
+  \draw[arr] (ctmp) -- (itmp);
+  \draw[arr] (crad) -- (irad);
+  \draw[arr] (clid) -- (ilab);
+  \draw[arr] (ifeat) -- (ifeat -| head.west);
+  \draw[arr] (idep) -- (idep -| head.west);
+  \draw[arr] (itmp) -- (itmp -| head.west);
+  \draw[arr] (irad) -- (irad -| head.west);
+  \draw[arr] (ilab) -- (loss);
+  \draw[arr] (head) -- node[right, font=\tiny] {logits} (loss);
+\end{tikzpicture}
