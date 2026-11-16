@@ -82,10 +82,14 @@ def test_a_run_writes_its_checkpoints(tmp_path):
     cache = make_cache(tmp_path / "cache")
     training = Training(small_config(cache, tmp_path / "runs"))
     assert [s["scenes"] for s in training.splits()] == [4, 2]
-    history = training.fit()
+    seen = []
+    history = training.fit(on_epoch=lambda h: seen.append([e["epoch"] for e in h]))
     run = tmp_path / "runs/test"
     assert [h["epoch"] for h in history] == [1, 2]
-    assert {p.name for p in run.iterdir()} == {"config.json", "history.json", "best.pt", "last.pt"}
+    assert seen == [[1], [1, 2]]
+    assert {p.name for p in run.iterdir()} == {"config.json", "history.json", "steps.json", "best.pt", "last.pt"}
+    steps = json.loads((run / "steps.json").read_text())
+    assert [(s["step"], s["epoch"]) for s in steps] == [(i, 1 + (i > 4)) for i in range(1, 9)]  # 4 steps per epoch
     config = json.loads((run / "config.json").read_text())
     assert config["dev_scenes"] == training.dev_scenes and config["settings"]["train"]["epochs"] == 2
 
@@ -129,6 +133,9 @@ def test_a_stopped_run_continues_as_if_it_never_stopped(tmp_path, monkeypatch):
     monkeypatch.undo()
     continued = Training(small_config(cache, tmp_path / "runs", epochs=3)).fit()
     assert losses(continued) == pytest.approx(losses(expected))
+    read = lambda name: json.loads((tmp_path / "runs" / name / "steps.json").read_text())
+    assert [s["step"] for s in read("test")] == [s["step"] for s in read("whole")]
+    assert [s["train_loss"] for s in read("test")] == pytest.approx([s["train_loss"] for s in read("whole")])
 
     with pytest.raises(ValueError, match="train.lr 0.001 -> 0.01"):
         Training(small_config(cache, tmp_path / "runs", epochs=3, lr=0.01)).fit()

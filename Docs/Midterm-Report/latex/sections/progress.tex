@@ -1,0 +1,77 @@
+% !TEX root = ../main.tex
+% ============================================================================
+% Owner: Aday and Bao (method, data, infrastructure). Arteaga: deviations table.
+% Drafted from Docs/worklog.md, Docs/Wiki/*.md, Docs/proposal-vs-pipeline.md.
+% ============================================================================
+\section{Progress So Far}
+\label{sec:progress}
+
+\subsection{Method as implemented}
+
+\paragraph{Backbone.} The stock relative Depth Anything V2 ViT-B checkpoint \citep{yang2024depthanythingv2}, frozen, run once per image at $924 \times 518$. Its output is disparity with unknown scale and shift, so each cached entry carries two per-image least-squares fits of disparity to inverse depth: one against the keyframe lidar, used for the labels and the temporal channel, and one against the radar points, used for the radar residual.
+
+\paragraph{Inputs.} Everything lives on a $264 \times 148$ grid, the ViT patch grid times four, where one cell covers about $6 \times 6$ pixels. The head input has 68 channels (Table~\ref{tab:inputs}), each standardized by its training-set mean and standard deviation. Channel groups can be switched off at load time for ablations.
+
+\begin{table}[t]
+  \centering
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}l l p{3.2cm}@{}}
+    \toprule
+    \textbf{Ch.} & \textbf{Input} & \textbf{How it is made} \\
+    \midrule
+    0--63 & Decoder features & \texttt{output\_conv1} tap, 64 channels, area-averaged to the grid \\
+    64 & Depth & Disparity divided by its image mean; no fit \\
+    65 & Temporal spread & Std over mean of inverse depth across frames at $\pm1, \pm2$ (12\,Hz), ego-motion compensated \\
+    66 & Radar residual & $|\hat d - z| / z$ under the radar fit, 5 sweeps, radius 1 cell \\
+    67 & Radar validity & 1 where the residual holds a measurement \\
+    \bottomrule
+  \end{tabular}
+  \caption{The 68 input channels of the confidence head.}
+  \label{tab:inputs}
+\end{table}
+
+\paragraph{Labels.} For each lidar return within 1--80\,m, the absolute relative error (AbsRel) of the fitted prediction at that pixel is placed in its grid cell; the nearest point wins a cell. The target is $\mathbb{1}[\mathrm{AbsRel} > \tau]$ with $\tau = 0.10$, and a mask marks the labeled cells. About 9\% of cells on the $264 \times 148$ grid carry a label, about 3,600 per image, which corresponds to 0.25\% of pixels, in line with the proposal's ``under one percent''.
+
+\paragraph{Head and loss.} Three $3 \times 3$ convolutions with ReLU and widths 64, 64, 32, then a $1 \times 1$ convolution to one logit per cell. The loss is binary cross-entropy over labeled cells only, with positives weighted by the negative-to-positive ratio.
+
+\paragraph{Training.} AdamW, learning rate $10^{-3}$, weight decay $10^{-4}$, cosine schedule, batch size 8, 8 epochs. The dev split is 10\% of the training scenes, capped at 3,000 images. The checkpoint kept is the one with the lowest dev loss (deviation D14).
+
+\subsection{Data and infrastructure}
+
+Full nuScenes v1.0 (trainval and test, over 800\,GB) was downloaded to the USC CARC cluster on 2026-10-19 with a resumable, MD5-checked script adapted from an open-source downloader. The cache of head inputs for all 204,894 trainval camera images was built as a 16-shard GPU job array and verified twice. Each entry is one \texttt{.npz} plus one \texttt{.json}: the fp16 feature map, the disparity grid, the temporal spread and its frame count, the lidar and radar points with the model disparity at each, and the two fits. Labels and radar channels are computed when an entry loads, so $\tau$, the radar radius, and the choice of fit are settings rather than rebuilds. A fingerprint of the content settings lets a stopped build resume. A backup copy is on Hugging Face (\texttt{nadayusc/confhead-cache}). \todo{confirm the upload completed and a download restores the cache.}
+
+Training runs as a single-GPU (A100 or A40) batch job with a 12-hour limit and resumes from the last checkpoint. The evaluation code holds a first version of sparsification curves, AUSE, AURG, rejection AUC, and ECE, with synthetic tests for the curves; data loading from the cache and bootstrap confidence intervals are still to be written. Three notebooks document the cache, training, and evaluation workflows.
+
+\subsection{Deviations from the proposal}
+
+Table~\ref{tab:deviations} lists where the implementation departs from the pre-proposal and the internal Run~1 plan. Three items from the proposal are not built yet and each has a planned action (Section~\ref{sec:plan}): the flip-augmentation baseline, the BEVCar weather split, and the frame selector. Three others are accepted as deviations with a reason. MC dropout is dropped because every dropout rate in the Depth Anything V2 encoder is zero and the decoder has none, so repeated passes are identical; flip disagreement covers its role. Predictions are on the $264 \times 148$ grid rather than at image resolution; every method is scored on the same labeled cells, so the grid costs each one equally. The label share is about 9\% of cells rather than ``under 1\% of pixels''; both are true, since nearly every lidar point gets its own cell.
+
+\begin{table*}[t]
+  \centering
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+  \begin{tabular}{@{}l P{2.2cm} P{5.1cm} P{5.1cm} P{1.9cm}@{}}
+    \toprule
+    \textbf{ID} & \textbf{Subject} & \textbf{Proposal / Run 1 plan} & \textbf{Implemented} & \textbf{Status} \\
+    \midrule
+    D1 & Depth model & Metric checkpoint (vkitti), in meters, no fit & Relative ViT-B with per-image lidar and radar fits & Decided; lidar leakage noted \\
+    D2 & Feature storage & Run the model inside the training loop (no store) & Features cached on a coarser grid, 5.4\,MB/image & Follows pre-proposal \\
+    D3 & Feature map & \texttt{path\_1}, 128 ch.\ at $296 \times 528$ & \texttt{output\_conv1}, 64 ch.\ at $264 \times 148$ & Within Form B \\
+    D4 & Temporal channel & Deferred to Run 2 & Built: relative std of inverse depth, 4 extra passes & Follows Form B \\
+    D5 & Depth channel & $D/80$ in meters & Disparity over its image mean & Follows from D1 \\
+    D6 & Radar residual & Clipped to $[0,1]$, radius 2, keyframe sweep & Unclipped, radius 1, 5 sweeps, radar fit; empty when the fit fails (13.5\% of mini) & Ablation planned \\
+    D7 & Label placement & Bilinear sample at each lidar pixel & Nearest point wins a grid cell & Decided \\
+    D8 & CAM\_BACK ego body & Drop lidar hidden by the trunk (3.2\% of CAM\_BACK) & Not masked & Open \\
+    D9 & Occlusion bleed-through & Not covered & Not removed (0.35\% of lidar pixels) & Open \\
+    D10 & Data & Full nuScenes with train/dev/report splits & Done: trainval cache built on CARC & Resolved \\
+    D11 & Weather tag & Decide how to count ``night, after rain'' & Substring rule: such a scene is night and rain & Open; BEVCar split planned \\
+    D12 & Label gate & Positive rate within 5--70\% on train & 37.6\% positive on trainval & Inside gate \\
+    D13 & Images with no fit & Not covered & 4 night images have no lidar fit, so no labels & Open \\
+    D14 & Checkpoint choice & Lowest dev AUSE & Lowest dev loss; AUSE computed afterwards & Decided \\
+    \bottomrule
+  \end{tabular}
+  \caption{Deviations between the plans and the implementation. ``Open'' items are listed with their resolution in Section~\ref{sec:plan}.}
+  \label{tab:deviations}
+\end{table*}

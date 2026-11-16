@@ -11,7 +11,8 @@ A running record of what the training team has done. Add new entries at the bott
 | Cache tutorial notebook | In progress: not yet run on CARC |
 | Project wiki in `Docs/Wiki` | Done |
 | Cache backup on Hugging Face | Upload job running |
-| Confidence head training, Run 1 (trainval) | Training job running |
+| Confidence head training, Run 1 (trainval) | Done, on Hugging Face |
+| Run tracking (model card, Trackio) | Done locally; upload from a CARC job not yet tested |
 
 Data locations on CARC:
 
@@ -91,6 +92,21 @@ The dataset is more than 800 GB, so it cannot go into the PI's project folder. `
 
 - To do: when the job ends, check the dev loss of each epoch and that the run folder holds the trained head.
 
+## 2026-11-06
+
+### Finished Run 1
+
+- Run 1 trained all 8 epochs in 3.5 hours, against the estimate of 8.8 hours. The dev loss fell in every epoch, so the best head is epoch 8, with a dev loss of 0.5562.
+- Uploaded the run folder to the model repository [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead), under `run1/`.
+
+### Tied the upload and the run tracking into the training job
+
+- `carc-train.sbatch` now passes `--upload`: the job uploads the run folder after each epoch and once more at the end. The model card of the repository is built from the `config.json` and `history.json` of every run there, so the same runs always give the same card.
+- Each run folder also holds `steps.json`, the mean train loss five times per epoch. A new setting, `output.group`, names the family of a run, such as `baseline` or `radar`.
+- `examples/sync_trackio.py` rebuilds a local Trackio project from the repository. Guide: `confhead/guides/tracking-runs.md`.
+- To do: test the upload from a CARC job by submitting Run 1 again. The job finds 8 of 8 epochs, trains nothing, and uploads.
+- To do: decide how the team shares the dashboard: each person runs the sync, or a hosted Trackio Space.
+
 ## 2026-11-14
 
 ### Revised and fixed various small on evals, testing
@@ -110,12 +126,17 @@ The dataset is more than 800 GB, so it cannot go into the PI's project folder. `
 - Added scikit-learn (1.9.1) with `uv add scikit-learn`; `calculate_rejection_auc` imports it as `sklearn`.
 - To do: return NaN from `calculate_rejection_auc` when every pixel is correct or every pixel is wrong (`roc_auc_score` raises then, and per-image scoring will hit such images); count a confidence of exactly 1.0 in the last ECE bin; tests in `tests/test_calibration.py`.
 
+### Bev 
+- Bevcar work today - Checked with `uv run pytest -q`: no collection error; 66 passed, 5 skipped. The 4 failures are in test_backup.py and happen on Windows only.
+- Created confhead/src/evals/bevcar_splits.py — new file with the three scene name lists (DAY_SCENES, RAIN_SCENES, NIGHT_SCENES) and the BEVCAR_CONDITION lookup dict
+- Modified confhead/src/evals/run_evals.py — added defaultdict accumulator, wired in BEVCAR_CONDITION.get(scene_name) inside the data loop, and added the per-condition metrics loop after it
+- Created confhead/examples/compare_condition_tags.py — audit script to compare cache keyword tags vs BEVCar lists on CARC
+- Created confhead/examples/label_count_table.py — script to count scenes, keyframes, labeled cells, and AbsRel > tau per BEVCar group
 
 ### Evals team set future checklist items
 
 Varad:
 - Download all three trained models as of today from Nathan A and Nathan B
-- Setup BEVCar's lists of which test scenes are day, rain, or night into file for scoring script
 - Build flip comparison py file, start on CARC (mirror image, run depth model, flip result, use where two depths diagree as a no-training confidence score)
 
 Katherine:
@@ -180,3 +201,4 @@ Alejandro/everyone:
 - Prepare for project clinic on Nov 30
 
 --- Final Report due Dec 7
+

@@ -1,0 +1,7 @@
+% !TEX root = ../main.tex
+% ============================================================================
+% Owner: all. Rewrite once the Run 1 numbers are in.
+% ============================================================================
+\begin{abstract}
+Monocular depth models such as Depth Anything V2 return a depth value for every pixel and no indication of which values to trust. We are training a small convolutional head that reads the frozen depth model's decoder features, its predicted depth, a temporal-consistency signal, and two radar channels, and outputs per cell the probability that the depth error exceeds a fixed threshold. Labels come from lidar projected into the camera image, so no hand annotation is needed. At the midpoint of the project the full nuScenes dataset is on the USC CARC cluster, a cache of head inputs covers all 204,894 trainval camera images, the head, loss, and training loop are implemented, and the first full training run is in progress. This report reviews the literature the design draws on, describes what is built and where it departs from the proposal, reports the statistics of the cached data and the first training estimate, and sets out the plan for the remaining weeks. \todo{add the Run 1 headline number once evaluated}
+\end{abstract}
