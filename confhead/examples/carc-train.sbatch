@@ -18,7 +18,10 @@
 
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR}"
+export UV_PROJECT_ENVIRONMENT="${TMPDIR:-/tmp}/confhead-venv-${SLURM_JOB_ID}"
+export UV_LINK_MODE=copy
+trap 'rm -rf "${UV_PROJECT_ENVIRONMENT}"' EXIT
 CONFIG="${1:?usage: sbatch examples/carc-train.sbatch <config> [train_head.py arguments]}"
 shift
 
-uv run examples/train_head.py --config "${CONFIG}" --upload "$@"
+uv run --locked examples/train_head.py --config "${CONFIG}" --upload "$@"

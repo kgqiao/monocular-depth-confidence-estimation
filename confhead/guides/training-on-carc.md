@@ -20,6 +20,8 @@ uv sync
 mkdir -p logs
 ```
 
+Each job builds its own Python environment in the node's `$TMPDIR` (or `/tmp`) from the uv cache that `uv sync` fills, and deletes it when it ends. Jobs never use the shared `.venv`, so you can start several at once, and a `uv sync` on the login node does not change a running job. The note in step 5 of [cache-building-on-carc.md](cache-building-on-carc.md) says why.
+
 ## 1. Look at the Config
 
 [`configs/train-trainval.toml`](../configs/train-trainval.toml) holds every setting of the run. These are the settings you are most likely to change:
@@ -164,5 +166,6 @@ These two runs are the radar ablation of action 3 in [`Docs/training-next-action
 | `... is a run with other settings: ...` | Undo the change that the message names, or set another `output.name`. |
 | `unknown setting ...` | The setting is spelled wrong. The message lists the settings of that section. |
 | `torch ... has no kernels for <GPU>` | The installed torch does not support this GPU. Run `git pull` and `uv sync` on the login node, then submit again. |
+| `No module named 'torch._...'` or `libcufile.so.0: cannot open shared object file` | The job loaded torch from a `.venv` that another job was rebuilding. The sbatch files build an environment for each job since 2026-11-16, so run `git pull` and submit again. |
 | `upload of ... failed: ...` | The job could not reach Hugging Face, or the login has no write access. The training goes on. Upload the run by hand from the login node, as in step 7. |
 | `... the class weight needs both classes` | The sample of train images holds no label above `tau`, or none below it. Check `inputs.labels.tau`. |

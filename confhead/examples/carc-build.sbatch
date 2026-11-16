@@ -16,8 +16,11 @@
 
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR}"
+export UV_PROJECT_ENVIRONMENT="${TMPDIR:-/tmp}/confhead-venv-${SLURM_JOB_ID}"
+export UV_LINK_MODE=copy
+trap 'rm -rf "${UV_PROJECT_ENVIRONMENT}"' EXIT
 CONFIG="${1:?usage: sbatch examples/carc-build.sbatch <config> [build_cache.py arguments]}"
 shift
 
-uv run examples/build_cache.py --config "${CONFIG}" \
+uv run --locked examples/build_cache.py --config "${CONFIG}" \
     --shard "${SLURM_ARRAY_TASK_ID:-0}/${SLURM_ARRAY_TASK_COUNT:-1}" "$@"

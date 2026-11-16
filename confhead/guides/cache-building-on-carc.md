@@ -69,12 +69,13 @@ The plan reads the dataset and tells you what the build will do. It does not use
 
 ```sh
 uv sync
-srun --account=$SBATCH_ACCOUNT --cpus-per-task=2 --mem=32G --time=00:30:00 \
-  uv run examples/build_cache.py --config configs/nuscenes-trainval.toml --plan
+UV_PROJECT_ENVIRONMENT=/tmp/confhead-venv-$USER UV_LINK_MODE=copy \
+  srun --account=$SBATCH_ACCOUNT --cpus-per-task=2 --mem=32G --time=00:30:00 \
+  uv run --locked examples/build_cache.py --config configs/nuscenes-trainval.toml --plan
 ```
 
 > [!NOTE]
-> `srun` does not read `SBATCH_ACCOUNT`, so the command sets the account with `--account`.
+> `srun` does not read `SBATCH_ACCOUNT`, so the command sets the account with `--account`. `UV_PROJECT_ENVIRONMENT` makes `uv run` build its environment in the node's `/tmp` instead of the shared `.venv`, as the batch jobs do (see the note in step 5).
 
 The job can wait in the queue before it starts. Then the plan takes a few minutes, and it prints a line after each step:
 
@@ -111,6 +112,9 @@ sbatch --time=00:30:00 examples/carc-build.sbatch configs/nuscenes-trainval.toml
 ```sh
 cat logs/confhead-build-<job>_*.out
 ```
+
+> [!NOTE]
+> Each job builds its own Python environment in the node's `$TMPDIR` (or `/tmp`) and deletes it when it ends, so the log starts with uv's `Creating virtual environment` and `Installed ... packages` lines. The jobs do not use the shared `.venv`: CARC nodes have different patch versions of `/usr/bin/python3.12`, and uv deletes and rebuilds a venv that was made with another version, which breaks every other job that is loading from it. `uv sync` on the login node fills the uv cache that the jobs install from.
 
 The log must end with `problems     none`. The log also shows a rough speed, on the line that starts with `50/50 items`:
 
@@ -176,6 +180,8 @@ Each task skips the entries that are already built and continues with the rest.
 | `... holds a cache built with other settings` | You changed a setting that changes the content of an entry. Set a new `output.root`, or add `--overwrite` to build every entry again. |
 | `... holds no cache yet; build it first` | The check job ran before any build task wrote an entry. Read the build logs for the error. |
 | `torch ... has no kernels for <GPU>` | The installed torch does not support this GPU. Run `git pull` and `uv sync` on the login node, then submit again. |
+| `No module named 'torch._...'` or `libcufile.so.0: cannot open shared object file` | The job loaded torch from a `.venv` that another job was rebuilding. The sbatch files build an environment for each job since 2026-11-16, so run `git pull` and submit again. |
+| `The lockfile at uv.lock needs to be updated` | `pyproject.toml` changed without `uv.lock`. Run `git pull`; if it persists, run `uv lock` and commit the lockfile. |
 | A build log ends with `failed: <entry>: ...` | The log names each entry that failed and the cause. Fix the cause, then submit again. |
 
 ## Build the test split
