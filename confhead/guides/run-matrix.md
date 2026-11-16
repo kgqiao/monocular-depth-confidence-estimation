@@ -55,7 +55,7 @@ Stage 1: all seven runs trained 8 of 8 epochs. This is dev loss only; Eval's sco
 - One channel alone (0.6394 depth, 0.6778 temporal) is far worse than any run with the features.
 - `m1-seed1` (0.5885) is not comparable on dev loss, because the seed also picks other dev scenes. Its use is Eval's score on val.
 
-The runs and their files are in [`csci566-depthconf/confhead`](https://huggingface.co/csci566-depthconf/confhead) on Hugging Face (public). Its `EVAL_GUIDE.md` tells the Eval team which run is which and what to score first.
+The runs and their files are in [`csci566-depthconf/confhead`](https://huggingface.co/csci566-depthconf/confhead) on Hugging Face. The repository is gated: log in, and ask for access (or be added by an admin) before a download works. Its `EVAL_GUIDE.md` tells the Eval team which run is which and what to score first.
 
 Stages 2 and 3 (all six runs trained 8 of 8 epochs; dev loss only, Eval's scores decide): `m2-radar-lidar-fit` (0.5507) is 0.0059 under `run-v1-radar` (0.5566), the largest gap of any run against the baseline, and `m2-radius0`, `m2-radius2` and `m2-sweeps1` are within 0.0018 of it (0.5554, 0.5548, 0.5549). The two `tau` runs use other labels, so their dev loss (0.4261 at 0.05, 0.6444 at 0.2) cannot be compared with the others. Stage 6: `m6-quarter-data` (27,700 images per epoch) reaches 0.5651, 0.0085 above the baseline. `m6-maxdepth50` uses other labels (0.5607) and also cannot be compared. Hugging Face holds all of these runs.
 
