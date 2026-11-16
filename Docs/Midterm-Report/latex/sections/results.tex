@@ -10,7 +10,7 @@ No AUSE or AURG has been measured on the full data yet. Ten heads are trained on
 
 \subsection{Cache and Label Statistics}
 
-Table~\ref{tab:cachestats} summarizes the development cache built on nuScenes v1.0-mini at a $132 \times 74$ grid and the counts measured on the full trainval cache. Three observations shape the experiments. First, the task is learnable in principle: labels cover a quarter of the coarse-grid cells, and 37\% of labeled cells are positive at $\tau = 0.10$, inside the 5--70\% gate the Run~1 plan set. Second, night is harder: the median per-image AbsRel is 0.052 by day and 0.079 at night, and the only images with no usable lidar fit are four night frames. Third, the radar residual is noisy: its median is 0.25 under the radar fit and 0.28 under the lidar fit, about five times the lidar-measured depth error, and 13.5\% of mini images have no radar fit at all. The likely cause is that nuScenes radar has no elevation, so a radar point can project onto a pixel showing another surface. Whether the channel still helps is tested by the no-radar run in Section~\ref{sec:runs}.
+Table~\ref{tab:cachestats} summarizes the development cache built on nuScenes v1.0-mini and the counts measured on the full trainval cache, both at the $132 \times 74$ grid. Three observations shape the experiments. First, the task is learnable in principle: labels cover a quarter of the coarse-grid cells, and 37\% of labeled cells are positive at $\tau = 0.10$, inside the 5--70\% gate the Run~1 plan set. Second, night is harder: the median per-image AbsRel is 0.052 by day and 0.079 at night, and the only images with no usable lidar fit are four night frames. Third, the radar residual is noisy: its median is 0.25 under the radar fit and 0.28 under the lidar fit, about five times the lidar-measured depth error, and 13.5\% of mini images have no radar fit at all. The likely cause is that nuScenes radar has no elevation, so a radar point can project onto a pixel showing another surface. Whether the channel still helps is tested by the no-radar run in Section~\ref{sec:runs}.
 
 \begin{table}[t]
   \centering
@@ -18,22 +18,23 @@ Table~\ref{tab:cachestats} summarizes the development cache built on nuScenes v1
   \setlength{\tabcolsep}{4pt}
   \begin{tabular}{@{}l r r@{}}
     \toprule
-    & \textbf{mini ($\times 2$)} & \textbf{trainval ($\times 4$)} \\
+    & \textbf{mini ($\times 2$)} & \textbf{trainval ($\times 2$)} \\
     \midrule
     Camera images & 2,424 & 204,894 \\
-    Cache size & 3.43\,GB & \todo{TB} \\
-    Build time & 42\,min & \todo{h} \\
-    Lidar points / image & 3,613 & \todo{} \\
-    Radar points / image (5 sweeps) & 150 & \todo{} \\
-    Images with a lidar fit & 99.8\% & \todo{} \\
-    Images with a radar fit & 86.5\% & \todo{} \\
+    Cache entries & 2,424 & 149,410 \\
+    Cache size & 3.43\,GB & ---$^{\ddagger}$ \\
+    Build time & 42\,min & ---$^{\ddagger}$ \\
+    Lidar points / image & 3,613 & ---$^{\ddagger}$ \\
+    Radar points / image (5 sweeps) & 150 & ---$^{\ddagger}$ \\
+    Images with a lidar fit & 99.8\% & ---$^{\ddagger}$ \\
+    Images with a radar fit & 86.5\% & ---$^{\ddagger}$ \\
     Labeled cells & 26.2\% & 25.1\%$^{\dagger}$ \\
     Positive labels ($\tau = 0.10$) & 37.2\% & 37.6\% \\
-    Median AbsRel, day / night & 0.052 / 0.079 & \todo{} \\
-    Median radar residual & 0.25 & \todo{} \\
+    Median AbsRel, day / night & 0.052 / 0.079 & ---$^{\ddagger}$ \\
+    Median radar residual & 0.25 & ---$^{\ddagger}$ \\
     \bottomrule
   \end{tabular}
-  \caption{Statistics of the cached head inputs and labels. $^{\dagger}$Measured on the training split at the $\times 4$ grid by the Run~1 estimate. \todo{fill the trainval column from the cache summary on CARC.} \todo{Aday, Bao: confirm the trainval grid. A labeled share of 25.1\% matches the $\times 2$ grid of mini, not the 9\% of the $\times 4$ grid.}}
+  \caption{Statistics of the cached head inputs and labels. $^{\dagger}$Measured on the training split by the Run~1 estimate. $^{\ddagger}$Not yet measured: the summary of the trainval cache still has to be run on CARC.}
   \label{tab:cachestats}
 \end{table}
 
@@ -44,7 +45,7 @@ We measured radar coverage on 149,410 cache entries with the training settings (
 \subsection{Training Runs}
 \label{sec:runs}
 
-Run~1 uses 631 training scenes (110,929 images, including 76 night and 125 rain scenes) and 69 dev scenes (3,000 of 12,150 images). Of the training cells, 25.1\% carry a label and 37.6\% of those are positive, giving a class weight of 1.658. The estimate of 2026-10-28 put 8 epochs at about 8.8 hours, because the cache loaded at 28 images/s against 1,007 images/s for a training step. The run itself took 3.5 hours. Its dev loss fell in every epoch, so the best head is the last one, with a dev loss of 0.5562.
+Run~1 uses 631 training scenes (110,929 images, including 76 night and 125 rain scenes) and 69 dev scenes (3,000 of 12,150 images). Of the training cells, 25.1\% carry a label and 37.6\% of those are positive, giving a class weight of 1.658. The first estimate put 8 epochs at about 8.8 hours, because the cache loaded at 28 images/s against 1,007 images/s for a training step. The run itself took 3.5 hours. Its dev loss fell in every epoch, so the best head is the last one, with a dev loss of 0.5562.
 
 Table~\ref{tab:runs} lists the ten runs and Figure~\ref{fig:losscurve} draws their losses. The same settings trained twice (\texttt{run1} and \texttt{run-v1-radar}) differ by 0.0004 in dev loss. This is the only measure of repeat noise so far, so we treat a gap below about 0.001 as a tie. All differences below are against the baseline \texttt{run-v1-radar}.
 
@@ -52,7 +53,7 @@ Table~\ref{tab:runs} lists the ten runs and Figure~\ref{fig:losscurve} draws the
 
 \textbf{The temporal spread helps a little, and depth and radar are ties.} Removing the temporal spread costs 0.0063. Removing the depth channel costs 0.0008 and removing radar changes the loss by 0.0004, both inside the tie band; for radar this is what its coverage predicts. We leave \texttt{m1-seed1} out of these comparisons, because the seed also picks other dev scenes. Its use is the evaluation score on val.
 
-\textbf{The loss was still falling when every run ended.} In every run the best epoch is the last; a 16-epoch run is in stage 4 of the run matrix. On mini, the two checkpoint rules disagreed: dev AUSE was lowest after epoch 1 while dev loss was lowest after epoch 8, which is why D14 computes AUSE on the loss-selected checkpoint and reports both curves. \todo{dev AUSE per epoch, once the scoring script runs.}
+\textbf{The loss was still falling when every run ended.} In every run the best epoch is the last; a 16-epoch run is in stage 4 of the run matrix. On mini, the two checkpoint rules disagreed: dev AUSE was lowest after epoch 1 while dev loss was lowest after epoch 8, which is why D14 computes AUSE on the loss-selected checkpoint and reports both curves.
 
 \begin{table*}[t]
   \centering
@@ -87,34 +88,4 @@ Table~\ref{tab:runs} lists the ten runs and Figure~\ref{fig:losscurve} draws the
 
 \subsection{Sparsification Results (Pending)}
 
-Table~\ref{tab:results} and Figure~\ref{fig:sparsification} are the primary deliverable and will be filled once the trained runs are scored. Every method is scored on the same labeled cells of the nuScenes val split, overall and per BEVCar condition group.
-
-\begin{table*}[t]
-  \centering
-  \small
-  \setlength{\tabcolsep}{3pt}
-  \begin{tabular}{@{}l cc cc cc cc@{}}
-    \toprule
-    & \multicolumn{2}{c}{\textbf{All}} & \multicolumn{2}{c}{\textbf{Day}} & \multicolumn{2}{c}{\textbf{Night}} & \multicolumn{2}{c}{\textbf{Rain}} \\
-    \cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
-    \textbf{Method} & AUSE & AURG & AUSE & AURG & AUSE & AURG & AUSE & AURG \\
-    \midrule
-    Random removal & -- & 0 & -- & 0 & -- & 0 & -- & 0 \\
-    Temporal spread & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} \\
-    Flip disagreement & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} \\
-    Head, all inputs & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} \\
-    Head, no radar & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} \\
-    Head, features only & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} \\
-    Oracle & 0 & -- & 0 & -- & 0 & -- & 0 & -- \\
-    \bottomrule
-  \end{tabular}
-  \caption{AUSE (lower is better) and AURG (higher is better) on the nuScenes val split, per BEVCar condition group. \todo{fill from the scored runs; add scene counts per group.}}
-  \label{tab:results}
-\end{table*}
-
-\begin{figure}[t]
-  \centering
-  \fbox{\parbox{0.9\columnwidth}{\centering\vspace{2.5cm}\todo{Sparsification curves: AbsRel of the remaining cells against the fraction removed, for the head, temporal spread, flip disagreement, random removal, and the oracle; one panel per condition}\vspace{2.5cm}}}
-  \caption{Sparsification curves. \todo{replace with the evaluation output.}}
-  \label{fig:sparsification}
-\end{figure}
+The primary deliverable is the AUSE and AURG of every method, with the sparsification curves of the heads against the oracle and random removal. We will report both once the trained runs are scored. Every method is scored on the same labeled cells of the nuScenes val split, overall and per BEVCar condition group. The methods are random removal, temporal spread, flip disagreement, the head with all inputs, the head without radar, the head with features only, and the oracle.
