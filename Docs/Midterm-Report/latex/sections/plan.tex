@@ -1,0 +1,51 @@
+% !TEX root = ../main.tex
+% ============================================================================
+% Owner: Arteaga, with each item's owner named. Drafted from
+% Docs/training-next-actions.md, Docs/worklog.md, and the dataset strategy.
+% ============================================================================
+\section{Updated Plan}
+\label{sec:plan}
+
+\subsection{Remaining work}
+
+Each item names its owner and what ``done'' means. None of the items needs a rebuild of the cache: the flip baseline writes a side file, and the BEVCar split, the radar variants, and the frame selector all work from arrays every entry already holds.
+
+\begin{enumerate}[leftmargin=*, itemsep=2pt]
+  \item \textbf{Finish and evaluate Run 1} (Aday, Bao; Tawde, Qiao). Check the per-epoch dev loss, save the loss curve and dev AUSE with the checkpoint, write a $p_\mathrm{error}$ map for every val image, and report AUSE and AURG for the head, random removal, and the oracle. Done when Table~\ref{tab:results} has its first three rows.
+  \item \textbf{Flip-augmentation baseline} (Aday, Bao). Run the backbone on the horizontally flipped val keyframes (about 36,000 images), align with a lidar-free scale-and-shift fit, and score the per-cell relative difference. Done when its AUSE and AURG are in the table.
+  \item \textbf{BEVCar weather split} (Tawde, Qiao). Adopt the 111 day, 24 rain, and 15 night val scenes (4,449, 968, and 602 keyframes) from BEVCar's released lists, report every number per group with its scene count, compare the cache's keyword tags against the lists, and add a label-count table per group. Done when the per-group columns of Table~\ref{tab:results} are filled.
+  \item \textbf{Radar ablation} (Aday, Bao). Train and score the head with radar off, with the radar fit, and with the lidar fit; try a trimmed radar fit; report the radar residual next to the lidar AbsRel. Done when the report says whether the radar channel helps.
+  \item \textbf{Temporal ablation and features-only head} (Aday, Bao). Score the raw temporal spread as a baseline and the head on decoder features alone. These decide what stays in the model.
+  \item \textbf{Complete the evaluation code} (Tawde, Qiao). Cache data loading, bootstrap confidence intervals, and the sparsification figure. \todo{date}
+  \item \textbf{Frame selector} (Tawde, Qiao). Rank whole images by mean $p_\mathrm{error}$ and by mean raw temporal spread, drop the worst $N$\%, and draw both on the same image-level sparsification axes. This is the first downstream consumer.
+  \item \textbf{Resolve the open deviations} (all). D8: mask the CAM\_BACK ego body by a fixed image region. D9: decide whether to drop bleed-through points from the labels. D11: adopt the BEVCar rule for rainy night scenes. D13: drop the no-fit images or label every cell as wrong, and say which. \todo{record each decision}
+  \item \textbf{Second dataset} (Arteaga). Request STF / DENSE access; if the radar ablation shows the radar channel is not carrying the head, evaluate on ZOD instead.
+  \item \textbf{Final report and repository} (all). Results per condition, the deviations table with every item closed, the model card on Hugging Face, and the reproducibility notebooks.
+\end{enumerate}
+
+\subsection{Timeline}
+
+\begin{table}[h]
+  \centering
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}l p{4.6cm}@{}}
+    \toprule
+    \textbf{Week of} & \textbf{Milestone} \\
+    \midrule
+    Nov 16 & Run 1 evaluated; flip baseline scored; BEVCar split adopted (items 1--3) \\
+    Nov 23 & Radar and temporal ablations trained and scored (items 4--5); evaluation code complete (item 6) \\
+    Nov 30 & Frame selector; open deviations closed; Run 2 if an ablation changes the input set (items 7--8) \\
+    Dec 7 & Final figures and tables; report writing; repository cleanup (items 9--10) \\
+    \todo{final due date} & Final report and presentation \\
+    \bottomrule
+  \end{tabular}
+  \caption{Plan for the remainder of the term. \todo{confirm the final report deadline and adjust.}}
+  \label{tab:timeline}
+\end{table}
+
+The stretch goal from the proposal, weighting the camera-to-voxel lift of an occupancy network by the confidence map and measuring mIoU on Occ3D, stays conditional: it starts only if items 1--5 are done by the week of November 30.
+
+\subsection{Risks}
+
+Training is bound by cache loading at 28 images/s, so each additional training run costs about nine GPU-hours; the ablations are budgeted as four such runs. The radar residual is about five times noisier than the lidar error, so the radar channels may add nothing, which is a reportable negative result rather than a failure. The label gate and all error statistics are measured with the relative model and a lidar fit, so the report must state that the fit uses a sensor the deployed system lacks. The Hugging Face backup of the cache has not yet been verified by a restore.

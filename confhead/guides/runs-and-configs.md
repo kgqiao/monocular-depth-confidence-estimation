@@ -1,6 +1,6 @@
 # Training Runs and Their Configs
 
-This guide lists the confidence-head training runs and says what each setting of a run means. It is written for the eval team, who score the heads. The steps to train a run are in [training-on-carc.md](training-on-carc.md).
+This guide lists the confidence-head training runs and says what each setting of a run means. It is written for the eval team, who score the heads. The steps to train a run are in [training-on-carc.md](training-on-carc.md). [`results/model_checkpoints.md`](../results/model_checkpoints.md) lists every run so far, including the stage 1 ablations, with a link to each checkpoint.
 
 ## What a Run Is
 
@@ -8,9 +8,9 @@ A run trains one confidence head on the v1.0-trainval cache, on top of a frozen 
 
 | Run | Radar channels | Input channels | Where | State |
 |---|---|---|---|---|
-| `run-v0-no-radar` | off | 66 | `nathancbao/confhead` (private) and `/scratch1/ncbao/confhead-runs/` | Done: 8 of 8 epochs in 2 h 44 min, best dev loss 0.5562 (epoch 8) |
+| `run-v0-no-radar` | off | 66 | [`nathancbao/confhead`](https://huggingface.co/nathancbao/confhead) and `/scratch1/ncbao/confhead-runs/` | Done: 8 of 8 epochs in 2 h 44 min, best dev loss 0.5562 (epoch 8) |
 | `run1` | on | 68 | [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead/tree/main/run1) | Done: 8 of 8 epochs, best dev loss 0.5562 (epoch 8) |
-| `run-v1-radar` | on | 68 | `nathancbao/confhead` (private) and `/scratch1/ncbao/confhead-runs/` | Done: 8 of 8 epochs in 5 h 29 min, best dev loss 0.5566 (epoch 8). A repeat of `run1`, with the same settings |
+| `run-v1-radar` | on | 68 | [`nathancbao/confhead`](https://huggingface.co/nathancbao/confhead) and `/scratch1/ncbao/confhead-runs/` | Done: 8 of 8 epochs in 5 h 29 min, best dev loss 0.5566 (epoch 8). A repeat of `run1`, with the same settings |
 
 `run-v0-no-radar` and `run1` differ in one setting, `inputs.radar`. Everything else is the same, including the seed (0), the dev scenes, and the labels, so a difference in score between them comes from radar alone.
 
@@ -68,7 +68,7 @@ From the log of the run: 631 train scenes (110,929 images), 69 dev scenes (12,15
 
 ## Get the Files
 
-- From Hugging Face: `uv run hf download nadayusc/confhead <run>/best.pt --local-dir .` for `run1`, and the same with `nathancbao/confhead` for `run-v0-no-radar` and `run-v1-radar`. The `nathancbao/confhead` repository is private, so ask Nathan B to add your Hugging Face username first.
+- From Hugging Face: `uv run hf download nadayusc/confhead <run>/best.pt --local-dir .` for `run1`, and the same with `nathancbao/confhead` for `run-v0-no-radar` and `run-v1-radar`. Both repositories are public, so no login is needed. `nathancbao/confhead` holds the seven stage 1 runs too (see [run-matrix.md](run-matrix.md)) and an `EVAL_GUIDE.md` for the Eval team.
 - From CARC: the folder of a run. A scratch folder is private to its owner, so it has to be copied or shared first.
 
 ## Before You Quote a Result

@@ -18,6 +18,17 @@ Changes to the head do not change these inputs, so the library calculates them o
 
 One entry of the cache. Each block is one grid cell (here 132 x 74, at `grid.patch_multiple = 2`). The pedestrians move, so their temporal spread is high, and the lidar labels show where the depth is wrong by more than 10%.
 
+## Runs and Results
+
+[`results/model_checkpoints.md`](results/model_checkpoints.md) lists every trained head with its dev loss and a link to its checkpoint on Hugging Face. Start there to pick a run to evaluate.
+
+| Resource | What it holds |
+|---|---|
+| [Run matrix](guides/run-matrix.md) | The ablation plan, the flags of each run, its state, and the findings so far |
+| [`nathancbao/confhead`](https://huggingface.co/nathancbao/confhead) | The ablation checkpoints, with an [`EVAL_GUIDE.md`](https://huggingface.co/nathancbao/confhead/blob/main/EVAL_GUIDE.md) for the Eval team |
+| [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead) | `run1`, the first trainval run |
+| [`nathancbao/confhead-charts`](https://huggingface.co/spaces/nathancbao/confhead-charts) | Trackio loss curves of the ablation runs |
+
 ## Quickstart
 
 ### Prerequisites
@@ -164,6 +175,12 @@ examples/carc-submit.sh configs/nuscenes-trainval.toml 16
 sbatch examples/carc-train.sbatch configs/train-trainval.toml
 ```
 
+After each epoch, the job uploads the run to the Hugging Face model repository that `--repo` names, [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead) by default, and rewrites that repository's model card with the settings and losses of its runs. The ablation runs are in [`nathancbao/confhead`](https://huggingface.co/nathancbao/confhead), and [`results/model_checkpoints.md`](results/model_checkpoints.md) lists the runs of both repositories. [guides/tracking-runs.md](guides/tracking-runs.md) draws the loss curves of one repository's runs in a Trackio dashboard on your own computer:
+
+```sh
+uv run --group tracking examples/sync_trackio.py
+```
+
 [guides/cache-backup-on-huggingface.md](guides/cache-backup-on-huggingface.md) backs up a built cache to a Hugging Face dataset repository as compressed shards, and restores it:
 
 ```sh
@@ -200,7 +217,7 @@ The rules that the code follows, and why, are in [design.md](design.md).
 - `configs/`: cache settings, training settings, and the Hugging Face repository of the backup.
 - `results/`: the small summaries that the team reads.
 - `docs/`: the figure of this README.
-- `outputs/`: caches, figures, tables, and training runs that the examples and notebooks write. Not in git.
+- `outputs/`: caches, figures, tables, training runs, and the Trackio database that the examples and notebooks write. Not in git.
 
 ## References
 

@@ -1,0 +1,11 @@
+% !TEX root = ../main.tex
+% ============================================================================
+% Owner: Arteaga
+% ============================================================================
+\section{Introduction}
+
+Depth Anything and similar models supply depth to systems that have no depth sensor. They are used in driving, robotics, augmented reality, and 3D reconstruction, usually as a drop-in component. Every pixel gets a depth value and no measure of reliability: an estimate that is wrong by thirty percent looks exactly like one that is right. The cost of that silence is highest in the conditions where camera depth is least reliable: night, rain on the lens, spray, and low sun. A confidence map lets a downstream consumer weight the depth, discard it, or fall back to another sensor.
+
+This project trains a model to predict that error without touching the depth model. A small convolutional head reads the frozen model's internal features along with its predicted depth, the temporal spread of depth across neighboring frames, a radar residual, and a radar validity mask. It outputs, per grid cell, the probability that the depth there is wrong by more than a threshold. Lidar projected into the image gives the true error at the cells that receive a return, so the head learns from scattered labels and produces a dense map at inference. Lidar is present when the model is built and absent when it runs; radar, which a production car does carry, is present in both.
+
+The rest of the report follows the four components the course asks for. Section~\ref{sec:lit} reviews the literature on depth foundation models, uncertainty for monocular depth, radar-camera fusion, and adverse-condition datasets, and places our design among them. Section~\ref{sec:progress} describes what is implemented and how it departs from the proposal. Section~\ref{sec:results} reports the initial results. Section~\ref{sec:plan} gives the updated plan for the remainder of the term.

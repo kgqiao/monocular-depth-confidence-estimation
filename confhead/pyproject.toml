@@ -23,6 +23,9 @@ notebook = [
     "jupyterlab>=4.6.4",
     "nbconvert>=7.17.2",
 ]
+tracking = [
+    "trackio==0.45.0",
+]
 
 [build-system]
 requires = ["hatchling"]
