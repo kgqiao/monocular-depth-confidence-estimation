@@ -6,16 +6,16 @@
 \section{Initial Results}
 \label{sec:results}
 
-No AUSE or AURG has been measured on the full data yet. Ten heads are trained on the trainval cache, and the evaluation that scores them is due on November~20 (Section~\ref{sec:plan}). This section reports what the cached data says about the task, the training and dev losses of the ten runs, and what those losses say about the inputs. The dev loss shows that a run learned; it does not rank the runs. The sparsification table and figure stay as placeholders until the runs are scored.
+No AUSE or AURG has been measured on the full data yet. Ten heads are trained on the trainval cache, and the evaluation that scores them is due on November~20 (Section~\ref{sec:plan}). This section reports what the cached data says about the task, the training and dev losses of the ten runs, and what those losses say about the inputs. The dev loss shows that a run learned; it does not rank the runs. The sparsification scores follow once the runs are scored.
 
 \subsection{Cache and Label Statistics}
 
-Table~\ref{tab:cachestats} summarizes the development cache built on nuScenes v1.0-mini and the counts measured on the full trainval cache, both at the $132 \times 74$ grid. Three observations shape the experiments. First, the task is learnable in principle: labels cover a quarter of the coarse-grid cells, and 37\% of labeled cells are positive at $\tau = 0.10$, inside the 5--70\% gate the Run~1 plan set. Second, night is harder: the median per-image AbsRel is 0.052 by day and 0.079 at night, and the only images with no usable lidar fit are four night frames. Third, the radar residual is noisy: its median is 0.25 under the radar fit and 0.28 under the lidar fit, about five times the lidar-measured depth error, and 13.5\% of mini images have no radar fit at all. The likely cause is that nuScenes radar has no elevation, so a radar point can project onto a pixel showing another surface. Whether the channel still helps is tested by the no-radar run in Section~\ref{sec:runs}.
+Table~\ref{tab:cachestats} summarizes the development cache built on nuScenes v1.0-mini and the counts measured on the full trainval cache, both at the $132 \times 74$ grid. Three observations shape the experiments. First, the task is learnable in principle: labels cover a quarter of the coarse-grid cells, and 37\% of labeled cells are positive at $\tau = 0.10$, inside the 5--70\% gate the Run~1 plan set. Second, night is harder: the median per-image AbsRel is 0.052 by day and 0.079 at night, and the only mini images with no usable lidar fit are four night frames. Third, the radar residual is noisy: its median is 0.25 under the radar fit and 0.28 under the lidar fit, about five times the lidar-measured depth error, and 13.5\% of mini images have no radar fit at all. The likely cause is that nuScenes radar has no elevation, so a radar point can project onto a pixel showing another surface. Whether the channel still helps is tested by the no-radar run in Section~\ref{sec:runs}.
 
 \begin{table}[t]
   \centering
   \small
-  \setlength{\tabcolsep}{4pt}
+  \setlength{\tabcolsep}{2pt}
   \begin{tabular}{@{}l r r@{}}
     \toprule
     & \textbf{mini ($\times 2$)} & \textbf{trainval ($\times 2$)} \\
@@ -53,7 +53,7 @@ Table~\ref{tab:runs} lists the ten runs and Figure~\ref{fig:losscurve} draws the
 
 \textbf{The temporal spread helps a little, and depth and radar are ties.} Removing the temporal spread costs 0.0063. Removing the depth channel costs 0.0008 and removing radar changes the loss by 0.0004, both inside the tie band; for radar this is what its coverage predicts. We leave \texttt{m1-seed1} out of these comparisons, because the seed also picks other dev scenes. Its use is the evaluation score on val.
 
-\textbf{The loss was still falling when every run ended.} In every run the best epoch is the last; a 16-epoch run is in stage 4 of the run matrix. On mini, the two checkpoint rules disagreed: dev AUSE was lowest after epoch 1 while dev loss was lowest after epoch 8, which is why D14 computes AUSE on the loss-selected checkpoint and reports both curves.
+\textbf{The loss was still falling when every run ended.} In every run the best epoch is the last; a 16-epoch run is in stage 4 of the run matrix. On mini, the two checkpoint rules disagreed: dev AUSE was lowest after epoch 1 while dev loss was lowest after epoch 8, which is why D14 keeps the checkpoint that the dev loss chose and leaves AUSE to the evaluation, which scores that checkpoint.
 
 \begin{table*}[t]
   \centering
