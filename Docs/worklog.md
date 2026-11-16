@@ -144,17 +144,13 @@ Katherine:
 - Write scoring code to load trained model #1 to run on test images, score each image with metrics, save results 
 - Run scoring script on all test images on CARC, after 50 image test run succeeds
 
-DUE BY TUE 17th
-
---- Finish training all models 
-
 Nathan A/B:
-- Have all models trained finished by Sat Nov 21st
+- Have all models trained
 
+DUE BY TUE 17th
 
 
 ----- Run scoring on all models + condition splits, write analyses
-
 Katherine:
 - Run scoring script on all test images for all 3 trained models downloaded (and any new models)
 - Add all results to run_matrix.md
@@ -164,16 +160,35 @@ Varad:
 - Count how many pixels with a LIDAR answer each of day/rain/night has, utilizes scene list, goes into table
 - Build day/rain/night results table from scores from all models, scene lists, flip scores. Show which differences are real
 
+Katherine/Varad:
+- Look at eval results and decide top promising models
+
+DUE BY Fri Nov 20
+
+
+---- Decide from most promising models and maybe run additional models
+
+Nathans:
+- Run additional models if needed
+
+DUE BY Sat Nov 21
+
+
+--- Decide on the project before/after results
+
 Katherine:
 - Create frame selector to rank whole images by confidence. Check whether dropping the whole images lowers the error of the rest. 
 
 Varad:
 - Show use of confidence (i.e. weigh depth by it) with one number that improves (maybe team decides which taht is?)
+- NuScenes drive before and after (depth estimation with and without)
 
 Due by 24th
 
 
----- Writing final report
+
+
+---- Writing final report + prepare for project clinic Nov 30
 
 Katherine:
 - Add to final report: charts, main results table of every model
@@ -184,3 +199,6 @@ Varad:
 Alejandro/everyone:
 - Finalize and wrap up report
 - Prepare for project clinic on Nov 30
+
+--- Final Report due Dec 7
+
