@@ -1,6 +1,6 @@
 % !TEX root = ../main.tex
 % ============================================================================
-% Owner: Arteaga, with each item's owner named. Drafted from the checklist in
+% Owner: Arteaga. Drafted from the checklist in
 % Docs/worklog.md (2026-11-14), confhead/guides/run-matrix.md, and the dates
 % set at the team meeting of 2026-11-15.
 % ============================================================================
@@ -9,29 +9,30 @@
 
 \subsection{Remaining Work}
 
-The work falls into three blocks, with dates set at the team meeting of November~15. Each item names its owner and what ``done'' means. None of the items needs a rebuild of the cache: the flip baseline runs the backbone itself, and the BEVCar split, the radar variants, and the frame selector all work from arrays every entry already holds.
+The work falls into three blocks, with dates set at the team meeting of November~15. Each item says what ``done'' means. None of the items needs a rebuild of the cache: the flip baseline runs the backbone itself, and the BEVCar split, the radar variants, and the frame selector all work from arrays every entry already holds.
 
 \paragraph{By Tuesday, November 17: first scores.}
 \begin{enumerate}[leftmargin=*, itemsep=2pt, topsep=2pt]
-  \item \textbf{Flip-augmentation baseline} (Tawde). Download the trained checkpoints and run the flip baseline on the val keyframes on CARC. Done when its AUSE and AURG are in Table~\ref{tab:results}.
-  \item \textbf{Scoring script} (Qiao). Finish the rejection AUROC and ECE edge cases and their tests. Write the script that loads a trained head, scores every val image with each metric, and saves the results; run it on 50 images, then on all of them. Done when Table~\ref{tab:results} has its first head row.
+  \item \textbf{Flip-augmentation baseline}. Download the trained checkpoints and run the flip baseline on the val keyframes on CARC. Done when its AUSE and AURG are measured.
+  \item \textbf{Scoring script}. Finish the rejection AUROC and ECE edge cases and their tests. Write the script that loads a trained head, scores every val image with each metric, and saves the results; run it on 50 images, then on all of them. Done when the first head has an AUSE and an AURG.
 \end{enumerate}
 
 \paragraph{By Friday, November 20: all training and evaluation.}
 \begin{enumerate}[leftmargin=*, itemsep=2pt, topsep=2pt, resume]
-  \item \textbf{Remaining training runs} (Aday, Bao). Train stages 2 to 5 of the run matrix. Stage 2 starts with the lidar fit for the radar residual, which removes the fit failures, then radius 2. Stage 3 sets $\tau$ to 0.05 and 0.2. Stages 4 and 5 (learning rate, 16 epochs, head width, final seeds) follow as far as the queue allows.
-  \item \textbf{Score every run} (Qiao). Run the scoring script on all trained heads, record AUSE and AURG in the run matrix, and draw the sparsification curves of the heads against the oracle and random removal. Done when Table~\ref{tab:results} and Figure~\ref{fig:sparsification} are filled.
-  \item \textbf{Condition splits} (Tawde). Count the lidar-labeled cells of the BEVCar day, rain, and night groups (111, 24, and 15 val scenes). Build the per-condition table from the scores of every head and the flip baseline, with bootstrap intervals that show which differences are real. This also settles D11.
-  \item \textbf{Frame selector} (Qiao). Rank whole images by mean $p_\mathrm{error}$ and check whether dropping the worst images lowers the error of the rest. This is the first downstream consumer.
-  \item \textbf{Use of the confidence} (Tawde). Weight the depth by the confidence and report one number that improves; the team chooses the number.
-  \item \textbf{Resolve the open deviations} (all). D8: mask the CAM\_BACK ego body by a fixed image region. D9: decide whether to drop bleed-through points from the labels. D13: drop the no-fit images or label every cell as wrong, and say which. \todo{record each decision}
+  \item \textbf{Remaining training runs}. Train stages 2 to 5 of the run matrix. Stage 2 starts with the lidar fit for the radar residual, which removes the fit failures, then radius 2. Stage 3 sets $\tau$ to 0.05 and 0.2. Stages 4 and 5 (learning rate, 16 epochs, head width, final seeds) follow as far as the queue allows.
+  \item \textbf{Score every run}. Run the scoring script on all trained heads, record AUSE and AURG in the run matrix, and draw the sparsification curves of the heads against the oracle and random removal. Done when every run has its scores and the curves are drawn.
+  \item \textbf{Condition splits}. Count the lidar-labeled cells of the BEVCar day, rain, and night groups (111, 24, and 15 val scenes). Build the per-condition table from the scores of every head and the flip baseline, with bootstrap intervals that show which differences are real. This also settles D11.
+  \item \textbf{Frame selector}. Rank whole images by mean $p_\mathrm{error}$ and check whether dropping the worst images lowers the error of the rest. This is the first downstream consumer.
+  \item \textbf{Use of the confidence}. Weight the depth by the confidence and report one number that improves; the team chooses the number.
+  \item \textbf{Resolve the open deviations}. D8: mask the CAM\_BACK ego body by a fixed image region. D9: decide whether to drop bleed-through points from the labels. D13: drop the no-fit images or label every cell as wrong, and say which.
 \end{enumerate}
 
 \paragraph{After November 20: poster and final report.}
 \begin{enumerate}[leftmargin=*, itemsep=2pt, topsep=2pt, resume]
-  \item \textbf{Visuals meeting} (all), Saturday, November~21. Choose the figures and tables for the poster and the final report from the scored results.
-  \item \textbf{Poster} (all). Build the poster in a shared Figma file in the week of November~23. Find out early whether it can be printed on campus or at a local print shop, so that the printed poster is in hand before the poster session and demo on November~30.
-  \item \textbf{Final report and repository} (Qiao: charts and the main table of every model; Tawde: the per-condition results, the comparisons with the simple scores, the lidar counts, and the limits; Arteaga with all: final edit). The deviations table with every item closed, the model card on Hugging Face, and the reproducibility notebooks.
+  \item \textbf{Visuals meeting}, Saturday, November~21. Choose the figures and tables for the poster and the final report from the scored results.
+  \item \textbf{Poster}. Build the poster in a shared Figma file in the week of November~23. Find out early whether it can be printed on campus or at a local print shop, so that the printed poster is in hand before the poster session and demo on November~30.
+  \item \textbf{Final report and repository}, due Monday, December~7. Complete the experiments and draw the conclusions. The report reads as a research paper: it motivates the problem, presents the approach, describes the experiments, and discusses the results. It holds the charts and the main table of every model, the per-condition results, the comparisons with the simple scores, the lidar counts, and the limits. The deviations table with every item closed, the model card on Hugging Face, and the reproducibility notebooks.
+  \item \textbf{Contribution statement and peer evaluation}. The syllabus requires a one-page contribution statement with the final report, which says who did what and which every member agrees to. After the report is submitted, each member scores every other member in the peer-evaluation survey. The survey is required, and a member who does not submit it forfeits their own peer score.
 \end{enumerate}
 
 \subsection{Timeline}
@@ -51,10 +52,11 @@ Table~\ref{tab:timeline} gives the dates.
     Sat Nov 21 & Team meeting: visuals for the poster and the final report (item 9) \\
     Week of Nov 23 & Poster built in Figma and printed (item 10) \\
     Mon Nov 30 & Poster session and demo \\
-    \todo{final due date} & Final report (item 11) \\
+    Mon Dec 7 & Final report with the one-page contribution statement (items 11--12) \\
+    After Dec 7 & Peer-evaluation survey, one per member (item 12) \\
     \bottomrule
   \end{tabular}
-  \caption{Plan for the remainder of the term. \todo{confirm the final report deadline.}}
+  \caption{Plan for the remainder of the term.}
   \label{tab:timeline}
 \end{table}
 
@@ -64,4 +66,4 @@ We drop two items of the earlier plan, because neither fits before the poster se
 
 \subsection{Risks}
 
-Evaluation is the critical path. The scoring script is not written and no head has been scored on real data, with five days to the November~20 date. Training is less of a risk than the first estimate suggested, since a run took 0.7 to 5.5 hours, depending on the cluster node. But a GPU job can wait many hours in the queue, and stages 4 and 5 of the run matrix wait on the stages before them. If they do not all finish, the report will say which stages ran. The dev loss was still falling at epoch 8 in every run, so the heads may be undertrained; the 16-epoch run tests this. Radar marks 3.4\% of the grid cells and the no-radar run ties the baseline, so the radar channels may add nothing, which would be a negative result worth reporting. The label gate and all error statistics are measured with the relative model and a lidar fit, so the report must state that the fit uses a sensor the deployed system lacks. The week of November~23 holds Thanksgiving, so the poster has to go to print early. The Hugging Face backup of the cache has not yet been verified by a restore.
+Evaluation is the critical path. The scoring script is not written and no head has been scored on real data, with five days to the November~20 date. Training is less of a risk than the first estimate suggested, since a run took 0.7 to 5.5 hours, depending on the cluster node. But a GPU job can wait many hours in the queue, and stages 4 and 5 of the run matrix wait on the stages before them. If they do not all finish, the report will say which stages ran. The dev loss was still falling at epoch 8 in every run, so the heads may be undertrained; the 16-epoch run tests this. Radar marks 3.4\% of the grid cells and the no-radar run ties the baseline, so the radar channels may add nothing, which would be a negative result worth reporting. The label gate and all error statistics are measured with the relative model and a lidar fit, so the report must state that the fit uses a sensor the deployed system lacks. The week of November~23 holds Thanksgiving, so the poster has to go to print early. The cache holds 73\% of the trainval camera images and the cause of the gap is not confirmed, so the scores may not cover every val image. The Hugging Face backup of the cache has not yet been verified by a restore.
