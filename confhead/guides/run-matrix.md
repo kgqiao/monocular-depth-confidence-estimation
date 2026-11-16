@@ -83,7 +83,7 @@ uv run --with "trackio[spaces]" python -c "import trackio; trackio.sync(project=
 - Do not compare dev loss across `tau`: another `tau` makes other labels.
 - The seed also picks the dev scenes (`dev_scenes` in `train.py`), so compare seeds on Eval's scores, not on dev loss.
 - `train.epochs` changes the cosine learning-rate schedule, so 16 epochs is a different run, not 8 plus more.
-- A run took 41 minutes to 5.5 hours so far, depending on the node, and a GPU job can wait many hours in the queue. Do not start two `uv run` jobs together: they share one `.venv`, and the second rebuilds it under the first. Start one, wait until it runs, then start the next.
+- A run took 41 minutes to 5.5 hours so far, depending on the node, and a GPU job can wait many hours in the queue. Each job builds its own environment, so you can submit several runs at once.
 
 ## Not in the Table
 
