@@ -68,7 +68,7 @@ From the log of the run: 631 train scenes (110,929 images), 69 dev scenes (12,15
 
 ## Get the Files
 
-- From Hugging Face: `uv run hf download nadayusc/confhead <run>/best.pt --local-dir .` for `run1`, and the same with `csci566-depthconf/confhead` for `run-v0-no-radar` and `run-v1-radar`. Both repositories are public, so no login is needed. `csci566-depthconf/confhead` holds the seven stage 1 runs too (see [run-matrix.md](run-matrix.md)) and an `EVAL_GUIDE.md` for the Eval team.
+- From Hugging Face: `uv run hf download nadayusc/confhead <run>/best.pt --local-dir .` for `run1`, and the same with `csci566-depthconf/confhead` for `run-v0-no-radar` and `run-v1-radar`. `nadayusc/confhead` is public. `csci566-depthconf/confhead` is gated: log in with `hf auth login` and get access from an admin first. It holds the stage 1 to 3 and stage 6 runs too (see [run-matrix.md](run-matrix.md)) and an `EVAL_GUIDE.md` for the Eval team.
 - From CARC: the folder of a run. A scratch folder is private to its owner, so it has to be copied or shared first.
 
 ## Before You Quote a Result
