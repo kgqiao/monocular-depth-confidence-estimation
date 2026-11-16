@@ -56,7 +56,7 @@ curl -L -o /scratch1/$USER/checkpoints/depth_anything_v2_vitb.pth \
 | `source.dataroot` | `/scratch1/$USER/nuscenes` | The folder that holds `v1.0-trainval/`, `samples/` and `sweeps/` |
 | `model.checkpoint` | `/scratch1/$USER/checkpoints/depth_anything_v2_vitb.pth` | The file from step 2 |
 | `output.root` | `/scratch1/$USER/confhead-cache/nuscenes-trainval` | Where the cache goes |
-| `grid.patch_multiple` | `4` | The size of the grid. 4 gives 264 x 148 and about 1.1 TB. 2 gives 132 x 74 and about 290 GB. |
+| `grid.patch_multiple` | `2` | The size of the grid. 2 gives 132 x 74 and about 290 GB. 4 gives 264 x 148 and about 1.1 TB. |
 
 The `$USER` in a path changes to your CARC user name, so the same file works for every member of the team.
 
