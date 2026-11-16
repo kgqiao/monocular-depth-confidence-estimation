@@ -13,7 +13,7 @@ Progress, Checklist A: 29 / 29 applied on 2026-11-15 (branch `midterm/arteaga`).
 
 ### Accuracy of claims
 
-- [x] **A1 Critical.** "Training needs lidar and inference does not" is not true of the all-input head, because the temporal spread lifts each cell with the lidar fit. Qualify the sentence and name the lidar-free heads (`m1-features-only`, `m1-no-temporal`).
+- [x] **A1 Critical.** "Training needs lidar and inference does not" is not true of the all-input head, because the temporal spread lifts each cell with the lidar fit. Qualify the sentence and say which heads are free of lidar (the features-only head in the introduction; `m1-features-only` and `m1-no-temporal` by name in the results).
   - [introduction.tex:9](latex/sections/introduction.tex) · §2.1
 - [x] **A2 Critical.** Say that `m1-features-only` needs no sensor fit at inference and comes within 0.0080 of all inputs, and that the heads reading the temporal spread are upper bounds for a deployed system.
   - [results.tex:52](latex/sections/results.tex) · §2.1

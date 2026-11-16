@@ -41,7 +41,7 @@ in Adverse Driving Conditions\\
 \g@addto@macro\@maketitle{%
   \begin{center}
     \includegraphics[width=0.46\textwidth]{figures/cache-entry-preview.png}
-    \captionof{figure}{One cache entry (nuScenes scene-0553, CAM\_FRONT, day). Top: the image with projected keyframe lidar, and the Depth Anything V2 prediction after the lidar fit. Middle: the temporal spread input and the first three principal components of the 64 decoder features. Bottom: the lidar AbsRel label on the grid, and the radar residual input. The head reads the middle-left temporal spread and the three right-hand quantities, with a radar validity mask that is not shown, and must predict the bottom-left map. Two panels show a quantity before the step the head sees: the top-right depth is drawn in meters after the lidar fit, while the head reads the disparity divided by its image mean, and the bottom-left AbsRel is drawn before it is thresholded at $\tau = 0.10$.}
+    \captionof{figure}{One cache entry (nuScenes scene-0553, CAM\_FRONT, day). Top: the image with projected keyframe lidar, and the Depth Anything V2 prediction after the lidar fit. Middle: the temporal spread input and the first three principal components of the 64 decoder features. Bottom: the lidar AbsRel label on the grid, and the radar residual input. The head reads the middle-left temporal spread and the three right-hand quantities, with a radar validity mask that is not shown, and must predict the bottom-left map. Two panels differ from what the head sees. The top-right depth is in meters after the lidar fit, while the head reads the disparity divided by its image mean, and the bottom-left AbsRel is drawn before thresholding at $\tau = 0.10$.}
     \label{fig:teaser}
   \end{center}
   \vskip 0.05in}
