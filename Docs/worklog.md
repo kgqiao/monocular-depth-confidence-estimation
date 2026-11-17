@@ -218,7 +218,7 @@ Alejandro/everyone:
 
 ## 2026-11-17
 
-### Made one command the only way to train
+### Improved training entrypoint
 
 - `confhead train` reads the list of runs from one file, submits a Slurm job for each, and writes a report when they end. Sent again, it continues what stopped and skips what is done.
 - The runs upload to the team's organization repository on Hugging Face.
