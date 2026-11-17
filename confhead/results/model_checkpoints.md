@@ -11,8 +11,8 @@ This page lists every training run of the confidence head, with a link to its ch
 |---|---|
 | [`guides/run-matrix.md`](../guides/run-matrix.md) | The run matrix: every run, what it changes from [`configs/train-trainval.toml`](../configs/train-trainval.toml), its state, and the stage 1 findings |
 | [`configs/run-matrix.toml`](../configs/run-matrix.toml) | The manifest that `confhead train` reads: the name and settings of each run |
-| [`csci566-depthconf/confhead`](https://huggingface.co/csci566-depthconf/confhead) | The checkpoints of every run of the matrix, and the upload target of the training jobs. Its model card lists the settings and per-epoch losses of each run. Access is by request |
-| [`csci566-depthconf/confhead` `EVAL_GUIDE.md`](https://huggingface.co/csci566-depthconf/confhead/blob/main/EVAL_GUIDE.md) | For the Eval team: which run is which, what to score first, and how to load a run |
+| [`csci566-depthconf/confhead`](https://huggingface.co/csci566-depthconf/confhead) | The checkpoints of every run of the matrix, and the upload target of the training jobs. Its model card lists the settings and per-epoch losses of each run. The repository is gated: log in, and ask for access (or be added by an admin) |
+| [`csci566-depthconf/confhead` `EVAL_GUIDE.md`](https://huggingface.co/csci566-depthconf/confhead/blob/main/EVAL_GUIDE.md) | For the Eval team: which run is which, what to score first, and how to load a run. [`EVAL_GUIDE.md`](EVAL_GUIDE.md) in this folder is a copy |
 | [`nathancbao/confhead`](https://huggingface.co/nathancbao/confhead) | The earlier home of the stage 0 and 1 runs on the partial cache (public) |
 | [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead) | `run1`, the first trainval run, on the partial cache |
 | [`nathancbao/confhead-charts`](https://huggingface.co/spaces/nathancbao/confhead-charts) | Trackio loss curves of the stage 0 and 1 runs on the partial cache, a snapshot from 2026-11-15 without `run1` |
@@ -39,12 +39,12 @@ Every run trained on the partial `nuscenes-trainval` cache (fingerprint `99d44ff
 | `m2-sweeps1` | the keyframe radar sweep only | 68 | 0.5549 | [`csci566-depthconf/confhead/m2-sweeps1`](https://huggingface.co/csci566-depthconf/confhead/tree/main/m2-sweeps1) |
 | `m3-tau005` | `tau` 0.05, so other labels | 68 | 0.4261 | [`csci566-depthconf/confhead/m3-tau005`](https://huggingface.co/csci566-depthconf/confhead/tree/main/m3-tau005) |
 | `m3-tau02` | `tau` 0.2, so other labels | 68 | 0.6444 | [`csci566-depthconf/confhead/m3-tau02`](https://huggingface.co/csci566-depthconf/confhead/tree/main/m3-tau02) |
-| `m6-maxdepth50` | labels up to 50 m only | 68 | 0.5607 | [`csci566-depthconf/confhead/m6-maxdepth50`](https://huggingface.co/csci566-depthconf/confhead/tree/main/m6-maxdepth50) |
+| `m6-maxdepth50` | label depth range up to 50 m (other labels) | 68 | 0.5607 | [`csci566-depthconf/confhead/m6-maxdepth50`](https://huggingface.co/csci566-depthconf/confhead/tree/main/m6-maxdepth50) |
 | `m6-quarter-data` | 27,700 train images per epoch, a quarter | 68 | 0.5651 | [`csci566-depthconf/confhead/m6-quarter-data`](https://huggingface.co/csci566-depthconf/confhead/tree/main/m6-quarter-data) |
 
 `run1` and `run-v1-radar` share every setting and the dev scenes. Their configs differ only in who trained them, the run folder, and the git commit, and the code in `src/` is the same at both commits. They are the one repeat pair the team has, and the 0.0004 noise figure comes from them.
 
-The dev loss of the two `tau` runs is not comparable with the others, because another `tau` makes other labels. Stages 4 and 5 of the run matrix (learning rate and head width, final seeds) have not run yet.
+Do not compare the dev loss of a `tau` run or of `m6-maxdepth50` with the others: they use other labels. Stages 4 and 5 of the run matrix (learning rate and head width, final seeds) have not run yet.
 
 ## Loading a Checkpoint
 

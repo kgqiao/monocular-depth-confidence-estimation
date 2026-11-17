@@ -46,8 +46,8 @@ States: `retrain` (trained on the partial cache; the loss shown is from that run
 | 4 | `m4-narrow` | a narrower head | `head.widths=[32, 32, 16]` | blocked | | | |
 | 5 | `m5-seed1` | final config, seed 1 | `train.seed=1` on the best config | blocked | | | |
 | 5 | `m5-seed2` | final config, seed 2 | `train.seed=2` on the best config | blocked | | | |
-| 6 | `m6-maxdepth50` | labels up to 50 m only | `inputs.labels.max_depth=50.0` | retrain | 0.5607 | | |
-| 6 | `m6-quarter-data` | a quarter of the train images per epoch | `train.samples_per_epoch=38000` (27,700 on the partial cache) | retrain | 0.5651 | | |
+| 6 | `m6-maxdepth50` | labels only up to 50 m | `inputs.labels.max_depth=50.0` | retrain | 0.5607 (other labels) | | |
+| 6 | `m6-quarter-data` | how much does the head lose with a quarter of the data? | `train.samples_per_epoch=38000` (27,700 on the partial cache) | retrain | 0.5651 | | |
 
 Radar coverage (0b), measured on the 149,410 entries of the partial cache, training settings (`radius` 1, every sweep): the radar validity channel marks 3.4% of the grid cells (6.2% at radius 2, 1.7% with the keyframe sweep only). Only 4.8% of the lidar-labeled cells have a valid radar cell on them. The radar fit fails on 17.0% of images (32% on the two back-side cameras), and those images get an all-zero radar residual and mask. So the dev loss, which is computed on labeled cells, can barely move with radar. Stage 2 is still worth a few runs: start with `m2-radar-lidar-fit`, which removes the fit failures, then `m2-radius2`. Compare the loss on the labeled cells that have radar, not the mean dev loss.
 
@@ -60,9 +60,9 @@ Stage 1, on the partial cache: all seven runs trained 8 of 8 epochs. This is dev
 - One channel alone (0.6394 depth, 0.6778 temporal) is far worse than any run with the features.
 - `m1-seed1` (0.5885) is not comparable on dev loss, because the seed also picks other dev scenes. Its use is Eval's score on val.
 
-Stages 2, 3, and 6 also trained on the partial cache, and their losses are in the table. They have no written findings yet. On dev loss, `m2-radar-lidar-fit` (0.5507) is 0.0059 below the baseline, and the other three radar runs are within 0.0018 of it. Do not compare the two `tau` runs with the baseline on dev loss, as the last section says.
+Stages 2 and 3, on the partial cache (all six runs trained 8 of 8 epochs; dev loss only, Eval's scores decide): `m2-radar-lidar-fit` (0.5507) is 0.0059 under `run-v1-radar` (0.5566), the largest gap of any run against the baseline, and `m2-radius0`, `m2-radius2` and `m2-sweeps1` are within 0.0018 of it (0.5554, 0.5548, 0.5549). The two `tau` runs use other labels, so their dev loss (0.4261 at 0.05, 0.6444 at 0.2) cannot be compared with the others. Stage 6: `m6-quarter-data` (27,700 images per epoch) reaches 0.5651, 0.0085 above the baseline. `m6-maxdepth50` uses other labels (0.5607) and also cannot be compared. Hugging Face holds all of these runs.
 
-The runs and their files are in [`csci566-depthconf/confhead`](https://huggingface.co/csci566-depthconf/confhead) on Hugging Face. Access to it is by request: log in and ask on the repository page. Its `EVAL_GUIDE.md` tells the Eval team which run is which and what to score first; it describes the partial-cache runs until someone updates it.
+The runs and their files are in [`csci566-depthconf/confhead`](https://huggingface.co/csci566-depthconf/confhead) on Hugging Face. The repository is gated: log in, and ask for access (or be added by an admin) before a download works. Its `EVAL_GUIDE.md` tells the Eval team which run is which and what to score first; [`results/EVAL_GUIDE.md`](../results/EVAL_GUIDE.md) is a copy. Both describe the partial-cache runs until someone updates them.
 
 Stage 4 runs on the best inputs of stages 1 to 3. Stage 5 uses the best config of all stages. Their rows go into the manifest when those configs are chosen. The `head.widths` lists of stage 4 are written as `head.widths=[128, 128, 64]` in `set`.
 
