@@ -25,7 +25,7 @@ One entry of the cache. Each block is one grid cell (here 132 x 74, at `grid.pat
 | Resource | What it holds |
 |---|---|
 | [Run matrix](guides/run-matrix.md) | The ablation plan, the flags of each run, its state, and the findings so far |
-| [`nathancbao/confhead`](https://huggingface.co/nathancbao/confhead) | The ablation checkpoints, with an [`EVAL_GUIDE.md`](https://huggingface.co/nathancbao/confhead/blob/main/EVAL_GUIDE.md) for the Eval team |
+| [`csci566-depthconf/confhead`](https://huggingface.co/csci566-depthconf/confhead) | The ablation checkpoints, with an [`EVAL_GUIDE.md`](https://huggingface.co/csci566-depthconf/confhead/blob/main/EVAL_GUIDE.md) for the Eval team |
 | [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead) | `run1`, the first trainval run |
 | [`nathancbao/confhead-charts`](https://huggingface.co/spaces/nathancbao/confhead-charts) | Trackio loss curves of the ablation runs |
 
@@ -175,7 +175,7 @@ examples/carc-submit.sh configs/nuscenes-trainval.toml 16
 sbatch examples/carc-train.sbatch configs/train-trainval.toml
 ```
 
-After each epoch, the job uploads the run to the Hugging Face model repository that `--repo` names, [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead) by default, and rewrites that repository's model card with the settings and losses of its runs. The ablation runs are in [`nathancbao/confhead`](https://huggingface.co/nathancbao/confhead), and [`results/model_checkpoints.md`](results/model_checkpoints.md) lists the runs of both repositories. [guides/tracking-runs.md](guides/tracking-runs.md) draws the loss curves of one repository's runs in a Trackio dashboard on your own computer:
+After each epoch, the job uploads the run to the Hugging Face model repository that `--repo` names, [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead) by default, and rewrites that repository's model card with the settings and losses of its runs. The ablation runs are in [`csci566-depthconf/confhead`](https://huggingface.co/csci566-depthconf/confhead), and [`results/model_checkpoints.md`](results/model_checkpoints.md) lists the runs of both repositories. [guides/tracking-runs.md](guides/tracking-runs.md) draws the loss curves of one repository's runs in a Trackio dashboard on your own computer:
 
 ```sh
 uv run --group tracking examples/sync_trackio.py
