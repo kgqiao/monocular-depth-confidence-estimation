@@ -133,11 +133,12 @@ The dataset is more than 800 GB, so it cannot go into the PI's project folder. `
 - Created confhead/examples/compare_condition_tags.py — audit script to compare cache keyword tags vs BEVCar lists on CARC
 - Created confhead/examples/label_count_table.py — script to count scenes, keyframes, labeled cells, and AbsRel > tau per BEVCar group
 
-### Evals team set future checklist items
+Varad: Tuesday Checklist Items done
+Downloaded all three trained confidence-head checkpoints from Nathan A and Nathan B to `/scratch1/tawde/checkpoints/` on CARC
+- Built `confhead/src/evals/flip_confidence.py` — runs depth model on original and horizontally-flipped image; disagreement between the two disparity maps is used as a no-training confidence score
+- Built `confhead/examples/run_flip_baseline.py` — full CARC eval script that loads the depth model, iterates over all val entries, resizes flip confidence to the LiDAR label grid, and reports AUC-ROC, ECE, AUSE, AURG per BEVCar condition (all / day / rain / night)
 
-Varad:
-- Download all three trained models as of today from Nathan A and Nathan B
-- Build flip comparison py file, start on CARC (mirror image, run depth model, flip result, use where two depths diagree as a no-training confidence score)
+### Evals team set future checklist items
 
 Katherine:
 - Finish the AUROC, ECE tests
