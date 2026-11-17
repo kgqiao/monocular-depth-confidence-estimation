@@ -1,8 +1,8 @@
 # Track the Runs in Trackio
 
-This guide draws the loss curves of the training runs in a [Trackio](https://github.com/gradio-app/trackio) dashboard on your own computer. The training jobs on CARC upload each run to a Hugging Face model repository, as [training-on-carc.md](training-on-carc.md) describes. The runs are in two repositories: `run1` in [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead), the default, and the ablation runs in [`nathancbao/confhead`](https://huggingface.co/nathancbao/confhead). [`results/model_checkpoints.md`](../results/model_checkpoints.md) lists them all.
+This guide draws the loss curves of the training runs in a [Trackio](https://github.com/gradio-app/trackio) dashboard on your own computer. The training jobs on CARC upload each run to a Hugging Face model repository, as [training-on-carc.md](training-on-carc.md) describes. The runs are in [`csci566-depthconf/confhead`](https://huggingface.co/csci566-depthconf/confhead), the default. The earlier runs on the partial cache are also in [`nathancbao/confhead`](https://huggingface.co/nathancbao/confhead) and [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead). [`results/model_checkpoints.md`](../results/model_checkpoints.md) lists them all.
 
-Each sync reads one repository and rebuilds the Trackio database from it, so you can delete the database at any time and lose nothing. To see the ablation runs, add `--repo nathancbao/confhead`. A read-only snapshot of those runs is also online in the static Space [`nathancbao/confhead-charts`](https://huggingface.co/spaces/nathancbao/confhead-charts); [run-matrix.md](run-matrix.md#see-the-runs-in-trackio) says how it was made.
+Each sync reads one repository and rebuilds the Trackio database from it, so you can delete the database at any time and lose nothing. To see the earlier runs, add `--repo nathancbao/confhead`. A read-only snapshot of those runs is also online in the static Space [`nathancbao/confhead-charts`](https://huggingface.co/spaces/nathancbao/confhead-charts); [run-matrix.md](run-matrix.md#see-the-runs-in-trackio) says how it was made.
 
 ## How the Sync Works
 
