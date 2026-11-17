@@ -25,7 +25,7 @@ The input cache holds, for every camera image of every nuScenes keyframe, what c
 
 ### What an entry holds
 
-One `.npz` of arrays and one `.json` that says what they mean, per camera image. The grid is the ViT patch grid times `grid.patch_multiple`: 4 by default (264 x 148), 2 for the local mini build (132 x 74) (`confhead/src/confhead/cache/config.py:45`).
+One `.npz` of arrays and one `.json` that says what they mean, per camera image. The grid is the ViT patch grid times `grid.patch_multiple`: 4 by default in the code (264 x 148), 2 for the trainval cache and the local mini build (132 x 74) (`confhead/src/confhead/cache/config.py:45`).
 
 | Array | Shape | Type | Content |
 |---|---|---|---|

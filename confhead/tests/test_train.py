@@ -6,7 +6,8 @@ import pytest
 from confhead import HeadInputs, LabelConfig, load_head
 from confhead.cache.config import CacheConfig
 from confhead.cache.store import build_index, open_for_build, write_entry
-from confhead.train import TrainConfig, Training, dev_scenes, load_train_config
+from confhead.train import (TrainConfig, Training, config_fingerprint, dev_scenes, load_train_config,
+                            planned_fingerprint)
 from test_cache import make_entry
 
 SCENES = {"scene-a": "day", "scene-b": "day", "scene-c": "day", "scene-d": "day", "scene-e": "night", "scene-f": "night"}
@@ -139,3 +140,40 @@ def test_a_stopped_run_continues_as_if_it_never_stopped(tmp_path, monkeypatch):
 
     with pytest.raises(ValueError, match="train.lr 0.001 -> 0.01"):
         Training(small_config(cache, tmp_path / "runs", epochs=3, lr=0.01)).fit()
+
+
+def test_the_fingerprint_names_the_model_and_not_where_it_ran(tmp_path):
+    cache = make_cache(tmp_path / "cache")
+    cfg = small_config(cache, tmp_path / "runs")
+    training = Training(cfg)
+    assert planned_fingerprint(cfg, training.cache) == (training.fingerprint, len(training.train_idx))
+
+    moved = small_config(cache, tmp_path / "elsewhere")
+    moved.output.name, moved.output.group, moved.run.num_workers = "other", "radar", 1
+    assert Training(moved).fingerprint == training.fingerprint
+    for change in ({"seed": 1}, {"lr": 0.01}, {"epochs": 3}):
+        assert Training(small_config(cache, tmp_path / "runs", **change)).fingerprint != training.fingerprint
+    tau = small_config(cache, tmp_path / "runs")
+    tau.inputs = HeadInputs(labels=LabelConfig(tau=0.2))
+    assert Training(tau).fingerprint != training.fingerprint
+
+
+def test_a_config_from_before_the_fingerprint_gives_the_same_one(tmp_path):
+    training = Training(small_config(make_cache(tmp_path / "cache"), tmp_path / "runs"))
+    training.fit()
+    config = json.loads((training.dir / "config.json").read_text())
+    assert config["fingerprint"] == training.fingerprint == config_fingerprint(config)
+    del config["fingerprint"], config["settings"]["output"]["group"]
+    assert config_fingerprint(config) == training.fingerprint
+    assert config_fingerprint({"settings": {}}) == ""
+
+
+def test_a_run_folder_refuses_a_cache_with_other_entries(tmp_path):
+    cache = make_cache(tmp_path / "cache")
+    Training(small_config(cache, tmp_path / "runs", epochs=1)).fit()
+    path = tmp_path / "runs/test/config.json"
+    config = json.loads(path.read_text())
+    config["train_images"] -= 2
+    path.write_text(json.dumps(config))
+    with pytest.raises(ValueError, match="train images 6 -> 8: the cache holds other entries"):
+        Training(small_config(cache, tmp_path / "runs", epochs=1)).fit()

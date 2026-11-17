@@ -24,10 +24,10 @@ One entry of the cache. Each block is one grid cell (here 132 x 74, at `grid.pat
 
 | Resource | What it holds |
 |---|---|
-| [Run matrix](guides/run-matrix.md) | The ablation plan, the flags of each run, its state, and the findings so far |
-| [`csci566-depthconf/confhead`](https://huggingface.co/csci566-depthconf/confhead) | The ablation checkpoints, with an [`EVAL_GUIDE.md`](https://huggingface.co/csci566-depthconf/confhead/blob/main/EVAL_GUIDE.md) for the Eval team |
-| [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead) | `run1`, the first trainval run |
-| [`nathancbao/confhead-charts`](https://huggingface.co/spaces/nathancbao/confhead-charts) | Trackio loss curves of the ablation runs |
+| [Run matrix](guides/run-matrix.md) | The ablation plan, what each run changes, its state, and the findings so far |
+| [`csci566-depthconf/confhead`](https://huggingface.co/csci566-depthconf/confhead) | The checkpoints of every run, with an [`EVAL_GUIDE.md`](https://huggingface.co/csci566-depthconf/confhead/blob/main/EVAL_GUIDE.md) for the Eval team ([copy](results/EVAL_GUIDE.md)). The repository is gated: log in and ask for access |
+| [`nathancbao/confhead`](https://huggingface.co/nathancbao/confhead), [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead) | The earlier runs on the partial cache: stages 0 and 1, and `run1` |
+| [`nathancbao/confhead-charts`](https://huggingface.co/spaces/nathancbao/confhead-charts) | Trackio loss curves of the earlier stage 0 and 1 runs |
 
 ## Quickstart
 
@@ -104,12 +104,7 @@ uv run examples/preview_cache.py scene-0553_020_CAM_FRONT
 uv run examples/read_cache.py
 ```
 
-Train the head on the mini cache with no notebook open, into `outputs/runs/mini/`. `--estimate` trains nothing: it prints the splits, the input statistics, and the time of one epoch. A run folder that holds `last.pt` continues after its last epoch:
-
-```sh
-uv run examples/train_head.py --estimate
-uv run examples/train_head.py
-```
+Heads that the team uses are trained on CARC with `confhead train`; see [On CARC](#on-carc). [`notebooks/train-head.ipynb`](notebooks/train-head.ipynb) trains one on the mini cache to show the steps.
 
 Run the tests. The tests on real data run when the dataset is at its default place, and the build test runs when `DEPTH_ANYTHING_CHECKPOINT` is set:
 
@@ -129,7 +124,7 @@ uv run jupyter lab notebooks/cache-tutorial.ipynb
 
 ### Train the head in a notebook
 
-[`notebooks/train-head.ipynb`](notebooks/train-head.ipynb) trains the confidence head on a built cache, and keeps the checkpoint with the lowest loss on a dev split of the train scenes. It runs the steps of `Training` from `confhead.train` one by one, and `examples/train_head.py` runs the same `Training` in one call. Each run writes its settings and checkpoints to `outputs/runs/`, or to `/scratch1/$USER/confhead-runs/` on CARC. [`notebooks/eval-template.ipynb`](notebooks/eval-template.ipynb) loads a checkpoint with `load_head` and predicts `p_error` for val images: a starting point for the eval runner. [guides/notebook-on-carc.md](guides/notebook-on-carc.md) opens both on CARC. On your own computer, after the two commands above:
+[`notebooks/train-head.ipynb`](notebooks/train-head.ipynb) trains the confidence head on a built cache, and keeps the checkpoint with the lowest loss on a dev split of the train scenes. It runs the steps of `Training` from `confhead.train` one by one, and the CARC job of `confhead train` runs the same `Training` in one call. Each run writes its settings and checkpoints to `outputs/runs/`, or to `/scratch1/$USER/confhead-runs/` on CARC. [`notebooks/eval-template.ipynb`](notebooks/eval-template.ipynb) loads a checkpoint with `load_head` and predicts `p_error` for val images: a starting point for the eval runner. [guides/notebook-on-carc.md](guides/notebook-on-carc.md) opens both on CARC. On your own computer, after the two commands above:
 
 ```sh
 uv run jupyter lab notebooks/train-head.ipynb
@@ -169,13 +164,15 @@ The settings that change the content of an entry make a fingerprint. A build int
 examples/carc-submit.sh configs/nuscenes-trainval.toml 16
 ```
 
-[guides/training-on-carc.md](guides/training-on-carc.md) trains the head on that cache as a batch job on one GPU, with [`configs/train-trainval.toml`](configs/train-trainval.toml). A job that stops at its time limit continues when you submit it again:
+[guides/training-on-carc.md](guides/training-on-carc.md) trains the runs of [`configs/run-matrix.toml`](configs/run-matrix.toml) on that cache, one Slurm job on one GPU per run. This is the only way to train a head that the team uses. `preview` checks the login, the cache, and each run; `run` submits the jobs and a report job; `status` prints where each run stands. Sending `run` again continues what stopped and skips what is done:
 
 ```sh
-sbatch examples/carc-train.sbatch configs/train-trainval.toml
+uv run confhead train preview configs/run-matrix.toml
+uv run confhead train run configs/run-matrix.toml
+uv run confhead train status configs/run-matrix.toml
 ```
 
-After each epoch, the job uploads the run to the Hugging Face model repository that `--repo` names, [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead) by default, and rewrites that repository's model card with the settings and losses of its runs. The ablation runs are in [`csci566-depthconf/confhead`](https://huggingface.co/csci566-depthconf/confhead), and [`results/model_checkpoints.md`](results/model_checkpoints.md) lists the runs of both repositories. [guides/tracking-runs.md](guides/tracking-runs.md) draws the loss curves of one repository's runs in a Trackio dashboard on your own computer:
+After each epoch, a job uploads its run to [`csci566-depthconf/confhead`](https://huggingface.co/csci566-depthconf/confhead) and rewrites that repository's model card with the settings and losses of its runs. [`results/model_checkpoints.md`](results/model_checkpoints.md) lists the runs. [guides/tracking-runs.md](guides/tracking-runs.md) draws the loss curves of the repository's runs in a Trackio dashboard on your own computer:
 
 ```sh
 uv run --group tracking examples/sync_trackio.py
