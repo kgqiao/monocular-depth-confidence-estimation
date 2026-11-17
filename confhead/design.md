@@ -18,7 +18,7 @@
 
 ## The training
 
-- **The library holds the run, and the notebook and the script call it.** `confhead.train.Training` holds every step: the dev split, the input statistics, the head, the timing, and the loop with its checkpoints. The notebook calls the steps one by one to show them, and `examples/train_head.py` calls `fit` once for a batch job. So the two train the same way, and a fix in one reaches the other.
+- **The library holds the run, and the notebook and the script call it.** `confhead.train.Training` holds every step: the dev split, the input statistics, the head, the timing, and the loop with its checkpoints. The notebook calls the steps one by one to show them, and `confhead train` calls `fit` once in each batch job. So the two train the same way, and a fix in one reaches the other.
 - **Settings load as for the cache.** A TOML file and `section.key=value` overrides fill a `TrainConfig`, and a nested setting takes more dots: `inputs.labels.tau`. The notebook sets the same fields in Python.
 - **Dev is drawn from the train scenes, by scene, per condition and weather.** The images of one scene are correlated, so a split by image would let dev see train. Val stays for the eval team, and the checkpoint is chosen by the dev loss, because the eval team owns AUSE.
 - **A run continues after its last epoch.** `last.pt` holds the optimizer and the schedule after each epoch. The batch order of an epoch depends only on the seed and the epoch number, and the weights are drawn right after the seed is set. So a run that stops and continues, and a run through the notebook's steps, train the same as one call of `fit`. A checkpoint is replaced in one step, so a job stopped while saving leaves the last one whole.

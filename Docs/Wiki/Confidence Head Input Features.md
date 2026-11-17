@@ -6,7 +6,7 @@ Everything comes from two sources: one pass of the frozen Depth Anything V2 (DA2
 
 ## The Input Tensor
 
-`x` has C + 4 channels on the cache grid: 264 x 148 for the trainval cache, where one cell covers about 6 x 6 image pixels. `dataset.py:ConfidenceDataset.__getitem__` stacks them in this order:
+`x` has C + 4 channels on the cache grid: 132 x 74 for the trainval cache (`grid.patch_multiple = 2`), where one cell covers about 12 x 12 image pixels. `dataset.py:ConfidenceDataset.__getitem__` stacks them in this order:
 
 | Channels | Name | Card |
 |---|---|---|
@@ -141,7 +141,7 @@ The head outputs one logit per cell, `p_error`: the probability that DA2's depth
 
 - `abs_rel`: \|predicted depth − lidar depth\| / lidar depth at each lidar point, with the predicted depth from the lidar fit and from DA2's disparity at the point's pixel, read before the grid. Each point goes to its cell, and the nearest point wins a cell.
 - `target`: 1 where `abs_rel` > `tau`, 0 elsewhere.
-- `mask`: 1 where a cell holds a lidar point. That is about 9% of the 264 x 148 cells, about 3,600 per image.
+- `mask`: 1 where a cell holds a lidar point. That is about 25% of the 132 x 74 cells, about 2,500 per image.
 
 The loss is a binary cross-entropy over the masked cells, with the positive cells weighted by the ratio of negatives to positives (`head.py:masked_bce`). The evaluation sorts the labeled cells by `p_error` and uses `abs_rel` for the sparsification curves.
 
