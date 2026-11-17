@@ -7,12 +7,13 @@ A running record of what the training team has done. Add new entries at the bott
 | Item | State |
 |---|---|
 | nuScenes v1.0 dataset on CARC | Done |
-| Confidence head input cache (trainval) | Done, checked |
+| Confidence head input cache (trainval) | Done, complete since 2026-11-16 |
 | Cache tutorial notebook | In progress: not yet run on CARC |
 | Project wiki in `Docs/Wiki` | Done |
-| Cache backup on Hugging Face | Upload job running |
-| Confidence head training, Run 1 (trainval) | Done, on Hugging Face |
-| Run tracking (model card, Trackio) | Done locally; upload from a CARC job not yet tested |
+| Cache backup on Hugging Face | Upload of the complete cache running |
+| Confidence head training, Run 1 (trainval) | Done, on Hugging Face (partial cache) |
+| Confidence head training, run matrix (18 runs, complete cache) | Done, on Hugging Face |
+| Run tracking (model card, Trackio) | Done; the Trackio snapshot still shows the partial-cache runs |
 
 Data locations on CARC:
 
@@ -202,3 +203,29 @@ Alejandro/everyone:
 
 --- Final Report due Dec 7
 
+## 2026-11-16
+
+### Repaired the confidence head input cache
+
+- The trainval cache was missing about a quarter of its entries, because some build tasks had built nothing.
+- Built the missing entries in place. The cache is now complete, and its backup to Hugging Face is uploading again.
+- Runs trained before this date used the partial cache, so their dev losses are not comparable with later runs.
+
+### Gave each Slurm job its own Python environment
+
+- Jobs that ran at the same time shared one environment, and one job could rebuild it under another and make it fail.
+- Each job now builds its own environment and deletes it when it ends, so several jobs can run at once.
+
+## 2026-11-17
+
+### Made one command the only way to train
+
+- `confhead train` reads the list of runs from one file, submits a Slurm job for each, and writes a report when they end. Sent again, it continues what stopped and skips what is done.
+- The runs upload to the team's organization repository on Hugging Face.
+
+### Trained every run again on the complete cache
+
+- All 18 runs of the run matrix trained in parallel and are on Hugging Face. Each took about 1 to 3 hours.
+- The partial-cache checkpoints were replaced under the same names. The old files stay in the repository under a tag.
+- A repeat of the baseline shows how much two runs with the same settings differ.
+- To do: update the run matrix and the Eval guide with the new losses, and tell the Eval team that the checkpoints changed.
