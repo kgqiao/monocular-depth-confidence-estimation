@@ -3,7 +3,7 @@
 This guide lists the confidence-head training runs and says what each setting of a run means. It is written for the eval team, who score the heads. The steps to train a run are in [training-on-carc.md](training-on-carc.md). [`results/model_checkpoints.md`](../results/model_checkpoints.md) lists every run so far with a link to its checkpoint.
 
 > [!IMPORTANT]
-> The runs and numbers on this page are from the partial cache: 149,410 of the 204,894 entries. The cache is complete since 2026-11-16, and every run is being trained again on it, as [run-matrix.md](run-matrix.md) describes. The settings and their meaning do not change.
+> The runs and numbers on this page are from the partial cache: 149,410 of the 204,894 entries. Every run was trained again on the complete cache on 2026-11-17; [run-matrix.md](run-matrix.md) has those losses. The settings and their meaning are the same.
 
 ## What a Run Is
 
