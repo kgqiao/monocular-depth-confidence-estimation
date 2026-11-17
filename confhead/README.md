@@ -25,7 +25,7 @@ One entry of the cache. Each block is one grid cell (here 132 x 74, at `grid.pat
 | Resource | What it holds |
 |---|---|
 | [Run matrix](guides/run-matrix.md) | The ablation plan, what each run changes, its state, and the findings so far |
-| [`csci566-depthconf/confhead`](https://huggingface.co/csci566-depthconf/confhead) | The checkpoints of every run, with an [`EVAL_GUIDE.md`](https://huggingface.co/csci566-depthconf/confhead/blob/main/EVAL_GUIDE.md) for the Eval team. Access is by request |
+| [`csci566-depthconf/confhead`](https://huggingface.co/csci566-depthconf/confhead) | The checkpoints of every run, with an [`EVAL_GUIDE.md`](https://huggingface.co/csci566-depthconf/confhead/blob/main/EVAL_GUIDE.md) for the Eval team ([copy](results/EVAL_GUIDE.md)). The repository is gated: log in and ask for access |
 | [`nathancbao/confhead`](https://huggingface.co/nathancbao/confhead), [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead) | The earlier runs on the partial cache: stages 0 and 1, and `run1` |
 | [`nathancbao/confhead-charts`](https://huggingface.co/spaces/nathancbao/confhead-charts) | Trackio loss curves of the earlier stage 0 and 1 runs |
 
