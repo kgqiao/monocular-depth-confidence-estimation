@@ -1,0 +1,138 @@
+# The run matrix: every training run of the confidence head. `confhead train`
+# reads it; guides/training-on-carc.md has the steps and guides/run-matrix.md
+# says what each run tests. Each run changes `set` from the settings of `config`.
+# A run name is the run folder on disk and in the repository, so never give a
+# name to other settings.
+
+config = "train-trainval.toml"
+repo = "csci566-depthconf/confhead"
+time = "16:00:00"
+# The entries of the complete cache. A cache with another count is refused.
+cache_entries = 204894
+
+[[run]]
+name = "run-v1-radar"
+stage = 0
+group = "baseline"
+question = "all inputs (the baseline)"
+set = []
+
+[[run]]
+name = "run-v1-radar-repeat"
+stage = 0
+group = "baseline"
+question = "the baseline again: how much do two runs with the same settings differ?"
+set = []
+
+[[run]]
+name = "run-v0-no-radar"
+stage = 0
+group = "inputs"
+question = "no radar"
+set = ["inputs.radar=false"]
+
+[[run]]
+name = "m1-no-temporal"
+stage = 1
+group = "inputs"
+question = "what does the temporal spread add?"
+set = ["inputs.temporal=false"]
+
+[[run]]
+name = "m1-no-depth"
+stage = 1
+group = "inputs"
+question = "what does the depth channel add?"
+set = ["inputs.depth=false"]
+
+[[run]]
+name = "m1-no-features"
+stage = 1
+group = "inputs"
+question = "what do the decoder features add?"
+set = ["inputs.features=false"]
+
+[[run]]
+name = "m1-features-only"
+stage = 1
+group = "inputs"
+question = "features without the other groups"
+set = ["inputs.depth=false", "inputs.temporal=false", "inputs.radar=false"]
+
+[[run]]
+name = "m1-temporal-only"
+stage = 1
+group = "inputs"
+question = "does the head beat the temporal cue alone?"
+set = ["inputs.features=false", "inputs.depth=false", "inputs.radar=false"]
+
+[[run]]
+name = "m1-depth-only"
+stage = 1
+group = "inputs"
+question = "does the head beat the depth channel alone?"
+set = ["inputs.features=false", "inputs.temporal=false", "inputs.radar=false"]
+
+[[run]]
+name = "m1-seed1"
+stage = 1
+group = "seed"
+question = "how big is the seed noise?"
+set = ["train.seed=1"]
+
+[[run]]
+name = "m2-radar-lidar-fit"
+stage = 2
+group = "radar"
+question = "does the lidar fit change the radar residual?"
+set = ["inputs.radar_cfg.align=lidar"]
+
+[[run]]
+name = "m2-radius0"
+stage = 2
+group = "radar"
+question = "radar radius 0"
+set = ["inputs.radar_cfg.radius=0"]
+
+[[run]]
+name = "m2-radius2"
+stage = 2
+group = "radar"
+question = "radar radius 2"
+set = ["inputs.radar_cfg.radius=2"]
+
+[[run]]
+name = "m2-sweeps1"
+stage = 2
+group = "radar"
+question = "the keyframe radar sweep only"
+set = ["inputs.radar_cfg.max_sweeps=1"]
+
+[[run]]
+name = "m3-tau005"
+stage = 3
+group = "labels"
+question = "tau 0.05"
+set = ["inputs.labels.tau=0.05"]
+
+[[run]]
+name = "m3-tau02"
+stage = 3
+group = "labels"
+question = "tau 0.2"
+set = ["inputs.labels.tau=0.2"]
+
+[[run]]
+name = "m6-maxdepth50"
+stage = 6
+group = "labels"
+question = "labels up to 50 m only"
+set = ["inputs.labels.max_depth=50.0"]
+
+[[run]]
+name = "m6-quarter-data"
+stage = 6
+group = "data"
+question = "a quarter of the train images per epoch"
+# A quarter of the train images of the complete cache; `confhead train preview` prints their number.
+set = ["train.samples_per_epoch=38000"]

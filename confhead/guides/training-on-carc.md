@@ -1,15 +1,23 @@
 # Train the Head on CARC
 
-This guide trains the confidence head on the v1.0-trainval cache, as a batch job on one CARC GPU. The job needs no open session. It writes its progress to a log, and a run that stops at its time limit continues when you submit it again.
+This guide trains the runs of the run matrix on CARC and puts them on Hugging Face. `confhead train` is the only way to train a head that the team uses: it gives every run the same cache, the same job, and the same checks. One command submits a Slurm job per run. The jobs run at the same time, need no open session, and upload each run when it ends.
 
-[`notebooks/train-head.ipynb`](../notebooks/train-head.ipynb) runs the same training step by step. Both call `confhead.train`, so the notebook is the place to try a setting on the mini cache before you submit a long job.
+[`notebooks/train-head.ipynb`](../notebooks/train-head.ipynb) shows the training step by step on the mini cache. It is a tutorial, and its runs do not go to the repository.
+
+| Command | What it does |
+|---|---|
+| `confhead train preview <manifest>` | Checks the login, the cache, and each run, and prints what `run` would do. It trains nothing. |
+| `confhead train run <manifest>` | Submits a job for each run that has epochs left, uploads the runs that are trained but not uploaded, and submits a report job. |
+| `confhead train status <manifest>` | Prints where each run stands. |
+
+The manifest is [`configs/run-matrix.toml`](../configs/run-matrix.toml). [run-matrix.md](run-matrix.md) says what each run tests.
 
 ## What You Need
 
-- The trainval cache, built with [cache-building-on-carc.md](cache-building-on-carc.md). The config expects it in `/scratch1/$USER/confhead-cache/nuscenes-trainval`.
-- The repository cloned on CARC, and uv, as in the cache guide.
+- The complete trainval cache in `/scratch1/naday/confhead-cache/nuscenes-trainval`, with 204,894 entries. Every run reads this one cache, whoever submits the job. `preview` refuses a cache with another entry count.
+- The repository cloned on CARC, and uv, as in [cache-building-on-carc.md](cache-building-on-carc.md).
 - `SBATCH_ACCOUNT` set to your CARC project account, as in step 1 of the cache guide.
-- A Hugging Face login with write access to the model repository the job uploads to, as in step 2 of [cache-backup-on-huggingface.md](cache-backup-on-huggingface.md). The job uploads the run after each epoch to [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead), or to the repository that `--repo` names. The ablation runs go to [`nathancbao/confhead`](https://huggingface.co/nathancbao/confhead) (see step 7).
+- A Hugging Face login that can write to [`csci566-depthconf/confhead`](https://huggingface.co/csci566-depthconf/confhead): a role of `write` or `admin` in the `csci566-depthconf` organization, and a write token. Log in once with `uv run hf auth login`.
 
 Run every command on a CARC login node, from the `confhead` folder:
 
@@ -17,155 +25,229 @@ Run every command on a CARC login node, from the `confhead` folder:
 cd ~/Vision-Project-CSCI-566/confhead
 git pull
 uv sync
-mkdir -p logs
 ```
 
-Each job builds its own Python environment in the node's `$TMPDIR` (or `/tmp`) from the uv cache that `uv sync` fills, and deletes it when it ends. Jobs never use the shared `.venv`, so you can start several at once, and a `uv sync` on the login node does not change a running job. The note in step 5 of [cache-building-on-carc.md](cache-building-on-carc.md) says why.
+`run` refuses to submit when tracked files have changes, so that the `config.json` of a run names the code that trained it.
 
-## 1. Look at the Config
-
-[`configs/train-trainval.toml`](../configs/train-trainval.toml) holds every setting of the run. These are the settings you are most likely to change:
-
-| Setting | Value | What it is |
-|---|---|---|
-| `data.cache` | `/scratch1/$USER/confhead-cache/nuscenes-trainval` | The cache to train on |
-| `output.runs` | `/scratch1/$USER/confhead-runs` | The folder of all runs |
-| `output.name` | `run1` | The run folder inside `output.runs` |
-| `inputs.features`, `inputs.depth`, `inputs.temporal`, `inputs.radar` | `true` | The channel groups of `x`. Turn one off for an ablation. |
-| `train.samples_per_epoch` | `0` | Train images per epoch, drawn at random. 0 means all of them. |
-
-To train on a cache that a teammate built, point `data.cache` to their folder, for example `/scratch1/<user>/confhead-cache/nuscenes-trainval`.
-
-> [!TIP]
-> To change a setting for one run only, add `--set section.key=value` to the command. A nested setting takes more dots: `--set inputs.labels.tau=0.2`. [`src/confhead/train.py`](../src/confhead/train.py) lists every setting with its default.
-
-## 2. Estimate the Run
-
-This job trains nothing. It reads the splits, measures the input statistics, and times the loading and the training step:
+## 1. Preview
 
 ```sh
-sbatch --time=01:00:00 examples/carc-train.sbatch configs/train-trainval.toml --estimate
+uv run confhead train preview configs/run-matrix.toml
 ```
 
-`sbatch` prints the job number: `Submitted batch job <job>`. When the job ends, read its log:
+To take a part of the matrix, name stages or runs. The same selection works for `run` and `status`:
 
 ```sh
-cat logs/confhead-train-<job>.out
+uv run confhead train preview configs/run-matrix.toml --stage 2 3
+uv run confhead train preview configs/run-matrix.toml --runs 'm1-*' run-v1-radar
 ```
 
-The last lines look like this:
+The preview prints the login, the cache, and one line per run:
 
 ```
-labels   ...% of cells labeled; positive rate ...% (gate 5% to 70%: inside); class weight ...
-speed    loading ... images/s, training step ... images/s
-epoch    ... images in about ... min; 8 epochs in about ... h
+login     <user> can write to csci566-depthconf/confhead
+cache     /scratch1/naday/confhead-cache/nuscenes-trainval: 204894 entries, fingerprint 99d44ff8c71c5355
+
+run             stage  fingerprint       images/epoch  hours  action
+run-v1-radar    0      ...               ...           ...    train; replaces the repository run
+m1-no-temporal  1      ...               ...           ...    resume after epoch 5 of 8
+m2-radius2      2      ...               ...                  done, in the repository
+
+18 runs: ... GPU jobs, ... uploads only, ... done, ... in the queue
+estimate  about ... GPU-hours in total, ...
+ready     send the same arguments to `confhead train run`
 ```
 
-> [!IMPORTANT]
-> The `labels` line must say `inside`. A positive rate outside the gate means that the depth needs a scale per camera before training, as the Run 1 plan says. Stop there and bring the numbers to the team.
+A `problem` line names what stops `run`, and the preview ends without `ready`.
 
-If one epoch takes more than 2 hours, set `train.samples_per_epoch` in the config to half the train images. The `train` line of the log gives their number.
+To prove that the login can write, the preview creates a branch `access-check-<user>` in the repository and deletes it at once. It changes nothing else.
 
-## 3. Submit the Training
+The hours are a ballpark. For each run, the preview takes the speed of the earlier run of the same name in the repository and scales it to the new number of images. It also prints the total at 28 images per second, the slowest loading measured on CARC. Runs of one size took 0.2 to 5.5 hours before, by the node they ran on.
+
+### The Action of Each Run
+
+`preview`, `run`, and `status` read the state of a run from three places: its run folder, the repository, and the Slurm queue. No file records what was submitted.
+
+| What is found | Action |
+|---|---|
+| No run folder | `train`: a new job |
+| A run folder with the same fingerprint and epochs left | `resume after epoch <n>`: a job that continues from `last.pt` |
+| A run folder with every epoch, and the run is not in the repository | `upload only`: `run` uploads it from the login node, with no job |
+| The repository holds the run with the same fingerprint and every epoch | `done` |
+| A job of this run is queued or running | `job <number>`: nothing is submitted |
+| A run folder with another fingerprint | `stale run folder`: needs `--archive-stale` |
+| The repository holds the name with another fingerprint | `replaces the repository run`: needs `--replace` |
+
+### The Fingerprint
+
+The fingerprint of a run is a hash of what makes it a model:
+
+- every setting except the `data`, `output`, and `run` sections
+- the fingerprint of the cache build
+- the number of train images
+- the dev scenes
+
+Two runs with the same fingerprint are the same model, wherever they trained. The number of train images separates the complete cache from a copy that lacks entries, which has the same cache fingerprint. `config.json` saves the git commit, and the fingerprint leaves it out, so a commit that changes no training code does not make every run new.
+
+## 2. Trial Run
+
+Before the real runs, send one short run through the whole path:
 
 ```sh
-sbatch examples/carc-train.sbatch configs/train-trainval.toml
+uv run confhead train run configs/run-matrix.toml --runs run-v1-radar --trial
 ```
 
-The job has 12 hours, set by `#SBATCH --time` in [`examples/carc-train.sbatch`](../examples/carc-train.sbatch). If the estimate is longer, the job stops at the limit and step 5 continues it. You can also submit with a longer `--time`, up to the limit of the partition.
+A trial trains 1 epoch of 10,000 images under the name `trial-run-v1-radar`, which takes about 6 minutes at the slowest rate. It uses the same job script, environment, checkpoints, upload, and report as a real run. When the report says the trial is done, delete it on disk and in the repository:
 
-After each epoch, and once more at the end, the job uploads the run folder to the model repository, as step 7 describes. A failed upload prints a warning, and the training goes on.
+```sh
+uv run confhead train clean-trials configs/run-matrix.toml
+```
 
-## 4. Watch the Job
+## 3. Run
+
+```sh
+uv run confhead train run configs/run-matrix.toml
+```
+
+`run` makes the checks of the preview again and submits nothing if one fails. Then it prints a line per job:
+
+```
+submitted run-v1-radar: job <job>, train, log logs/train/run-v1-radar-<job>.out
+report    job <job> starts when they end: logs/train/report-<job>.out
+```
+
+Each job has 16 hours, the `time` of the manifest; `--time 24:00:00` sets another limit for one command. A job writes `last.pt` and `best.pt` to `/scratch1/$USER/confhead-runs/<run>` after every epoch, and uploads the run folder after every epoch and once more at the end.
+
+Each job builds its own Python environment in the node's `$TMPDIR` (or `/tmp`) and deletes it when it ends. Jobs never use the shared `.venv`, so they do not disturb each other. The note in step 5 of [cache-building-on-carc.md](cache-building-on-carc.md) says why.
+
+### Replace a Run
+
+A run name is the folder of the run on disk and in the repository. When the repository holds another model under a name of the matrix, `run` stops unless you pass `--replace`:
+
+```sh
+uv run confhead train run configs/run-matrix.toml --replace --tag cache-149k
+```
+
+Before the first job starts, `run` sets a tag on the current commit of the repository, unless a tag names that commit already. `--tag` gives the tag its name; without it the name is `before-<date>-<time>`. The files of the replaced runs stay in the history of the repository:
+
+```sh
+uv run hf download csci566-depthconf/confhead m1-no-temporal/best.pt --revision cache-149k --local-dir .
+```
+
+A run folder on disk that holds another model under the same name stops `run` in the same way. `--archive-stale` renames the folder to `<run>.stale-<fingerprint>` and deletes nothing.
+
+## 4. Watch the Jobs
 
 ```sh
 squeue --me
-tail -f logs/confhead-train-<job>.out
+tail -f logs/train/<run>-<job>.out
+uv run confhead train status configs/run-matrix.toml
 ```
 
-The log prints a line five times per epoch, with the loss, the speed, and the time left in the epoch. After each epoch it prints the train and dev loss, and the commit of the upload:
+A log prints a line five times per epoch with the loss, the speed, and the time left in the epoch. After each epoch it prints the losses and the commit of the upload:
 
 ```
 epoch 1: train loss ..., dev loss ..., ... min, best so far
-uploaded epoch 1 of 8: https://huggingface.co/nadayusc/confhead/commit/...
+uploaded epoch 1 of 8: https://huggingface.co/csci566-depthconf/confhead/commit/...
 ```
 
-The model card of the repository shows the epochs each run has finished. On your own computer, [tracking-runs.md](tracking-runs.md) draws the loss curves of every run.
+> [!IMPORTANT]
+> The positive rate is the share of labeled cells with an error above `tau`. A log line `the positive rate is outside the gate of 5% to 70%` means that the depth needs a scale per camera before training. The [Run 1 plan](../../Docs/Wiki/CS566%20Confidence%20Head%20Training%20Run%201.md) sets this gate. Stop that run with `scancel <job>` and bring the numbers to the team.
 
-To stop the job, use `scancel <job>`.
+To stop a job, use `scancel <job>`. The run keeps its checkpoints.
 
-## 5. Continue a Run That Stopped
+## 5. Read the Report
 
-If the job reached its time limit or failed, submit the same command again:
+The report job starts when every training job of the command has ended, whether it finished or failed. It writes `logs/train/report-<job>.out`:
+
+```
+run             state                  epochs  best dev loss  job    Slurm      elapsed
+run-v1-radar    done                   8 of 8  ...            <job>  COMPLETED  ...
+m1-no-temporal  STOPPED                5 of 8  ...            <job>  TIMEOUT    ...
+m2-radius2      TRAINED, NOT UPLOADED  8 of 8  ...            <job>  FAILED     ...
+
+16 of 18 runs are done and in the repository.
+```
+
+For each run that is not done, the report gives the Slurm state, the exit code, and the last 15 lines of the job's log.
+
+| State | What it means |
+|---|---|
+| `done` | Every epoch is trained and the run is in the repository. |
+| `STOPPED` | The job ended with epochs left: a time limit, a node failure, or an error. |
+| `TRAINED, NOT UPLOADED` | Every epoch is trained, and the last upload failed three times. The job exits with an error. |
+| `NOT STARTED` | No checkpoint was written. |
+
+## 6. Continue What Is Left
+
+Read the cause in the report, fix it, and send the same `run` command again:
 
 ```sh
-sbatch examples/carc-train.sbatch configs/train-trainval.toml
+uv run confhead train run configs/run-matrix.toml
 ```
 
-The run folder holds `last.pt` after every epoch, so the job continues after the last epoch that finished, and loses at most one epoch. The batch order of an epoch depends only on the seed and the epoch number, so a continued run trains as if it had never stopped. When every epoch is done, the log says `... already holds 8 of 8 epochs; nothing to train`.
+It uploads the runs that are trained, submits jobs for the runs with epochs left, and skips the runs that are done or still in the queue. A continued run loses at most one epoch. The batch order of an epoch depends only on the seed and the epoch number, so a continued run trains as if it had never stopped.
 
-A run folder refuses other settings. If you changed a setting in between, the log names it, for example `train.lr 0.001 -> 0.002`. Undo the change, or give the run a new `output.name`.
+## 7. After the Runs
 
-## 6. Find the Checkpoint
+- Fill in the dev loss of each run in [run-matrix.md](run-matrix.md) and [`results/model_checkpoints.md`](../results/model_checkpoints.md).
+- [tracking-runs.md](tracking-runs.md) draws the loss curves of the repository's runs.
 
-The last line of the log names the checkpoint for the eval team:
+Each upload rewrites the model card of the repository from the `config.json` and `history.json` of every run in it. When two jobs upload at once, the later commit is refused, reads the repository again, and retries, so neither run drops off the card.
 
-```
-best     epoch <n> of 8, dev loss <loss>: /scratch1/<user>/confhead-runs/run1/best.pt
+To download a head:
+
+```sh
+uv run hf download csci566-depthconf/confhead m1-no-temporal/best.pt --local-dir .
 ```
 
 | File in the run folder | What it holds |
 |---|---|
-| `config.json` | every setting, the dev scenes, the class weight, the cache fingerprint, the git commit |
+| `config.json` | every setting, the dev scenes, the class weight, the cache fingerprint, the git commit, the run fingerprint |
 | `best.pt` | the head of the epoch with the lowest dev loss |
 | `last.pt` | the head of the last epoch, with the optimizer and the schedule, to continue the run |
 | `history.json` | the train and dev loss of each epoch |
 | `steps.json` | the mean train loss five times per epoch |
 
-[`notebooks/eval-template.ipynb`](../notebooks/eval-template.ipynb) loads `best.pt` with `load_head` and predicts `p_error` for val images.
+## Add a Run
 
-## 7. Upload the Run
+Add a `[[run]]` to [`configs/run-matrix.toml`](../configs/run-matrix.toml) and a row to [run-matrix.md](run-matrix.md):
 
-The job uploads the files of the run folder to a model repository, in a folder named after the run folder, so each run and ablation has its own folder. The repository is [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead) unless you pass `--repo` after the config. The ablation runs of [run-matrix.md](run-matrix.md) are in [`nathancbao/confhead`](https://huggingface.co/nathancbao/confhead), so pass `--repo nathancbao/confhead` for a new one, with a login that has write access to it. [`results/model_checkpoints.md`](../results/model_checkpoints.md) lists the runs of both repositories.
-
-Each upload also rewrites the model card from the `config.json` and `history.json` of every run in the repository, so the card lists the settings and losses of every run in that repository. When two jobs upload at once, the later commit is refused, reads the repository again, and retries, so neither run drops off the card.
-
-[`examples/upload_run.py`](../examples/upload_run.py) does the same upload by hand, for example when the job could not reach Hugging Face. The files are small, so it runs on the login node:
-
-```sh
-uv run examples/upload_run.py /scratch1/$USER/confhead-runs/run1
+```toml
+[[run]]
+name = "m4-lr3e-3"
+stage = 4
+group = "optimizer"
+question = "learning rate 0.003"
+set = ["train.lr=0.003"]
 ```
 
-The script refuses a run that has not trained every epoch; pass `--partial` to upload it anyway. Uploading the same run again replaces its files. Run the script with no run folder to rewrite the card alone, or with `--print-card` to see it without uploading. `--repo` names another repository.
+`set` changes settings of [`configs/train-trainval.toml`](../configs/train-trainval.toml), written as `section.key=value`. A nested setting takes more dots: `inputs.labels.tau=0.2`. [`src/confhead/train.py`](../src/confhead/train.py) lists every setting with its default, and [runs-and-configs.md](runs-and-configs.md) says what each means. `group` names the family of the run on the Trackio dashboard.
 
-To download a head:
+Never give a name to other settings. `preview` then reports the old run as another model and asks for `--replace`.
 
-```sh
-uv run hf download nadayusc/confhead run1/best.pt --local-dir .
-uv run hf download nathancbao/confhead m1-no-temporal/best.pt --local-dir .
-```
+## Upload a Run by Hand
 
-## Run an Ablation
-
-Give each ablation its own `output.name`, and each family of ablations its own `output.group`, which groups its runs on the dashboard. Several jobs can run at once, each on its own GPU:
+`run` uploads a trained run on its own. To upload a run folder directly, for example one that is not in the matrix:
 
 ```sh
-sbatch examples/carc-train.sbatch configs/train-trainval.toml --set inputs.radar=false --set output.name=run1-no-radar --set output.group=radar
-sbatch examples/carc-train.sbatch configs/train-trainval.toml --set inputs.radar_cfg.align=lidar --set output.name=run1-radar-lidar-fit --set output.group=radar
+uv run confhead train upload /scratch1/$USER/confhead-runs/<run> --repo csci566-depthconf/confhead
 ```
 
-Never reuse a run name for other settings: an upload under the same name replaces the files of the earlier run.
-
-These two runs are the radar ablation of action 3 in [`Docs/training-next-actions.md`](../../Docs/training-next-actions.md). The labels do not change with the inputs, so the eval team can compare the runs directly.
+The command refuses a run that has not trained every epoch, unless you pass `--partial`. It refuses to overwrite a run with another fingerprint, unless you pass `--replace`. With no run folder it rewrites the model card alone, and with `--print-card` it prints the card and uploads nothing.
 
 ## If Something Goes Wrong
 
 | Message | What to do |
 |---|---|
-| `... has no index.json` | `data.cache` does not point to a built cache. Check the path, or build the cache first. |
-| `... is a run with other settings: ...` | Undo the change that the message names, or set another `output.name`. |
-| `unknown setting ...` | The setting is spelled wrong. The message lists the settings of that section. |
-| `torch ... has no kernels for <GPU>` | The installed torch does not support this GPU. Run `git pull` and `uv sync` on the login node, then submit again. |
-| `No module named 'torch._...'` or `libcufile.so.0: cannot open shared object file` | The job loaded torch from a `.venv` that another job was rebuilding. The sbatch files build an environment for each job since 2026-11-16, so run `git pull` and submit again. |
-| `upload of ... failed: ...` | The job could not reach Hugging Face, or the login has no write access. The training goes on. Upload the run by hand from the login node, as in step 7. |
+| `the login ... cannot write to ...` | The message gives your role in the organization and the role of the token. Ask an admin of `csci566-depthconf` for the `write` role, or log in with a write token. |
+| `... holds ... entries, and run-matrix.toml expects 204894` | `data.cache` points to a cache that is not complete, or to another copy. |
+| `tracked files have changes` | Commit or undo the changes, then send the command again. |
+| `<run>: ... holds another model; --archive-stale renames the folder` | The run folder on disk was trained with other settings or another cache. Pass `--archive-stale`. |
+| `<run>: the repository holds another model under this name` | Pass `--replace` to overwrite it, or give the run another name in the manifest. |
+| `... is a run with other settings: ...` | A job found a run folder that changed after `run` checked it. The message names what differs. |
+| `unknown setting ...` | A `set` of the manifest is spelled wrong. The message lists the settings of that section. |
+| `torch ... has no kernels for <GPU>` | The installed torch does not support this GPU. Run `git pull` and `uv sync` on the login node, then send `run` again. |
+| `upload of ... failed: ...` | An upload after an epoch failed. The training goes on, and the next epoch uploads again. |
+| `<run> is trained but not in ...` | The last upload failed three times. Send `run` again: it uploads the run from the login node. |
 | `... the class weight needs both classes` | The sample of train images holds no label above `tau`, or none below it. Check `inputs.labels.tau`. |
