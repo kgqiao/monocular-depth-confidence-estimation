@@ -3,42 +3,42 @@
 This table lists the training runs, what each one changes from the default config, and where each stands. Every run changes one thing from [`configs/train-trainval.toml`](../configs/train-trainval.toml). It is not a full grid. The runs and their settings are defined in [`configs/run-matrix.toml`](../configs/run-matrix.toml), which `confhead train` reads; this page explains them. Settings and their meaning are in [runs-and-configs.md](runs-and-configs.md).
 
 > [!IMPORTANT]
-> Every dev loss on this page is from the partial cache: 149,410 of the 204,894 entries, 110,929 train images. The cache is complete since 2026-11-16, and every run is being trained again on it. Do not compare a loss below with a loss from the complete cache.
+> Every dev loss in the table is from the complete cache (204,894 entries, 152,124 train images), trained on 2026-11-17. The earlier runs on the partial cache had the same names. Their files are in the repository under the tag `cache-149k`, and their losses cannot be compared with the ones here.
 
 ## How to Run Them
 
 [training-on-carc.md](training-on-carc.md) has the steps. In short, on a CARC login node:
 
 ```sh
-uv run confhead train preview configs/run-matrix.toml --replace
-uv run confhead train run configs/run-matrix.toml --replace --tag cache-149k
+uv run confhead train preview configs/run-matrix.toml
+uv run confhead train run configs/run-matrix.toml
 ```
 
-`--stage 2 3` or `--runs 'm2-*'` takes a part of the matrix. `--replace` is needed while the repository holds the partial-cache run under the same name; the tag keeps those files reachable with `--revision cache-149k`. The runs go to [`csci566-depthconf/confhead`](https://huggingface.co/csci566-depthconf/confhead). To add a run, add a `[[run]]` to the manifest and a row here.
+`--stage 2 3` or `--runs 'm2-*'` takes a part of the matrix. A run that is done and in the repository is skipped. The runs go to [`csci566-depthconf/confhead`](https://huggingface.co/csci566-depthconf/confhead). To add a run, add a `[[run]]` to the manifest and a row here.
 
 ## The Runs
 
-States: `retrain` (trained on the partial cache; the loss shown is from that run), `new`, `blocked` (waits on an earlier stage, and is not in the manifest yet). `confhead train status configs/run-matrix.toml` prints the live state of each run. Eval's AUSE and AURG come from the Eval team, on the official val split.
+States: `done`, `blocked` (waits on an earlier stage, and is not in the manifest yet). `confhead train status configs/run-matrix.toml` prints the live state of each run. Eval's AUSE and AURG come from the Eval team, on the official val split.
 
-| Stage | Run | Question | `set` in the manifest | State | Best dev loss (partial cache) | AUSE | AURG |
+| Stage | Run | Question | `set` in the manifest | State | Best dev loss | AUSE | AURG |
 |---|---|---|---|---|---|---|---|
-| 0 | `run-v1-radar` | all inputs (the baseline) | none | retrain | 0.5566 | | |
-| 0 | `run-v1-radar-repeat` | the baseline again: how much do two runs with the same settings differ? | none | new | | | |
-| 0 | `run-v0-no-radar` | no radar | `inputs.radar=false` | retrain | 0.5562 | | |
+| 0 | `run-v1-radar` | all inputs (the baseline) | none | done | 0.5589 | | |
+| 0 | `run-v1-radar-repeat` | the baseline again: how much do two runs with the same settings differ? | none | done | 0.5581 | |
+| 0 | `run-v0-no-radar` | no radar | `inputs.radar=false` | done | 0.5580 | | |
 | 0b | radar coverage | how much of each image does radar cover? | no training: `examples/radar_coverage.py` | done | | | |
-| 1 | `m1-no-temporal` | what does the temporal spread add? | `inputs.temporal=false` | retrain | 0.5629 | | |
-| 1 | `m1-no-depth` | what does the depth channel add? | `inputs.depth=false` | retrain | 0.5574 | | |
-| 1 | `m1-no-features` | what do the decoder features add? | `inputs.features=false` | retrain | 0.6167 | | |
-| 1 | `m1-features-only` | features without the other groups | `inputs.depth=false inputs.temporal=false inputs.radar=false` | retrain | 0.5646 | | |
-| 1 | `m1-temporal-only` | does the head beat the temporal cue alone? | `inputs.features=false inputs.depth=false inputs.radar=false` | retrain | 0.6778 | | |
-| 1 | `m1-depth-only` | does the head beat the depth channel alone? | `inputs.features=false inputs.temporal=false inputs.radar=false` | retrain | 0.6394 | | |
-| 1 | `m1-seed1` | how big is the seed noise? | `train.seed=1` | retrain | 0.5885 (other dev scenes) | | |
-| 2 | `m2-radar-lidar-fit` | does the lidar fit change the radar residual? | `inputs.radar_cfg.align=lidar` | retrain | 0.5507 | | |
-| 2 | `m2-radius0` | radar radius 0 | `inputs.radar_cfg.radius=0` | retrain | 0.5554 | | |
-| 2 | `m2-radius2` | radar radius 2 | `inputs.radar_cfg.radius=2` | retrain | 0.5548 | | |
-| 2 | `m2-sweeps1` | the keyframe radar sweep only | `inputs.radar_cfg.max_sweeps=1` | retrain | 0.5549 | | |
-| 3 | `m3-tau005` | tau 0.05 | `inputs.labels.tau=0.05` | retrain | 0.4261 | | |
-| 3 | `m3-tau02` | tau 0.2 | `inputs.labels.tau=0.2` | retrain | 0.6444 | | |
+| 1 | `m1-no-temporal` | what does the temporal spread add? | `inputs.temporal=false` | done | 0.5648 | | |
+| 1 | `m1-no-depth` | what does the depth channel add? | `inputs.depth=false` | done | 0.5607 | | |
+| 1 | `m1-no-features` | what do the decoder features add? | `inputs.features=false` | done | 0.6129 | | |
+| 1 | `m1-features-only` | features without the other groups | `inputs.depth=false inputs.temporal=false inputs.radar=false` | done | 0.5683 | | |
+| 1 | `m1-temporal-only` | does the head beat the temporal cue alone? | `inputs.features=false inputs.depth=false inputs.radar=false` | done | 0.6713 | | |
+| 1 | `m1-depth-only` | does the head beat the depth channel alone? | `inputs.features=false inputs.temporal=false inputs.radar=false` | done | 0.6368 | | |
+| 1 | `m1-seed1` | how big is the seed noise? | `train.seed=1` | done | 0.5622 (other dev scenes) | | |
+| 2 | `m2-radar-lidar-fit` | does the lidar fit change the radar residual? | `inputs.radar_cfg.align=lidar` | done | 0.5534 | | |
+| 2 | `m2-radius0` | radar radius 0 | `inputs.radar_cfg.radius=0` | done | 0.5591 | | |
+| 2 | `m2-radius2` | radar radius 2 | `inputs.radar_cfg.radius=2` | done | 0.5581 | | |
+| 2 | `m2-sweeps1` | the keyframe radar sweep only | `inputs.radar_cfg.max_sweeps=1` | done | 0.5582 | | |
+| 3 | `m3-tau005` | tau 0.05 | `inputs.labels.tau=0.05` | done | 0.4362 (other labels) | | |
+| 3 | `m3-tau02` | tau 0.2 | `inputs.labels.tau=0.2` | done | 0.6349 (other labels) | | |
 | 4 | `m4-lr3e-3` | learning rate 0.003 | `train.lr=0.003` | blocked | | | |
 | 4 | `m4-lr3e-4` | learning rate 0.0003 | `train.lr=0.0003` | blocked | | | |
 | 4 | `m4-epochs16` | 16 epochs | `train.epochs=16` | blocked | | | |
@@ -46,23 +46,23 @@ States: `retrain` (trained on the partial cache; the loss shown is from that run
 | 4 | `m4-narrow` | a narrower head | `head.widths=[32, 32, 16]` | blocked | | | |
 | 5 | `m5-seed1` | final config, seed 1 | `train.seed=1` on the best config | blocked | | | |
 | 5 | `m5-seed2` | final config, seed 2 | `train.seed=2` on the best config | blocked | | | |
-| 6 | `m6-maxdepth50` | labels only up to 50 m | `inputs.labels.max_depth=50.0` | retrain | 0.5607 (other labels) | | |
-| 6 | `m6-quarter-data` | how much does the head lose with a quarter of the data? | `train.samples_per_epoch=38000` (27,700 on the partial cache) | retrain | 0.5651 | | |
+| 6 | `m6-maxdepth50` | labels only up to 50 m | `inputs.labels.max_depth=50.0` | done | 0.5633 (other labels) | | |
+| 6 | `m6-quarter-data` | how much does the head lose with a quarter of the data? | `train.samples_per_epoch=38000` | done | 0.5664 | | |
 
 Radar coverage (0b), measured on the 149,410 entries of the partial cache, training settings (`radius` 1, every sweep): the radar validity channel marks 3.4% of the grid cells (6.2% at radius 2, 1.7% with the keyframe sweep only). Only 4.8% of the lidar-labeled cells have a valid radar cell on them. The radar fit fails on 17.0% of images (32% on the two back-side cameras), and those images get an all-zero radar residual and mask. So the dev loss, which is computed on labeled cells, can barely move with radar. Stage 2 is still worth a few runs: start with `m2-radar-lidar-fit`, which removes the fit failures, then `m2-radius2`. Compare the loss on the labeled cells that have radar, not the mean dev loss.
 
-Stage 1, on the partial cache: all seven runs trained 8 of 8 epochs. This is dev loss only; Eval's scores decide. Every difference below is against `run-v1-radar` (0.5566, all inputs). The repeat noise is known from one pair only: the same settings trained twice (`run1` in `nadayusc/confhead`, and `run-v1-radar`) differ by 0.0004. In every run the best epoch is the last, so the loss was still falling.
+Stages 0 and 1: all runs trained 8 of 8 epochs. This is dev loss only; Eval's scores decide. Every difference below is against `run-v1-radar` (0.5589, all inputs). The repeat noise is known from one pair only: `run-v1-radar` and `run-v1-radar-repeat` have the same settings and differ by 0.0008. The best epoch is the last or the one before it in every run, so the loss had nearly stopped falling.
 
-- The decoder features carry most of the signal. Without them the loss is 0.6167 (+0.0601). The features alone (0.5646, with radar off too) are 0.0080 worse than all inputs.
-- The temporal spread helps a little: removing it costs +0.0063.
-- The depth channel is close to noise: removing it costs +0.0008, about twice the one repeat gap.
-- Radar made no difference on dev loss: `run-v0-no-radar` 0.5562 against 0.5566.
-- One channel alone (0.6394 depth, 0.6778 temporal) is far worse than any run with the features.
-- `m1-seed1` (0.5885) is not comparable on dev loss, because the seed also picks other dev scenes. Its use is Eval's score on val.
+- The decoder features carry most of the signal. Without them the loss is 0.6129 (+0.0540). The features alone (0.5683, with radar off too) are 0.0094 worse than all inputs.
+- The temporal spread helps a little: removing it costs +0.0059.
+- The depth channel adds little: removing it costs +0.0018, about twice the one repeat gap.
+- Radar made no difference on dev loss: `run-v0-no-radar` 0.5580 against 0.5589, a gap of about the repeat noise.
+- One channel alone (0.6368 depth, 0.6713 temporal) is far worse than any run with the features.
+- `m1-seed1` (0.5622) is not comparable on dev loss, because the seed also picks other dev scenes. Its use is Eval's score on val.
 
-Stages 2 and 3, on the partial cache (all six runs trained 8 of 8 epochs; dev loss only, Eval's scores decide): `m2-radar-lidar-fit` (0.5507) is 0.0059 under `run-v1-radar` (0.5566), the largest gap of any run against the baseline, and `m2-radius0`, `m2-radius2` and `m2-sweeps1` are within 0.0018 of it (0.5554, 0.5548, 0.5549). The two `tau` runs use other labels, so their dev loss (0.4261 at 0.05, 0.6444 at 0.2) cannot be compared with the others. Stage 6: `m6-quarter-data` (27,700 images per epoch) reaches 0.5651, 0.0085 above the baseline. `m6-maxdepth50` uses other labels (0.5607) and also cannot be compared. Hugging Face holds all of these runs.
+Stages 2 and 3 (all six runs trained 8 of 8 epochs; dev loss only, Eval's scores decide): `m2-radar-lidar-fit` (0.5534) is 0.0055 under `run-v1-radar` (0.5589), the largest gap under the baseline of any run. `m2-radius0`, `m2-radius2` and `m2-sweeps1` are within 0.0008 of the baseline (0.5591, 0.5581, 0.5582), which is no more than the repeat noise. The two `tau` runs use other labels, so their dev loss (0.4362 at 0.05, 0.6349 at 0.2) cannot be compared with the others. Stage 6: `m6-quarter-data` (38,000 images per epoch) reaches 0.5664, 0.0075 above the baseline. `m6-maxdepth50` uses other labels (0.5633) and also cannot be compared.
 
-The runs and their files are in [`csci566-depthconf/confhead`](https://huggingface.co/csci566-depthconf/confhead) on Hugging Face. The repository is gated: log in, and ask for access (or be added by an admin) before a download works. Its `EVAL_GUIDE.md` tells the Eval team which run is which and what to score first; [`results/EVAL_GUIDE.md`](../results/EVAL_GUIDE.md) is a copy. Both describe the partial-cache runs until someone updates them.
+The runs and their files are in [`csci566-depthconf/confhead`](https://huggingface.co/csci566-depthconf/confhead) on Hugging Face. The repository is gated: log in, and ask for access (or be added by an admin) before a download works. Its `EVAL_GUIDE.md` tells the Eval team which run is which and what to score first; [`results/EVAL_GUIDE.md`](../results/EVAL_GUIDE.md) is a copy. Both still give the dev losses of the partial-cache runs.
 
 Stage 4 runs on the best inputs of stages 1 to 3. Stage 5 uses the best config of all stages. Their rows go into the manifest when those configs are chosen. The `head.widths` lists of stage 4 are written as `head.widths=[128, 128, 64]` in `set`.
 
@@ -88,11 +88,11 @@ uv run --with "trackio[spaces]" python -c "import trackio; trackio.sync(project=
 
 ## Reading the Table
 
-- The best dev loss is a health check, not a ranking. Eval's AUSE and AURG decide which config wins. On the partial cache, a gap smaller than the difference between `run1` and `run-v1-radar` (0.0004) is a tie. On the complete cache, the difference between `run-v1-radar` and `run-v1-radar-repeat` takes that role.
+- The best dev loss is a health check, not a ranking. Eval's AUSE and AURG decide which config wins. A gap smaller than the difference between `run-v1-radar` and `run-v1-radar-repeat` (0.0008) is a tie.
 - Do not compare dev loss across `tau`: another `tau` makes other labels.
 - The seed also picks the dev scenes (`dev_scenes` in `train.py`), so compare seeds on Eval's scores, not on dev loss.
 - `train.epochs` changes the cosine learning-rate schedule, so 16 epochs is a different run, not 8 plus more.
-- A run took 12 minutes to 5.5 hours on the partial cache, depending on the node and the settings, and a GPU job can wait many hours in the queue. The complete cache has about 1.37 times the train images.
+- A run took 0.8 to 3.1 hours of training on the complete cache, and a GPU job can wait many hours in the queue.
 
 ## Not in the Table
 
