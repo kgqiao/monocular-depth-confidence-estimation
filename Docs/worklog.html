@@ -312,6 +312,13 @@
 <li>Run scoring script on all test images on CARC, after 50 image test run succeeds</li>
 <li>All 13 tests in <code>test_calibration.py</code> pass</li>
 </ul>
+<h3 id="finished-the-calibration-metrics-and-tests-added-the-eval-figures">Finished the calibration metrics and tests; added the eval figures</h3>
+<ul>
+<li>Wrote <code>src/evals/plot.py</code>: reliability diagram, sparsification curves, and a qualitative example (image, lidar AbsRel, <code>p_error</code>); each returns a figure for the caller to save</li>
+<li>Wrote <code>tests/test_plot.py</code>: checks each figure builds with the expected panels and lines</li>
+<li>Added <code>httpx</code> to the dev group in <code>pyproject.toml</code>: <code>tests/test_hub.py</code> needs it and a plain <code>uv sync</code> didn't install it</li>
+<li>Updated the <code>metrics.py</code> docstrings: &quot;cells&quot; instead of &quot;pixels&quot;;</li>
+</ul>
 <p>Nathan A/B:</p>
 <ul>
 <li>Have all models trained</li>

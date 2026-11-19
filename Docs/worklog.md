@@ -144,6 +144,14 @@ The dataset is more than 800 GB, so it cannot go into the PI's project folder. `
 - All 13 tests in `test_calibration.py` pass
 
 
+### Finished the calibration metrics and tests; added the eval figures
+- Wrote `src/evals/plot.py`: reliability diagram, sparsification curves, and a qualitative example (image, lidar AbsRel, `p_error`); each returns a figure for the caller to save
+- Wrote `tests/test_plot.py`: checks each figure builds with the expected panels and lines
+- Added `httpx` to the dev group in `pyproject.toml`: `tests/test_hub.py` needs it and a plain `uv sync` didn't install it
+- Updated the `metrics.py` docstrings: "cells" instead of "pixels"; 
+
+
+
 Nathan A/B:
 - Have all models trained
 - 
