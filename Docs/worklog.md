@@ -133,22 +133,23 @@ The dataset is more than 800 GB, so it cannot go into the PI's project folder. `
 - Created confhead/examples/compare_condition_tags.py — audit script to compare cache keyword tags vs BEVCar lists on CARC
 - Created confhead/examples/label_count_table.py — script to count scenes, keyframes, labeled cells, and AbsRel > tau per BEVCar group
 
-### Evals team set future checklist items
 
-Varad:
-- Download all three trained models as of today from Nathan A and Nathan B
-- Build flip comparison py file, start on CARC (mirror image, run depth model, flip result, use where two depths diagree as a no-training confidence score)
+### 2026-11-18
 
-Katherine:
-- Finish the AUROC, ECE tests
+### Wrote remaining AUROC, ECE tests; Brier score and reliability diagram functions and tests
+- Wrote remaining AUROC, ECE tests in `test_calibration.py`
+- Wrote Brier score and reliability diagram functions (in `metrics.py`) and tests (in `test_calibration.py`) 
 - Write scoring code to load trained model #1 to run on test images, score each image with metrics, save results 
 - Run scoring script on all test images on CARC, after 50 image test run succeeds
+- All 13 tests in `test_calibration.py` pass
+
 
 Nathan A/B:
 - Have all models trained
-
-DUE BY TUE 17th
-
+- 
+Varad:
+- Download all three trained models as of today from Nathan A and Nathan B
+- Build flip comparison py file, start on CARC (mirror image, run depth model, flip result, use where two depths diagree as a no-training confidence score)
 
 ----- Run scoring on all models + condition splits, write analyses
 Katherine:

@@ -172,7 +172,11 @@
 </tr>
 <tr>
 <td>Confidence head training, Run 1 (trainval)</td>
-<td>Training job running</td>
+<td>Done, on Hugging Face</td>
+</tr>
+<tr>
+<td>Run tracking (model card, Trackio)</td>
+<td>Done locally; upload from a CARC job not yet tested</td>
 </tr>
 </tbody>
 </table>
@@ -259,6 +263,20 @@
 <p>To do: when the job ends, check the dev loss of each epoch and that the run folder holds the trained head.</p>
 </li>
 </ul>
+<h2 id="2026-11-06">2026-11-06</h2>
+<h3 id="finished-run-1">Finished Run 1</h3>
+<ul>
+<li>Run 1 trained all 8 epochs in 3.5 hours, against the estimate of 8.8 hours. The dev loss fell in every epoch, so the best head is epoch 8, with a dev loss of 0.5562.</li>
+<li>Uploaded the run folder to the model repository <a href="https://huggingface.co/nadayusc/confhead"><code>nadayusc/confhead</code></a>, under <code>run1/</code>.</li>
+</ul>
+<h3 id="tied-the-upload-and-the-run-tracking-into-the-training-job">Tied the upload and the run tracking into the training job</h3>
+<ul>
+<li><code>carc-train.sbatch</code> now passes <code>--upload</code>: the job uploads the run folder after each epoch and once more at the end. The model card of the repository is built from the <code>config.json</code> and <code>history.json</code> of every run there, so the same runs always give the same card.</li>
+<li>Each run folder also holds <code>steps.json</code>, the mean train loss five times per epoch. A new setting, <code>output.group</code>, names the family of a run, such as <code>baseline</code> or <code>radar</code>.</li>
+<li><code>examples/sync_trackio.py</code> rebuilds a local Trackio project from the repository. Guide: <code>confhead/guides/tracking-runs.md</code>.</li>
+<li>To do: test the upload from a CARC job by submitting Run 1 again. The job finds 8 of 8 epochs, trains nothing, and uploads.</li>
+<li>To do: decide how the team shares the dashboard: each person runs the sync, or a hosted Trackio Space.</li>
+</ul>
 <h2 id="2026-11-14">2026-11-14</h2>
 <h3 id="revised-and-fixed-various-small-on-evals-testing">Revised and fixed various small on evals, testing</h3>
 <ul>
@@ -277,24 +295,33 @@
 <li>Added scikit-learn (1.9.1) with <code>uv add scikit-learn</code>; <code>calculate_rejection_auc</code> imports it as <code>sklearn</code>.</li>
 <li>To do: return NaN from <code>calculate_rejection_auc</code> when every pixel is correct or every pixel is wrong (<code>roc_auc_score</code> raises then, and per-image scoring will hit such images); count a confidence of exactly 1.0 in the last ECE bin; tests in <code>tests/test_calibration.py</code>.</li>
 </ul>
-<h3 id="evals-team-set-future-checklist-items">Evals team set future checklist items</h3>
-<p>Varad:</p>
+<h3 id="bev">Bev</h3>
 <ul>
-<li>Download all three trained models as of today from Nathan A and Nathan B</li>
-<li>Setup BEVCar's lists of which test scenes are day, rain, or night into file for scoring script</li>
-<li>Build flip comparison py file, start on CARC (mirror image, run depth model, flip result, use where two depths diagree as a no-training confidence score)</li>
+<li>Bevcar work today - Checked with <code>uv run pytest -q</code>: no collection error; 66 passed, 5 skipped. The 4 failures are in test_backup.py and happen on Windows only.</li>
+<li>Created confhead/src/evals/bevcar_splits.py — new file with the three scene name lists (DAY_SCENES, RAIN_SCENES, NIGHT_SCENES) and the BEVCAR_CONDITION lookup dict</li>
+<li>Modified confhead/src/evals/run_evals.py — added defaultdict accumulator, wired in BEVCAR_CONDITION.get(scene_name) inside the data loop, and added the per-condition metrics loop after it</li>
+<li>Created confhead/examples/compare_condition_tags.py — audit script to compare cache keyword tags vs BEVCar lists on CARC</li>
+<li>Created confhead/examples/label_count_table.py — script to count scenes, keyframes, labeled cells, and AbsRel &gt; tau per BEVCar group</li>
 </ul>
-<p>Katherine:</p>
+<h3 id="2026-11-18">2026-11-18</h3>
+<h3 id="wrote-remaining-auroc-ece-tests-brier-score-and-reliability-diagram-functions-and-tests">Wrote remaining AUROC, ECE tests; Brier score and reliability diagram functions and tests</h3>
 <ul>
-<li>Finish the AUROC, ECE tests</li>
+<li>Wrote remaining AUROC, ECE tests in <code>test_calibration.py</code></li>
+<li>Wrote Brier score and reliability diagram functions (in <code>metrics.py</code>) and tests (in <code>test_calibration.py</code>)</li>
 <li>Write scoring code to load trained model #1 to run on test images, score each image with metrics, save results</li>
 <li>Run scoring script on all test images on CARC, after 50 image test run succeeds</li>
+<li>All 13 tests in <code>test_calibration.py</code> pass</li>
 </ul>
 <p>Nathan A/B:</p>
 <ul>
 <li>Have all models trained</li>
+<li></li>
 </ul>
-<p>DUE BY TUE 17th</p>
+<p>Varad:</p>
+<ul>
+<li>Download all three trained models as of today from Nathan A and Nathan B</li>
+<li>Build flip comparison py file, start on CARC (mirror image, run depth model, flip result, use where two depths diagree as a no-training confidence score)</li>
+</ul>
 <p>----- Run scoring on all models + condition splits, write analyses
 Katherine:</p>
 <ul>
