@@ -56,7 +56,7 @@ def compute_sparsification_curves(true_errors: np.ndarray, uncertainty_scores: n
                         removed data, balances smooth plotting and fast execution
                             
     Returns:
-        fractions: 1D array of 100 fractions from 0.0 to 0.99.
+        fractions: 1D array of num_steps fractions from 0.0 to 0.99.
         method_curve: Mean error remaining at each fraction using the uncertainty scores.
         oracle_curve: Mean error remaining at each fraction if sorted perfectly by true error.
         random_curve: The baseline flat curve at the global mean error.

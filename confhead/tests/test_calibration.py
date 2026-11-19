@@ -1,5 +1,5 @@
 """
-Build test metrics for the following cases: AUROC, ECE (and Brier)
+Build test metrics for the following cases: AUROC, ECE, Brier, reliability bins
 
 """
 
