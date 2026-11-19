@@ -111,19 +111,16 @@ The dataset is more than 800 GB, so it cannot go into the PI's project folder. `
 ## 2026-11-14
 
 ### Revised and fixed various small on evals, testing
-
 - Move evals/ to confhead/src/evals/. `uv run` puts confhead/src on the import path, so `from evals.metrics import ...` now resolves, and tests/test_metrics.py no longer stops pytest at collection.
 - metrics.py: np.trapz -> np.trapezoid (np.trapz is gone in the project's NumPy 2.5.4)
 - run_evals.py: remove a stray line continuation that was a SyntaxError
 - Checked with `uv run pytest -q`: no collection error; 66 passed, 5 skipped. The 4 failures are in test_backup.py and happen on Windows only.
 
 ### Finished the sparsification curves and their tests
-
 - `compute_sparsification_curves` now returns four values: fractions, method curve, oracle curve, and the random curve (the mean error at every fraction), which `calculate_ause_and_aurg` needs.
 - `tests/test_metrics.py`: a perfect score gives AUSE 0, a random score gives AURG near 0, a reversed score gives a negative AURG, and a constant error gives flat curves. 4 passed.
 
 ### Started the rejection AUROC and ECE fixes
-
 - Added scikit-learn (1.9.1) with `uv add scikit-learn`; `calculate_rejection_auc` imports it as `sklearn`.
 - To do: return NaN from `calculate_rejection_auc` when every pixel is correct or every pixel is wrong (`roc_auc_score` raises then, and per-image scoring will hit such images); count a confidence of exactly 1.0 in the last ECE bin; tests in `tests/test_calibration.py`.
 
@@ -134,23 +131,58 @@ The dataset is more than 800 GB, so it cannot go into the PI's project folder. `
 - Created confhead/examples/compare_condition_tags.py — audit script to compare cache keyword tags vs BEVCar lists on CARC
 - Created confhead/examples/label_count_table.py — script to count scenes, keyframes, labeled cells, and AbsRel > tau per BEVCar group
 
-Varad: Tuesday Checklist Items done
-Downloaded all three trained confidence-head checkpoints from Nathan A and Nathan B to `/scratch1/tawde/checkpoints/` on CARC
+## 2026-11-16
+
+### Repaired the confidence head input cache
+
+- The trainval cache was missing about a quarter of its entries, because some build tasks had built nothing.
+- Built the missing entries in place. The cache is now complete, and its backup to Hugging Face is uploading again.
+- Runs trained before this date used the partial cache, so their dev losses are not comparable with later runs.
+
+### Gave each Slurm job its own Python environment
+
+- Jobs that ran at the same time shared one environment, and one job could rebuild it under another and make it fail.
+- Each job now builds its own environment and deletes it when it ends, so several jobs can run at once.
+
+## 2026-11-17
+### Improved training entrypoint
+- `confhead train` reads the list of runs from one file, submits a Slurm job for each, and writes a report when they end. Sent again, it continues what stopped and skips what is done.
+- The runs upload to the team's organization repository on Hugging Face.
+
+### Trained every run again on the complete cache
+- All 18 runs of the run matrix trained in parallel and are on Hugging Face. Each took about 1 to 3 hours.
+- The partial-cache checkpoints were replaced under the same names. The old files stay in the repository under a tag.
+- A repeat of the baseline shows how much two runs with the same settings differ.
+- To do: update the run matrix and the Eval guide with the new losses, and tell the Eval team that the checkpoints changed.
+
+### Build flip comparison and run flip baseline on evals
+- Downloaded all three trained confidence-head checkpoints from Nathan A and Nathan B to `/scratch1/tawde/checkpoints/` on CARC
 - Built `confhead/src/evals/flip_confidence.py` — runs depth model on original and horizontally-flipped image; disagreement between the two disparity maps is used as a no-training confidence score
 - Built `confhead/examples/run_flip_baseline.py` — full CARC eval script that loads the depth model, iterates over all val entries, resizes flip confidence to the LiDAR label grid, and reports AUC-ROC, ECE, AUSE, AURG per BEVCar condition (all / day / rain / night)
 
-### Evals team set future checklist items
 
-Katherine:
-- Finish the AUROC, ECE tests
+## 2026-11-18
+### Wrote remaining AUROC, ECE tests; Brier score and reliability diagram functions and tests
+- Wrote remaining AUROC, ECE tests in `test_calibration.py`
+- Wrote Brier score and reliability diagram functions (in `metrics.py`) and tests (in `test_calibration.py`) 
 - Write scoring code to load trained model #1 to run on test images, score each image with metrics, save results 
 - Run scoring script on all test images on CARC, after 50 image test run succeeds
+- All 13 tests in `test_calibration.py` pass
 
+### Finished the calibration metrics and tests; added the eval figures
+- Wrote `src/evals/plot.py`: reliability diagram, sparsification curves, and a qualitative example (image, lidar AbsRel, `p_error`); each returns a figure for the caller to save
+- Wrote `tests/test_plot.py`: checks each figure builds with the expected panels and lines
+- Added `httpx` to the dev group in `pyproject.toml`: `tests/test_hub.py` needs it and a plain `uv sync` didn't install it
+- Updated the `metrics.py` docstrings: "cells" instead of "pixels"; 
+
+
+
+
+
+
+### Evals team set future checklist items
 Nathan A/B:
 - Have all models trained
-
-DUE BY TUE 17th
-
 
 ----- Run scoring on all models + condition splits, write analyses
 Katherine:
@@ -169,7 +201,6 @@ DUE BY Fri Nov 20
 
 
 ---- Decide from most promising models and maybe run additional models
-
 Nathans:
 - Run additional models if needed
 
@@ -177,7 +208,6 @@ DUE BY Sat Nov 21
 
 
 --- Decide on the project before/after results
-
 Katherine:
 - Create frame selector to rank whole images by confidence. Check whether dropping the whole images lowers the error of the rest. 
 
@@ -189,9 +219,7 @@ Due by 24th
 
 
 
-
 ---- Writing final report + prepare for project clinic Nov 30
-
 Katherine:
 - Add to final report: charts, main results table of every model
 
@@ -203,30 +231,3 @@ Alejandro/everyone:
 - Prepare for project clinic on Nov 30
 
 --- Final Report due Dec 7
-
-## 2026-11-16
-
-### Repaired the confidence head input cache
-
-- The trainval cache was missing about a quarter of its entries, because some build tasks had built nothing.
-- Built the missing entries in place. The cache is now complete, and its backup to Hugging Face is uploading again.
-- Runs trained before this date used the partial cache, so their dev losses are not comparable with later runs.
-
-### Gave each Slurm job its own Python environment
-
-- Jobs that ran at the same time shared one environment, and one job could rebuild it under another and make it fail.
-- Each job now builds its own environment and deletes it when it ends, so several jobs can run at once.
-
-## 2026-11-17
-
-### Improved training entrypoint
-
-- `confhead train` reads the list of runs from one file, submits a Slurm job for each, and writes a report when they end. Sent again, it continues what stopped and skips what is done.
-- The runs upload to the team's organization repository on Hugging Face.
-
-### Trained every run again on the complete cache
-
-- All 18 runs of the run matrix trained in parallel and are on Hugging Face. Each took about 1 to 3 hours.
-- The partial-cache checkpoints were replaced under the same names. The old files stay in the repository under a tag.
-- A repeat of the baseline shows how much two runs with the same settings differ.
-- To do: update the run matrix and the Eval guide with the new losses, and tell the Eval team that the checkpoints changed.
