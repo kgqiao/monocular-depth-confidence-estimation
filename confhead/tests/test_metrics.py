@@ -1,16 +1,12 @@
 """
-Build test metrics for the following cases:
-
-pytest - 
-- Passing true_error as uncertainty score returns AUSE = 0.0
-
-
+Build test metrics for the following cases: Sparsification, AUSE, AURG
 
 """
 
 import numpy as np
 import pytest
 from evals.metrics import compute_sparsification_curves, calculate_ause_and_aurg
+
 
 @pytest.fixture # Hands same setup to every test tha tnames it as an arugment. No test can change another test's data
 def true_errors(): # Create fake true errors
@@ -20,6 +16,8 @@ def true_errors(): # Create fake true errors
     rng = np.random.default_rng(42)
     return rng.exponential(scale = 1.0, size = 10_000)
 
+
+# ---------- Sparsification curve: does the error drop as I remove the least-trusted cells? ----------
 
 def score(true_errors, uncertainty_scores):
     '''
@@ -31,6 +29,8 @@ def score(true_errors, uncertainty_scores):
 
     return sparsification, oracle, random_curve, ause, aurg
 
+
+# ---------- AUSE: how far is the head's ordering from the perfect (oracle) ordering? ----------
 
 def test_perfect_scores_gives_zero_ause(true_errors): # TEST 1: A perfect score gives AUSE = 0
     '''
@@ -44,6 +44,8 @@ def test_perfect_scores_gives_zero_ause(true_errors): # TEST 1: A perfect score 
     assert np.allclose(sparsification, oracle) # Return true if two arrays are element-wise equal
     assert np.isclose(ause, 0.0)
 
+
+# ---------- AURG: how much better is the head than removing cells at random? ----------
 
 def test_random_score_gives_aurg_near_zero(true_errors): # TEST 2: A random score gives AURG near 0
     rng = np.random.default_rng(7)
