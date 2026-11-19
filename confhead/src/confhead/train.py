@@ -2,19 +2,21 @@
 
 `Training(load_train_config(path)).fit()` trains a head and writes its run folder:
 
-    config.json   every setting, the dev scenes, the class weight, the cache, the git commit
+    config.json   every setting, the dev scenes, the class weight, the cache, the git commit, the fingerprint
     best.pt       the head of the epoch with the lowest dev loss
     last.pt       the head of the last epoch, with the optimizer and the schedule
     history.json  the train and dev loss of each epoch
     steps.json    the mean train loss five times per epoch
 
 A run folder that holds last.pt continues after its last epoch, and refuses
-other settings. The batch order of an epoch depends only on the seed and the
+a run with another fingerprint: other settings, another cache build, or other
+train images. The batch order of an epoch depends only on the seed and the
 epoch number, so a continued run sees the same batches as one that never stopped.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import multiprocessing as mp
@@ -194,6 +196,43 @@ def dev_scenes(rows: list[dict[str, Any]], fraction: float, seed: int) -> list[s
     return sorted(dev)
 
 
+def split_rows(rows: list[dict[str, Any]], fraction: float, seed: int) -> tuple[list[str], list[int], list[int]]:
+    """The dev scenes, and the indices of `rows` that go to train and to dev."""
+    scenes = dev_scenes(rows, fraction, seed)
+    dev = set(scenes)
+    return (scenes, [i for i, r in enumerate(rows) if r["scene"] not in dev],
+            [i for i, r in enumerate(rows) if r["scene"] in dev])
+
+
+def run_fingerprint(settings: dict[str, Any], cache_fingerprint: str, train_images: int, dev: list[str]) -> str:
+    """What makes two runs the same model: the settings that change the training, the cache build, and the split.
+
+    The number of train images separates two caches with one build fingerprint
+    that hold other entries. The git commit is left out, so a commit that
+    changes no training code keeps the fingerprint.
+    """
+    kept = asdict(_build(TrainConfig, {k: v for k, v in settings.items() if k not in RESUMABLE_CHANGES}, ""))
+    kept = {k: v for k, v in kept.items() if k not in RESUMABLE_CHANGES}
+    text = json.dumps({"settings": kept, "cache": cache_fingerprint, "train_images": train_images, "dev_scenes": dev},
+                      sort_keys=True)
+    return hashlib.sha256(text.encode()).hexdigest()[:16]
+
+
+def config_fingerprint(config: dict[str, Any]) -> str:
+    """The fingerprint of a run from its config.json; empty when the file does not hold what it takes."""
+    try:
+        return run_fingerprint(config["settings"], config["cache"]["fingerprint"], config["train_images"],
+                               config["dev_scenes"])
+    except (KeyError, TypeError, ValueError):
+        return ""
+
+
+def planned_fingerprint(cfg: TrainConfig, cache: Cache) -> tuple[str, int]:
+    """The fingerprint that a run of `cfg` on `cache` will have, and its train images, without loading an entry."""
+    scenes, train_idx, _ = split_rows(cache.rows(tag="train"), cfg.train.dev_fraction, cfg.train.seed)
+    return run_fingerprint(asdict(cfg), cache.header["fingerprint"], len(train_idx), scenes), len(train_idx)
+
+
 def git_commit() -> str:
     """The commit of the code, with -dirty when tracked files have changed; empty outside git."""
     def run(*args: str) -> str:
@@ -276,10 +315,7 @@ class Training:
         self.dataset = ConfidenceDataset(self.cache, cfg.inputs, tag="train")
         self.channels = self.dataset.channel_names
         rows = self.dataset.rows
-        self.dev_scenes = dev_scenes(rows, cfg.train.dev_fraction, cfg.train.seed)
-        dev = set(self.dev_scenes)
-        self.train_idx = [i for i, r in enumerate(rows) if r["scene"] not in dev]
-        self.dev_all = [i for i, r in enumerate(rows) if r["scene"] in dev]
+        self.dev_scenes, self.train_idx, self.dev_all = split_rows(rows, cfg.train.dev_fraction, cfg.train.seed)
         if not self.train_idx or not self.dev_all:
             raise ValueError(f"{self.cache.root}: the train split gives {len(self.train_idx)} train and "
                              f"{len(self.dev_all)} dev images; dev needs a condition and weather group of 2 or more scenes")
@@ -290,6 +326,8 @@ class Training:
         self.train_set = Subset(self.dataset, self.train_idx)
         self.dev_set = Subset(self.dataset, self.dev_idx)
         self.stats: InputStats | None = None
+        self.fingerprint = run_fingerprint(asdict(cfg), self.cache.header["fingerprint"], len(self.train_idx),
+                                           self.dev_scenes)
 
     def splits(self) -> list[dict[str, Any]]:
         """One row per split: scenes, images, images used, and night and rain scenes."""
@@ -384,6 +422,7 @@ class Training:
             "dev_scenes": self.dev_scenes, "dev_used": len(self.dev_idx), "train_images": len(self.train_idx),
             "positive_rate": stats.positive_rate, "pos_weight": pos_weight, "stats_sample": stats.images,
             "git": git_commit(), "torch": torch.__version__, "device": str(self.device),
+            "fingerprint": self.fingerprint,
         }
 
     def _cache_info(self) -> dict[str, Any]:
@@ -392,7 +431,7 @@ class Training:
                 "grid": meta["grid_size"], "model": self.cache.settings["model"]}
 
     def _check_same_run(self) -> None:
-        """Refuse to continue a run folder with other settings or another cache build."""
+        """Refuse to continue a run folder with another fingerprint, and name what differs."""
         path = self.dir / "config.json"
         if not path.is_file():
             raise ValueError(f"{self.dir} holds last.pt but no config.json; use another output.name")
@@ -403,6 +442,10 @@ class Training:
                    if old.get(k) != new.get(k)]
         if saved["cache"]["fingerprint"] != self.cache.header["fingerprint"]:
             changes.append(f"cache fingerprint {saved['cache']['fingerprint']} -> {self.cache.header['fingerprint']}")
+        if saved["train_images"] != len(self.train_idx):
+            changes.append(f"train images {saved['train_images']} -> {len(self.train_idx)}: the cache holds other entries")
+        if not changes and config_fingerprint(saved) != self.fingerprint:
+            changes.append("other dev scenes")
         if changes:
             raise ValueError(f"{self.dir} is a run with other settings: {'; '.join(changes)}. "
                              "Use another output.name for a new run")
@@ -453,11 +496,15 @@ class Training:
             log.info("run %s: %d train images, %d dev images, %d steps per epoch, device %s, %d loader processes",
                      self.dir, len(sampler), len(self.dev_idx), len(train_loader), device, self.num_workers)
             log.info("positive rate %.1f%%, class weight %.3f", 100 * self.stats.positive_rate, pos_weight)
+            if not self.stats.in_gate:
+                log.warning("the positive rate is outside the gate of %.0f%% to %.0f%%: the depth needs a scale per "
+                            "camera first", 100 * POSITIVE_RATE_GATE[0], 100 * POSITIVE_RATE_GATE[1])
         best_loss = min((h["dev_loss"] for h in history), default=float("inf"))
         steps_path = self.dir / "steps.json"
         steps = json.loads(steps_path.read_text()) if history and steps_path.is_file() else []
         steps = [s for s in steps if s["epoch"] <= len(history)]
-        extra = {"pos_weight": pos_weight, "cache": self._cache_info(), "git": git_commit()}
+        extra = {"pos_weight": pos_weight, "cache": self._cache_info(), "git": git_commit(),
+                 "fingerprint": self.fingerprint}
 
         log_every = max(1, len(train_loader) // 5)
         for epoch in range(len(history), cfg.train.epochs):

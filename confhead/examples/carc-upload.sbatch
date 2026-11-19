@@ -16,7 +16,10 @@
 
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR}"
+export UV_PROJECT_ENVIRONMENT="${TMPDIR:-/tmp}/confhead-venv-${SLURM_JOB_ID}"
+export UV_LINK_MODE=copy
+trap 'rm -rf "${UV_PROJECT_ENVIRONMENT}"' EXIT
 CACHE="${1:?usage: sbatch examples/carc-upload.sbatch <cache folder> [confhead cache upload arguments]}"
 shift
 
-uv run confhead cache upload "${CACHE}" "$@"
+uv run --locked confhead cache upload "${CACHE}" "$@"

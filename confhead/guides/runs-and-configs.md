@@ -1,6 +1,9 @@
 # Training Runs and Their Configs
 
-This guide lists the confidence-head training runs and says what each setting of a run means. It is written for the eval team, who score the heads. The steps to train a run are in [training-on-carc.md](training-on-carc.md). [`results/model_checkpoints.md`](../results/model_checkpoints.md) lists every run so far, including the stage 1 ablations, with a link to each checkpoint.
+This guide lists the confidence-head training runs and says what each setting of a run means. It is written for the eval team, who score the heads. The steps to train a run are in [training-on-carc.md](training-on-carc.md). [`results/model_checkpoints.md`](../results/model_checkpoints.md) lists every run so far with a link to its checkpoint.
+
+> [!IMPORTANT]
+> The runs and numbers on this page are from the partial cache: 149,410 of the 204,894 entries. Every run was trained again on the complete cache on 2026-11-17; [run-matrix.md](run-matrix.md) has those losses. The settings and their meaning are the same.
 
 ## What a Run Is
 
@@ -16,11 +19,10 @@ A run trains one confidence head on the v1.0-trainval cache, on top of a frozen 
 
 `run1` and `run-v1-radar` have the same settings and differ by 0.0004 in best dev loss. That is the noise from repeating a run. Radar on (0.5562, 0.5566) and radar off (0.5562) are inside it. Dev loss does not say how good the confidence is, so the radar question is for AUSE and AURG.
 
-The commands for the two runs of this account:
+Both runs are in [`configs/run-matrix.toml`](../configs/run-matrix.toml). To train them again:
 
 ```sh
-sbatch examples/carc-train.sbatch configs/train-trainval.toml --set inputs.radar=false --set output.name=run-v0-no-radar
-sbatch examples/carc-train.sbatch configs/train-trainval.toml --set output.name=run-v1-radar
+uv run confhead train run configs/run-matrix.toml --runs run-v0-no-radar run-v1-radar
 ```
 
 ## Files in a Run Folder
@@ -29,7 +31,7 @@ sbatch examples/carc-train.sbatch configs/train-trainval.toml --set output.name=
 |---|---|
 | `best.pt` | the head of the epoch with the lowest dev loss. Score this one. |
 | `last.pt` | the head of the last epoch, with the optimizer and the schedule, to continue a run |
-| `config.json` | every setting of the run, the dev scenes, the class weight, the cache fingerprint, the git commit |
+| `config.json` | every setting of the run, the dev scenes, the class weight, the cache fingerprint, the git commit, the run fingerprint |
 | `history.json` | the train and dev loss of each epoch |
 
 ## The Settings
@@ -38,7 +40,7 @@ sbatch examples/carc-train.sbatch configs/train-trainval.toml --set output.name=
 
 | Setting | Value | What it is |
 |---|---|---|
-| `data.cache` | `/scratch1/$USER/confhead-cache/nuscenes-trainval` | the cache that is read (149,410 entries, fingerprint `99d44ff8c71c5355`) |
+| `data.cache` | `/scratch1/naday/confhead-cache/nuscenes-trainval` | the cache that is read (204,894 entries, fingerprint `99d44ff8c71c5355`). The runs on this page read a copy with 149,410 entries. |
 | `inputs.features`, `inputs.depth`, `inputs.temporal` | true | the 64 decoder features, the normalized disparity, and the temporal spread |
 | `inputs.radar` | false in v0, true otherwise | the two radar channels: the residual and the validity mask |
 | `inputs.labels.align` | `lidar` | the label comes from the lidar fit of the model's disparity |
@@ -58,7 +60,7 @@ sbatch examples/carc-train.sbatch configs/train-trainval.toml --set output.name=
 | `train.stats_sample` | 256 | the images used for the per-channel input statistics |
 | `train.seed` | 0 | |
 
-From the log of the run: 631 train scenes (110,929 images), 69 dev scenes (12,150 images, of which 3,000 are used; 8 night and 13 rain scenes), 25.1% of the cells labeled, a positive rate of 37.6%, and a class weight of 1.6575. The dev scenes are the same in every run with these settings.
+From the log of the run on the partial cache: 631 train scenes (110,929 images), 69 dev scenes (12,150 images, of which 3,000 are used; 8 night and 13 rain scenes), 25.1% of the cells labeled, a positive rate of 37.6%, and a class weight of 1.6575. The dev scenes are the same in every run with these settings.
 
 ## What Eval Keeps the Same
 
@@ -68,7 +70,7 @@ From the log of the run: 631 train scenes (110,929 images), 69 dev scenes (12,15
 
 ## Get the Files
 
-- From Hugging Face: `uv run hf download nadayusc/confhead <run>/best.pt --local-dir .` for `run1`, and the same with `nathancbao/confhead` for `run-v0-no-radar` and `run-v1-radar`. Both repositories are public, so no login is needed. `nathancbao/confhead` holds the seven stage 1 runs too (see [run-matrix.md](run-matrix.md)) and an `EVAL_GUIDE.md` for the Eval team.
+- From Hugging Face: `uv run hf download csci566-depthconf/confhead <run>/best.pt --local-dir .`. [`csci566-depthconf/confhead`](https://huggingface.co/csci566-depthconf/confhead) holds every run of [run-matrix.md](run-matrix.md) and an `EVAL_GUIDE.md` for the Eval team. Access is by request: log in and ask on the repository page. `run1` is in the public [`nadayusc/confhead`](https://huggingface.co/nadayusc/confhead).
 - From CARC: the folder of a run. A scratch folder is private to its owner, so it has to be copied or shared first.
 
 ## Before You Quote a Result
@@ -76,4 +78,4 @@ From the log of the run: 631 train scenes (110,929 images), 69 dev scenes (12,15
 - The dev loss is a weighted cross-entropy on the dev images. It does not say how well the confidence works: AUSE and AURG do.
 - The cache was built with the relative Depth Anything V2 ViT-B checkpoint, and the labels use a per-image lidar fit. The Run 1 plan named the metric checkpoint. This is open question 2 of [CS566 Implementation Deviations and Open Questions](../../Docs/Wiki/CS566%20Implementation%20Deviations%20and%20Open%20Questions.md).
 - The dev set has 8 night and 13 rain scenes, so dev numbers for night and rain are noisy.
-- The cache holds 149,410 entries, and the nuScenes keyframes of the 850 scenes make 204,894 camera images. The reason for the difference is not confirmed.
+- These runs trained on 149,410 of the 204,894 camera images of the 850 scenes. Five of the 16 build tasks had built nothing, and the cache was completed on 2026-11-16. The runs on the complete cache replace these under the same names; the partial-cache files stay under the tag that `confhead train run --replace` sets.

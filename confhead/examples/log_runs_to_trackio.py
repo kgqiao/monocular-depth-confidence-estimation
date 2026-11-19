@@ -1,8 +1,8 @@
 """Replay finished training runs into trackio, so that the runs overlay in one dashboard.
 
     uv run --with trackio examples/log_runs_to_trackio.py /scratch1/$USER/confhead-runs/run-v0-no-radar
-    uv run --with trackio examples/log_runs_to_trackio.py --hf-repo nadayusc/confhead
-    uv run --with trackio examples/log_runs_to_trackio.py --hf-repo nadayusc/confhead --space-id <user>/<space>
+    uv run --with trackio examples/log_runs_to_trackio.py --hf-repo csci566-depthconf/confhead
+    uv run --with trackio examples/log_runs_to_trackio.py --hf-repo csci566-depthconf/confhead --space-id <user>/<space>
 
 A run folder holds config.json and history.json (see guides/runs-and-configs.md).
 Each run becomes one trackio run named after its folder, with one point per epoch
@@ -69,7 +69,7 @@ def hub_runs(repo_id: str) -> dict[str, tuple[dict, list[dict]]]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("folders", nargs="*", type=Path, help="run folders on disk")
-    parser.add_argument("--hf-repo", help="a model repository whose run folders are replayed, e.g. nadayusc/confhead")
+    parser.add_argument("--hf-repo", help="a model repository whose run folders are replayed, e.g. csci566-depthconf/confhead")
     parser.add_argument("--project", default=PROJECT)
     parser.add_argument("--space-id", help="a Hugging Face Space to log to; default the local store")
     parser.add_argument("--partial", action="store_true", help="also replay a run that has not trained every epoch")
