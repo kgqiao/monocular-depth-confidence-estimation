@@ -17,7 +17,7 @@ short_side = 518
 tap = "output_conv1"
 
 [grid]
-patch_multiple = 4
+patch_multiple = 2
 
 [temporal]
 enabled = true

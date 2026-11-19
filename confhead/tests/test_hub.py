@@ -84,6 +84,71 @@ def test_an_upload_retries_after_another_upload_gets_ahead(run, monkeypatch):
         upload_run(run, "u/r", api=FakeApi(conflicts=9), attempts=3)
 
 
+def other_model(run):
+    record = RunRecord.read(run)
+    record.config["train_images"] += 100
+    return record
+
+
+def test_an_upload_replaces_another_model_only_on_purpose(run, monkeypatch):
+    monkeypatch.setattr(hub, "download_runs", lambda *a, **k: {"test": other_model(run)})
+    api = FakeApi(conflicts=0)
+    with pytest.raises(ValueError, match="holds a run test with another fingerprint"):
+        upload_run(run, "u/r", api=api)
+    assert not api.commits
+    assert upload_run(run, "u/r", api=api, replace=True).commit_url == "url"
+
+    monkeypatch.setattr(hub, "download_runs", lambda *a, **k: {"test": RunRecord.read(run)})
+    assert upload_run(run, "u/r", api=api).commit_url == "url"  # the same model: an epoch more, or the same files
+
+
+def test_deleting_runs_takes_them_off_the_card(run, monkeypatch):
+    monkeypatch.setattr(hub, "download_runs", lambda *a, **k: {"trial-a": RunRecord.read(run), "keep": RunRecord.read(run)})
+    cards = []
+    monkeypatch.setattr(hub, "model_card", lambda repo, runs: cards.append(sorted(runs)) or "card")
+    api = FakeApi(conflicts=0)
+    hub.delete_runs("u/r", ["trial-a"], api=api)
+    assert cards == [["keep"]] and api.commits[0][0] == ["trial-a/", "README.md"]
+
+
+class AccessApi:
+    def __init__(self, writes: bool):
+        self.writes, self.branches = writes, []
+
+    def whoami(self):
+        return {"name": "me", "orgs": [{"name": "team", "roleInOrg": "read"}], "auth": {"accessToken": {"role": "write"}}}
+
+    def repo_exists(self, repo_id):
+        return repo_id == "team/r"
+
+    def create_branch(self, repo_id, branch, exist_ok):
+        if not self.writes:
+            response = httpx.Response(403, request=httpx.Request("POST", "https://huggingface.co"))
+            raise HfHubHTTPError("403 Forbidden", response=response)
+        self.branches.append(branch)
+
+    def delete_branch(self, repo_id, branch):
+        self.branches.remove(branch)
+
+
+def test_write_access_is_proved_by_a_write(run):
+    api = AccessApi(writes=True)
+    assert hub.check_write_access("team/r", api) == "me" and not api.branches
+    with pytest.raises(ValueError, match=r"cannot write to team/r \(HTTP 403\). Role in team: read; token role: write"):
+        hub.check_write_access("team/r", AccessApi(writes=False))
+    with pytest.raises(ValueError, match="does not exist"):
+        hub.check_write_access("team/other", api)
+
+
+def test_a_tag_keeps_the_state_before_a_replace():
+    tags = []
+    api = SimpleNamespace(repo_info=lambda repo: SimpleNamespace(sha="abc"),
+                          list_repo_refs=lambda repo: SimpleNamespace(tags=tags),
+                          create_tag=lambda repo, tag, revision: tags.append(SimpleNamespace(name=tag, target_commit=revision)))
+    assert hub.tag_state("u/r", "before", api) == "before"
+    assert hub.tag_state("u/r", "again", api) is None and len(tags) == 1
+
+
 def test_trackio_points_hold_the_steps_and_each_epoch_end(run):
     record = RunRecord.read(run)
     points = run_points(record)
