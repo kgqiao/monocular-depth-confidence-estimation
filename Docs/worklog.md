@@ -175,8 +175,11 @@ The dataset is more than 800 GB, so it cannot go into the PI's project folder. `
 - Added `httpx` to the dev group in `pyproject.toml`: `tests/test_hub.py` needs it and a plain `uv sync` didn't install it
 - Updated the `metrics.py` docstrings: "cells" instead of "pixels"; 
 
-
-
+## 2026-11-19 (Varad)
+- Updated confhead/examples/run_flip_baseline.py to write two output files alongside the printed summary:
+  flip_baseline.csv (one row per val image: key, scene, camera, condition, n_labeled, n_wrong, AUROC, ECE, AUSE, AURG, Brier)
+  and flip_baseline_cells.npz (per-cell arrays: p_error, abs_rel, target, scene) so Katherine can score
+  the flip baseline identically to the trained confidence head runs
 
 
 
