@@ -104,7 +104,7 @@ def main():
     npz_path = out_dir / "flip_baseline_cells.npz"
 
     import torch
-    device = next(depth_model.parameters()).device
+    device = depth_model.device
 
     all_p_error: list[float] = []
     all_abs_rel: list[float] = []
