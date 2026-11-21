@@ -142,14 +142,16 @@ def main():
         cond  = BEVCAR_CONDITION.get(scene, "unknown")
 
         csv_rows.append({
+            "key":       entry.meta.get("key", ""),
             "scene":     scene,
+            "camera":    entry.meta.get("channel", ""),
             "condition": cond,
-            "token":     entry.meta.get("sample_token", ""),
-            "n_cells":   int(mask.sum()),
-            "auroc":     auroc,
-            "ece":       ece,
+            "n_labeled": int(mask.sum()),
+            "n_wrong":   int(target_flat.sum()),
             "ause":      ause,
             "aurg":      aurg,
+            "auroc":     auroc,
+            "ece":       ece,
             "brier":     brier,
         })
 
@@ -162,7 +164,7 @@ def main():
             print(f"  [{i+1}/{len(rows)}] {scene} cond={cond} cells={mask.sum()}")
 
     # write CSV
-    fieldnames = ["scene", "condition", "token", "n_cells", "auroc", "ece", "ause", "aurg", "brier"]
+    fieldnames = ["key", "scene", "camera", "condition", "n_labeled", "n_wrong", "ause", "aurg", "auroc", "ece", "brier"]
     with open(csv_path, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
