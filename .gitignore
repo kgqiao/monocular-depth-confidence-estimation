@@ -5,3 +5,4 @@ datasets/
 logs/
 *.out
 .obsidian/
+confhead/results/flip_baseline/*.npz
