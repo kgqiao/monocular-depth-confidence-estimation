@@ -1,0 +1,5 @@
+condition,n_images,total_labeled_cells,total_wrong_cells,avg_labeled_per_image
+day,19362,48837411,17129355,2522.3
+night,2615,7051096,4061000,2696.4
+rain,4230,9041461,3122519,2137.5
+TOTAL,26207.0,64929968.0,24312874.0,2477.6
