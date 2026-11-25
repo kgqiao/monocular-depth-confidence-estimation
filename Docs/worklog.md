@@ -186,10 +186,25 @@ The dataset is more than 800 GB, so it cannot go into the PI's project folder. `
 - Removed the placeholder run_evals.py; scoring now in examples/evaluate_head.py
 - Completed evals: scoring script for trained heads
 - Wrote evals: batch job to score one trained head on CARC" -m "Same setup as carc-train.sbatch: one GPU, a per-job uv environment, log in logs/confhead-eval-<jobid>.out. Pass --checkpoint; extra arguments go to examples/evaluate_head.py.
-
-
 - Run scoring script on all test images for all 3 trained models downloaded (and any new models)
+
+Scored Run 1: Scored run-v1-radar on the full val split. 35,927 images got scored and 187 were skipped because they have no labeled cells (36,114 total).
+
+    Condition	Images	AUROC	ECE	AUSE	AURG	Brier
+    day	26,553	0.8544	0.1236	0.0256	0.0758	0.1451
+    rain	5,796	0.8584	0.1268	0.0244	0.0760	0.1450
+    night	3,578	0.7664	0.1500	0.0501	0.0982	0.1841
+    total	35,927	0.8463	0.1268	0.0278	0.0781	0.1489
+    Overall: The baseline does a decent job ranking labeled cells (AUROC 0.85). AUSE is low at 0.028, so the confidence ordering is pretty close to ideal.
+    Day vs rain: About the same.
+    Night: Weakest by a clear margin. AUROC falls to 0.77 and AUSE is about double day and rain. Pooled numbers say the same thing (AUROC 0.79 at night vs 0.87).
+    Night and rain caveat: They only have 15 and 24 val scenes, so this night gap is considered only a hint until the scene bootstrap gives an interval.
+    ECE: It's shifted by pos_weight 1.66.
+
+
+
 - Add all results to run_matrix.md
+
 - Write analysis and make charts based on three models' scores (sparsification curves, comparing models with oracle and random)
 - Create frame selector to rank whole images by confidence. Check whether dropping the whole images lowers the error of the rest. 
 

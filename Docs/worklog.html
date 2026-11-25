@@ -363,18 +363,24 @@ the flip baseline identically to the trained confidence head runs</li>
 </ul>
 <h2 id="2026-11-24">2026-11-24</h2>
 <ul>
-<li>
-<p>Removed the placeholder run_evals.py; scoring now in examples/evaluate_head.py</p>
-</li>
-<li>
-<p>Completed evals: scoring script for trained heads</p>
-</li>
-<li>
-<p>Wrote evals: batch job to score one trained head on CARC&quot; -m &quot;Same setup as carc-train.sbatch: one GPU, a per-job uv environment, log in logs/confhead-eval-<jobid>.out. Pass --checkpoint; extra arguments go to examples/evaluate_head.py.</p>
-</li>
-<li>
-<p>Run scoring script on all test images for all 3 trained models downloaded (and any new models)</p>
-</li>
+<li>Removed the placeholder run_evals.py; scoring now in examples/evaluate_head.py</li>
+<li>Completed evals: scoring script for trained heads</li>
+<li>Wrote evals: batch job to score one trained head on CARC&quot; -m &quot;Same setup as carc-train.sbatch: one GPU, a per-job uv environment, log in logs/confhead-eval-<jobid>.out. Pass --checkpoint; extra arguments go to examples/evaluate_head.py.</li>
+<li>Run scoring script on all test images for all 3 trained models downloaded (and any new models)</li>
+</ul>
+<p>Scored Run 1: Scored run-v1-radar on the full val split. 35,927 images got scored and 187 were skipped because they have no labeled cells (36,114 total).</p>
+<pre><code>Condition	Images	AUROC	ECE	AUSE	AURG	Brier
+day	26,553	0.8544	0.1236	0.0256	0.0758	0.1451
+rain	5,796	0.8584	0.1268	0.0244	0.0760	0.1450
+night	3,578	0.7664	0.1500	0.0501	0.0982	0.1841
+total	35,927	0.8463	0.1268	0.0278	0.0781	0.1489
+Overall: The baseline does a decent job ranking labeled cells (AUROC 0.85). AUSE is low at 0.028, so the confidence ordering is pretty close to ideal.
+Day vs rain: About the same.
+Night: Weakest by a clear margin. AUROC falls to 0.77 and AUSE is about double day and rain. Pooled numbers say the same thing (AUROC 0.79 at night vs 0.87).
+Night and rain caveat: They only have 15 and 24 val scenes, so this night gap is considered only a hint until the scene bootstrap gives an interval.
+ECE: It's shifted by pos_weight 1.66.
+</code></pre>
+<ul>
 <li>
 <p>Add all results to run_matrix.md</p>
 </li>
