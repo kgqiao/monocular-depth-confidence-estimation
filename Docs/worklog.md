@@ -185,6 +185,7 @@ The dataset is more than 800 GB, so it cannot go into the PI's project folder. `
 ## 2026-11-24
 - Removed the placeholder run_evals.py; scoring now in examples/evaluate_head.py
 - Completed evals: scoring script for trained heads
+- Wrote evals: batch job to score one trained head on CARC" -m "Same setup as carc-train.sbatch: one GPU, a per-job uv environment, log in logs/confhead-eval-<jobid>.out. Pass --checkpoint; extra arguments go to examples/evaluate_head.py.
 
 
 - Run scoring script on all test images for all 3 trained models downloaded (and any new models)
