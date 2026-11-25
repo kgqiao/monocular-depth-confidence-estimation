@@ -156,7 +156,7 @@
 </tr>
 <tr>
 <td>Confidence head input cache (trainval)</td>
-<td>Done, checked</td>
+<td>Done, complete since 2026-11-16</td>
 </tr>
 <tr>
 <td>Cache tutorial notebook</td>
@@ -168,15 +168,19 @@
 </tr>
 <tr>
 <td>Cache backup on Hugging Face</td>
-<td>Upload job running</td>
+<td>Upload of the complete cache running</td>
 </tr>
 <tr>
 <td>Confidence head training, Run 1 (trainval)</td>
+<td>Done, on Hugging Face (partial cache)</td>
+</tr>
+<tr>
+<td>Confidence head training, run matrix (18 runs, complete cache)</td>
 <td>Done, on Hugging Face</td>
 </tr>
 <tr>
 <td>Run tracking (model card, Trackio)</td>
-<td>Done locally; upload from a CARC job not yet tested</td>
+<td>Done; the Trackio snapshot still shows the partial-cache runs</td>
 </tr>
 </tbody>
 </table>
@@ -303,7 +307,38 @@
 <li>Created confhead/examples/compare_condition_tags.py — audit script to compare cache keyword tags vs BEVCar lists on CARC</li>
 <li>Created confhead/examples/label_count_table.py — script to count scenes, keyframes, labeled cells, and AbsRel &gt; tau per BEVCar group</li>
 </ul>
-<h3 id="2026-11-18">2026-11-18</h3>
+<h2 id="2026-11-16">2026-11-16</h2>
+<h3 id="repaired-the-confidence-head-input-cache">Repaired the confidence head input cache</h3>
+<ul>
+<li>The trainval cache was missing about a quarter of its entries, because some build tasks had built nothing.</li>
+<li>Built the missing entries in place. The cache is now complete, and its backup to Hugging Face is uploading again.</li>
+<li>Runs trained before this date used the partial cache, so their dev losses are not comparable with later runs.</li>
+</ul>
+<h3 id="gave-each-slurm-job-its-own-python-environment">Gave each Slurm job its own Python environment</h3>
+<ul>
+<li>Jobs that ran at the same time shared one environment, and one job could rebuild it under another and make it fail.</li>
+<li>Each job now builds its own environment and deletes it when it ends, so several jobs can run at once.</li>
+</ul>
+<h2 id="2026-11-17">2026-11-17</h2>
+<h3 id="improved-training-entrypoint">Improved training entrypoint</h3>
+<ul>
+<li><code>confhead train</code> reads the list of runs from one file, submits a Slurm job for each, and writes a report when they end. Sent again, it continues what stopped and skips what is done.</li>
+<li>The runs upload to the team's organization repository on Hugging Face.</li>
+</ul>
+<h3 id="trained-every-run-again-on-the-complete-cache">Trained every run again on the complete cache</h3>
+<ul>
+<li>All 18 runs of the run matrix trained in parallel and are on Hugging Face. Each took about 1 to 3 hours.</li>
+<li>The partial-cache checkpoints were replaced under the same names. The old files stay in the repository under a tag.</li>
+<li>A repeat of the baseline shows how much two runs with the same settings differ.</li>
+<li>To do: update the run matrix and the Eval guide with the new losses, and tell the Eval team that the checkpoints changed.</li>
+</ul>
+<h3 id="build-flip-comparison-and-run-flip-baseline-on-evals">Build flip comparison and run flip baseline on evals</h3>
+<ul>
+<li>Downloaded all three trained confidence-head checkpoints from Nathan A and Nathan B to <code>/scratch1/tawde/checkpoints/</code> on CARC</li>
+<li>Built <code>confhead/src/evals/flip_confidence.py</code> — runs depth model on original and horizontally-flipped image; disagreement between the two disparity maps is used as a no-training confidence score</li>
+<li>Built <code>confhead/examples/run_flip_baseline.py</code> — full CARC eval script that loads the depth model, iterates over all val entries, resizes flip confidence to the LiDAR label grid, and reports AUC-ROC, ECE, AUSE, AURG per BEVCar condition (all / day / rain / night)</li>
+</ul>
+<h2 id="2026-11-18">2026-11-18</h2>
 <h3 id="wrote-remaining-auroc-ece-tests-brier-score-and-reliability-diagram-functions-and-tests">Wrote remaining AUROC, ECE tests; Brier score and reliability diagram functions and tests</h3>
 <ul>
 <li>Wrote remaining AUROC, ECE tests in <code>test_calibration.py</code></li>
@@ -319,65 +354,66 @@
 <li>Added <code>httpx</code> to the dev group in <code>pyproject.toml</code>: <code>tests/test_hub.py</code> needs it and a plain <code>uv sync</code> didn't install it</li>
 <li>Updated the <code>metrics.py</code> docstrings: &quot;cells&quot; instead of &quot;pixels&quot;;</li>
 </ul>
-<p>Nathan A/B:</p>
+<h2 id="2026-11-19">2026-11-19</h2>
 <ul>
-<li>Have all models trained</li>
+<li>Updated confhead/examples/run_flip_baseline.py to write two output files alongside the printed summary:
+flip_baseline.csv (one row per val image: key, scene, camera, condition, n_labeled, n_wrong, AUROC, ECE, AUSE, AURG, Brier)
+and flip_baseline_cells.npz (per-cell arrays: p_error, abs_rel, target, scene) so Katherine can score
+the flip baseline identically to the trained confidence head runs</li>
+</ul>
+<h2 id="2026-11-24">2026-11-24</h2>
+<ul>
+<li>
+<p>Removed the placeholder run_evals.py; scoring now in examples/evaluate_head.py</p>
+</li>
+<li>
+<p>Completed evals: scoring script for trained heads</p>
+</li>
+<li>
+<p>Wrote evals: batch job to score one trained head on CARC&quot; -m &quot;Same setup as carc-train.sbatch: one GPU, a per-job uv environment, log in logs/confhead-eval-<jobid>.out. Pass --checkpoint; extra arguments go to examples/evaluate_head.py.</p>
+</li>
+<li>
+<p>Run scoring script on all test images for all 3 trained models downloaded (and any new models)</p>
+</li>
+<li>
+<p>Add all results to run_matrix.md</p>
+</li>
+<li>
+<p>Write analysis and make charts based on three models' scores (sparsification curves, comparing models with oracle and random)</p>
+</li>
+<li>
+<p>Create frame selector to rank whole images by confidence. Check whether dropping the whole images lowers the error of the rest.</p>
+</li>
+</ul>
+<p>Varad:</p>
+<ul>
+<li>
+<p>Count how many pixels with a LIDAR answer each of day/rain/night has, utilizes scene list, goes into table</p>
+</li>
+<li>
+<p>Build day/rain/night results table from scores from all models, scene lists, flip scores. Show which differences are real</p>
+</li>
+<li>
+<p>Show use of confidence (i.e. weigh depth by it) with one number that improves (maybe team decides which taht is?)</p>
+</li>
+<li>
+<p>NuScenes drive before and after (depth estimation with and without)</p>
+</li>
+<li>
+<p>Katherine: Add to final report: charts, main results table of every model</p>
+</li>
+<li>
+<p>Varad: Add to final report: day/rain/night results, comparisons with simple scores, lidar data counts, limits\</p>
+</li>
 <li></li>
-</ul>
-<p>Varad:</p>
-<ul>
-<li>Download all three trained models as of today from Nathan A and Nathan B</li>
-<li>Build flip comparison py file, start on CARC (mirror image, run depth model, flip result, use where two depths diagree as a no-training confidence score)</li>
-</ul>
-<p>----- Run scoring on all models + condition splits, write analyses
-Katherine:</p>
-<ul>
-<li>Run scoring script on all test images for all 3 trained models downloaded (and any new models)</li>
-<li>Add all results to run_matrix.md</li>
-<li>Write analysis and make charts based on three models' scores (sparsification curves, comparing models with oracle and random)</li>
-</ul>
-<p>Varad:</p>
-<ul>
-<li>Count how many pixels with a LIDAR answer each of day/rain/night has, utilizes scene list, goes into table</li>
-<li>Build day/rain/night results table from scores from all models, scene lists, flip scores. Show which differences are real</li>
-</ul>
-<p>Katherine/Varad:</p>
-<ul>
-<li>Look at eval results and decide top promising models</li>
-</ul>
-<p>DUE BY Fri Nov 20</p>
-<p>---- Decide from most promising models and maybe run additional models</p>
-<p>Nathans:</p>
-<ul>
-<li>Run additional models if needed</li>
-</ul>
-<p>DUE BY Sat Nov 21</p>
-<p>--- Decide on the project before/after results</p>
-<p>Katherine:</p>
-<ul>
-<li>Create frame selector to rank whole images by confidence. Check whether dropping the whole images lowers the error of the rest.</li>
-</ul>
-<p>Varad:</p>
-<ul>
-<li>Show use of confidence (i.e. weigh depth by it) with one number that improves (maybe team decides which taht is?)</li>
-<li>NuScenes drive before and after (depth estimation with and without)</li>
-</ul>
-<p>Due by 24th</p>
-<p>---- Writing final report + prepare for project clinic Nov 30</p>
-<p>Katherine:</p>
-<ul>
-<li>Add to final report: charts, main results table of every model</li>
-</ul>
-<p>Varad:</p>
-<ul>
-<li>Add to final report: day/rain/night results, comparisons with simple scores, lidar data counts, limits\</li>
 </ul>
 <p>Alejandro/everyone:</p>
 <ul>
+<li>Look at eval results and decide top promising models</li>
 <li>Finalize and wrap up report</li>
 <li>Prepare for project clinic on Nov 30</li>
+<li>Finish Final Report due Dec 7</li>
 </ul>
-<p>--- Final Report due Dec 7</p>
 
             
             

@@ -175,62 +175,38 @@ The dataset is more than 800 GB, so it cannot go into the PI's project folder. `
 - Added `httpx` to the dev group in `pyproject.toml`: `tests/test_hub.py` needs it and a plain `uv sync` didn't install it
 - Updated the `metrics.py` docstrings: "cells" instead of "pixels"; 
 
-## 2026-11-19 (Varad)
+
+## 2026-11-19
 - Updated confhead/examples/run_flip_baseline.py to write two output files alongside the printed summary:
   flip_baseline.csv (one row per val image: key, scene, camera, condition, n_labeled, n_wrong, AUROC, ECE, AUSE, AURG, Brier)
   and flip_baseline_cells.npz (per-cell arrays: p_error, abs_rel, target, scene) so Katherine can score
   the flip baseline identically to the trained confidence head runs
 
+## 2026-11-24
+- Removed the placeholder run_evals.py; scoring now in examples/evaluate_head.py
+- Completed evals: scoring script for trained heads
+- Wrote evals: batch job to score one trained head on CARC" -m "Same setup as carc-train.sbatch: one GPU, a per-job uv environment, log in logs/confhead-eval-<jobid>.out. Pass --checkpoint; extra arguments go to examples/evaluate_head.py.
 
 
-### Evals team set future checklist items
-Nathan A/B:
-- Have all models trained
-
------ Run scoring on all models + condition splits, write analyses
-Katherine:
 - Run scoring script on all test images for all 3 trained models downloaded (and any new models)
 - Add all results to run_matrix.md
 - Write analysis and make charts based on three models' scores (sparsification curves, comparing models with oracle and random)
+- Create frame selector to rank whole images by confidence. Check whether dropping the whole images lowers the error of the rest. 
+
+
 
 Varad:
 - Count how many pixels with a LIDAR answer each of day/rain/night has, utilizes scene list, goes into table
 - Build day/rain/night results table from scores from all models, scene lists, flip scores. Show which differences are real
-
-Katherine/Varad:
-- Look at eval results and decide top promising models
-
-DUE BY Fri Nov 20
-
-
----- Decide from most promising models and maybe run additional models
-Nathans:
-- Run additional models if needed
-
-DUE BY Sat Nov 21
-
-
---- Decide on the project before/after results
-Katherine:
-- Create frame selector to rank whole images by confidence. Check whether dropping the whole images lowers the error of the rest. 
-
-Varad:
 - Show use of confidence (i.e. weigh depth by it) with one number that improves (maybe team decides which taht is?)
 - NuScenes drive before and after (depth estimation with and without)
 
-Due by 24th
 
-
-
----- Writing final report + prepare for project clinic Nov 30
-Katherine:
-- Add to final report: charts, main results table of every model
-
-Varad:
-- Add to final report: day/rain/night results, comparisons with simple scores, lidar data counts, limits\
-
+- Katherine: Add to final report: charts, main results table of every model
+- Varad: Add to final report: day/rain/night results, comparisons with simple scores, lidar data counts, limits\
+- 
 Alejandro/everyone:
+- Look at eval results and decide top promising models
 - Finalize and wrap up report
 - Prepare for project clinic on Nov 30
-
---- Final Report due Dec 7
+- Finish Final Report due Dec 7
