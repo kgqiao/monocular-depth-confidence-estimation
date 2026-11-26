@@ -1,0 +1,62 @@
+\documentclass[11pt]{article}
+
+% "review" gives line numbers and page numbers, as in the course reference.
+% The \acl@anonymizefalse line below keeps author names visible.
+% For a clean copy without line numbers, change "review" to "preprint".
+\usepackage[review]{acl}
+\makeatletter\acl@anonymizefalse\makeatother
+
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{inconsolata}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta}
+
+% Red, bracketed markers for anything still to be written or measured.
+% Search the PDF for "TODO" to find every open item.
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+
+% The teaser figure below the authors needs room, so shrink the default title box.
+\setlength\titlebox{3.3cm}
+
+\title{Knowing When Not to Trust Depth:\\
+A Learned Per-Pixel Confidence Head for Monocular Depth\\
+in Adverse Driving Conditions\\
+\large Midterm Report}
+
+\author{Nathan Aday, Alejandro Arteaga, Nathan Bao, Katherine Qiao, Varad Jaideep Tawde}
+
+\begin{document}
+
+\makeatletter
+\g@addto@macro\@maketitle{%
+  \begin{center}
+    \includegraphics[width=0.46\textwidth]{figures/cache-entry-preview.png}
+    \captionof{figure}{One cache entry (nuScenes scene-0553, CAM\_FRONT, day). Top: the image with projected keyframe lidar, and the Depth Anything V2 prediction after the lidar fit. Middle: the temporal spread input and the first three principal components of the 64 decoder features. Bottom: the lidar AbsRel label on the grid, and the radar residual input. The head reads the middle-left temporal spread and the three right-hand quantities, with a radar validity mask that is not shown, and must predict the bottom-left map. Two panels differ from what the head sees. The top-right depth is in meters after the lidar fit, while the head reads the disparity divided by its image mean, and the bottom-left AbsRel is drawn before thresholding at $\tau = 0.10$.}
+    \label{fig:teaser}
+  \end{center}
+  \vskip 0.05in}
+\makeatother
+
+\maketitle
+
+% Each section lives in its own file under sections/. Edit your section there.
+\input{sections/abstract}
+\input{sections/introduction}
+\input{sections/literature-review}
+\input{sections/progress}
+\input{sections/results}
+\input{sections/plan}
+
+\bibliography{references}
+
+\end{document}
