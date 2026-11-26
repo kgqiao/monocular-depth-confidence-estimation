@@ -6,30 +6,20 @@ Add a new model: just drop its CSV in a new subfolder and re-run.
 Usage: python3 confhead/examples/build_results_table.py
 """
 
+import sys
 import pandas as pd
 import numpy as np
 from pathlib import Path
 
+# Add confhead/src to path so we can import evals.bootstrap
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+from evals.bootstrap import scene_bootstrap_ci
+
 RESULTS_DIR = Path("confhead/results")
-N_BOOTSTRAP = 1000
+N_BOOTSTRAP = 2000
 CI_LEVEL = 0.95
 METRICS = ["auroc", "ece", "ause", "aurg", "brier"]
 CONDITIONS = ["day", "rain", "night"]
-
-
-def bootstrap_ci(values, n=N_BOOTSTRAP, ci=CI_LEVEL):
-    """Return (mean, lower, upper) using bootstrap resampling."""
-    values = np.asarray(values)
-    boot_means = [
-        np.mean(np.random.choice(values, size=len(values), replace=True))
-        for _ in range(n)
-    ]
-    alpha = (1 - ci) / 2
-    return (
-        float(np.mean(values)),
-        float(np.percentile(boot_means, alpha * 100)),
-        float(np.percentile(boot_means, (1 - alpha) * 100)),
-    )
 
 
 def discover_models():
@@ -47,7 +37,7 @@ def discover_models():
 
 
 def condition_stats(df, condition):
-    """Mean ± bootstrap CI for each metric, filtered to one condition."""
+    """Mean ± scene-bootstrap CI for each metric, filtered to one condition."""
     sub = df[df["condition"] == condition].copy()
     if sub.empty:
         return None
@@ -58,8 +48,11 @@ def condition_stats(df, condition):
     for m in METRICS:
         if m not in sub.columns:
             continue
-        vals = sub[m].dropna().values
-        mean, lo, hi = bootstrap_ci(vals)
+        # scene_bootstrap_ci handles NaN dropping internally
+        try:
+            mean, lo, hi = scene_bootstrap_ci(sub[m], sub["scene"])
+        except Exception:
+            continue
         out[m] = mean
         out[f"{m}_lo"] = lo
         out[f"{m}_hi"] = hi
@@ -81,7 +74,7 @@ def print_table(results, models):
     for metric in METRICS:
         print(f"\n{'='*W}")
         print(f"  {metric.upper()}  (↑ = higher better for auroc/aurg; ↓ = lower better for ece/ause/brier)")
-        print(f"  Bootstrap {int(CI_LEVEL*100)}% CI  (n={N_BOOTSTRAP})")
+        print(f"  Scene-bootstrap {int(CI_LEVEL*100)}% CI  (n={N_BOOTSTRAP})")
         print(f"{'='*W}")
         print(f"{'Model':<25} {'Day':>30} {'Rain':>30} {'Night':>30}")
         print(f"{'-'*W}")
@@ -104,7 +97,7 @@ def save_outputs(results):
 
     # Markdown table (easy to paste into paper/report)
     md_lines = ["# Model Results by Condition\n",
-                f"Bootstrap {int(CI_LEVEL*100)}% CI, n={N_BOOTSTRAP}\n",
+                f"Scene-bootstrap {int(CI_LEVEL*100)}% CI, n={N_BOOTSTRAP}\n",
                 f"Format: `mean [lo, hi]`\n"]
     for metric in METRICS:
         md_lines += [f"\n## {metric.upper()}\n",
@@ -125,7 +118,6 @@ def save_outputs(results):
 
 
 def main():
-    np.random.seed(42)
     print("Discovering model CSVs...\n")
     models = discover_models()
 
@@ -134,7 +126,7 @@ def main():
         return
 
     print(f"\n{len(models)} model(s) found: {list(models.keys())}\n")
-    print("Computing bootstrap CIs (this takes ~10s)...")
+    print(f"Computing scene-bootstrap CIs (n={N_BOOTSTRAP})...")
 
     rows = []
     for model_name, df in models.items():
