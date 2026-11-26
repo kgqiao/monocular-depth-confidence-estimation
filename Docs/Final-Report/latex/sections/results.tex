@@ -1,91 +1,241 @@
 % !TEX root = ../main.tex
 % ============================================================================
-% Owner: Tawde and Qiao (evaluation), with Aday and Bao for the Run 1 numbers.
-% Drafted from confhead/results/*.md, Docs/worklog.md, and the Run 1 log.
+% Budget: 2.3 pages. The page holds two full-width tables and two or three
+% figures at most; anything more goes to Appendix D.
+%
+% HOW TO WRITE A SUBSECTION HERE
+%   1. Start with the finding in one bold sentence, as the midterm results did.
+%   2. Give the numbers that support it and point to the table or figure.
+%   3. Say what limits the finding (scene count, interval, what was not run).
+% Each subsection below has a comment with what it must show and where the
+% numbers come from. Replace every \tbd and \todo; delete the comment last.
+%
+% WHERE THE NUMBERS COME FROM
+%   per-image scores of a head   confhead/examples/evaluate_head.py  (CARC: carc-eval.sbatch)
+%   flip baseline                confhead/examples/run_flip_baseline.py
+%   tables with intervals        confhead/examples/build_results_table.py
+%   figures                      confhead/src/evals/plot.py  -> ../figures-src/
+%
+% BEFORE ANY NUMBER GOES IN (rubric gates 2 and 3)
+%   - All methods of a table are scored on the same validation images and cells.
+%   - Intervals come from the paired bootstrap over scenes (Section 4.4).
+%   - The label masks D8, D9, D13 are settled (Section 3.3).
 % ============================================================================
-\section{Initial Results}
+\section{Results}
 \label{sec:results}
 
-No AUSE or AURG has been measured on the full data yet. Ten heads are trained on the trainval cache, and the evaluation that scores them is due on November~20 (Section~\ref{sec:plan}). This section reports what the cached data says about the task, the training and dev losses of the ten runs, and what those losses say about the inputs. The dev loss shows that a run learned; it does not rank the runs. The sparsification scores follow once the runs are scored. We trained all ten runs on the cache as it stands, with 73\% of the trainval images (Section~\ref{sec:progress}), and will retrain them once the cache is repaired. The losses below may therefore shift slightly; the runs share one cache, so they stay comparable.
+% ----------------------------------------------------------------------------
+\subsection{Main Comparison}
+\label{sec:main}
+% MUST SHOW: the head against every score that needs no training, and against
+% the two bounds, on all validation images. One row per method of Section 4.3.
+% The reader should see at a glance (a) how far the best head is from the
+% oracle, (b) how much it gains over flip disagreement, and (c) what the
+% lidar-free head loses against the full head.
+% Negative results stay in the table (rubric gate 5): if a simple score matches
+% a head, the row says so.
 
-\subsection{Cache and Label Statistics}
-
-Table~\ref{tab:cachestats} summarizes the development cache built on nuScenes v1.0-mini and the counts measured on the full trainval cache, both at the $132 \times 74$ grid. Three observations shape the experiments. First, the task is learnable in principle: labels cover a quarter of the coarse-grid cells, and 37\% of labeled cells are positive at $\tau = 0.10$, inside the 5--70\% gate the Run~1 plan set. Second, night is harder: the median per-image AbsRel is 0.052 by day and 0.079 at night, and the only mini images with no usable lidar fit are four night frames. Both medians are measured after the per-image lidar fit, so they describe the shape of the depth under the best scale and shift; a frame whose overall scale is off still counts as correct. Third, the radar residual is noisy: its median is 0.25 under the radar fit and 0.28 under the lidar fit, about five times the lidar-measured depth error, and 13.5\% of mini images have no radar fit at all. The likely cause is that nuScenes radar has no elevation, so a radar point can project onto a pixel showing another surface. Whether the channel still helps is tested by the no-radar run in Section~\ref{sec:runs}.
-
-\begin{table}[t]
-  \centering
-  \small
-  \setlength{\tabcolsep}{2pt}
-  \begin{tabular}{@{}l r r@{}}
-    \toprule
-    & \textbf{mini ($\times 2$)} & \textbf{trainval ($\times 2$)} \\
-    \midrule
-    Camera images & 2,424 & 204,894 \\
-    Cache entries & 2,424 & 149,410 \\
-    Cache size & 3.43\,GB & ---$^{\ddagger}$ \\
-    Build time & 42\,min & ---$^{\ddagger}$ \\
-    Lidar points / image & 3,613 & ---$^{\ddagger}$ \\
-    Radar points / image (5 sweeps) & 150 & ---$^{\ddagger}$ \\
-    Images with a lidar fit & 99.8\% & ---$^{\ddagger}$ \\
-    Images with a radar fit & 86.5\% & ---$^{\ddagger}$ \\
-    Labeled cells & 26.2\% & 25.1\%$^{\dagger}$ \\
-    Positive labels ($\tau = 0.10$) & 37.2\% & 37.6\%$^{\dagger}$ \\
-    Median AbsRel, day / night & 0.052 / 0.079 & ---$^{\ddagger}$ \\
-    Median radar residual & 0.25 & ---$^{\ddagger}$ \\
-    \bottomrule
-  \end{tabular}
-  \caption{Statistics of the cached head inputs and labels. ``$\times 2$'' names the grid, twice the ViT patch grid ($132 \times 74$); the image count is unchanged. The radar residual is under the radar fit. $^{\dagger}$Measured on the training split by the Run~1 estimate. $^{\ddagger}$Not yet measured: the summary of the trainval cache still has to be run on CARC.}
-  \label{tab:cachestats}
-\end{table}
-
-We measured two label pitfalls on mini, both open items (D8, D9): 3.2\% of CAM\_BACK lidar pixels fall on the ego vehicle's trunk, and about 0.35\% of lidar pixels are returns from behind a nearer object that bleed through. Both place labels on surfaces the camera does not see. The rule that the nearest point wins a cell already removes a bleed-through return whenever a return from the nearer object falls in the same cell; we have not yet measured the share that survives on the grid.
-
-We measured radar coverage on 149,410 cache entries with the training settings (radius 1, every sweep). The radar validity channel marks 3.4\% of the grid cells (6.2\% at radius 2, 1.7\% with the keyframe sweep only), and only 4.8\% of the lidar-labeled cells have a valid radar cell on them. The radar fit fails on 17.0\% of images, and on 32\% for the two back-side cameras; those images get an all-zero radar residual and validity. A loss computed on labeled cells can therefore barely move with radar.
-
-\subsection{Training Runs}
-\label{sec:runs}
-
-Run~1 uses 631 training scenes (110,929 images, including 76 night and 125 rain scenes) and 69 dev scenes (3,000 of 12,150 images). Of the training cells, 25.1\% carry a label and 37.6\% of those are positive, giving a class weight of 1.658. The first estimate put 8 epochs at about 8.8 hours, because the cache loaded at 28 images/s against 1,007 images/s for the training step alone, without loading. The run itself took 3.5 hours. Its dev loss fell in every epoch, so the best head is the last one, with a dev loss of 0.5562.
-
-Table~\ref{tab:runs} lists the ten runs and Figure~\ref{fig:losscurve} draws their losses. The same settings trained twice (\texttt{run1} and \texttt{run-v1-radar}) differ by 0.0004 in dev loss. This is the only measure of repeat noise so far, and one pair cannot fix a noise level. We treat a gap below about 0.001 as a tie only as a rough check; the bootstrap intervals and the stage~5 seeds will decide which differences are real. All differences below are against the baseline \texttt{run-v1-radar}.
-
-\textbf{The decoder features carry most of the signal.} Without them the dev loss rises by 0.0601, the largest cost of removing any one input group, and the features alone come within 0.0080 of all inputs. A single channel on its own, depth or the temporal spread, is far worse than any run that reads the features (Table~\ref{tab:runs}). The features-only head also needs no sensor fit at inference, so it is free of lidar, as is \texttt{m1-no-temporal}. Every head that reads the temporal spread uses the lidar fit and is an upper bound for a deployed system.
-
-\textbf{The temporal spread helps a little, and depth and radar are ties.} Removing the temporal spread costs 0.0063. Removing the depth channel costs 0.0008 and removing radar changes the loss by 0.0004, both inside the tie band; for radar this is what its coverage predicts. However, 95.2\% of the labeled cells have no radar cell on them, so a tie over all labeled cells leaves open whether the head uses radar where radar exists. A comparison on the radar-valid cells alone would settle it. We leave \texttt{m1-seed1} out of these comparisons, because the seed also picks other dev scenes. Its use is the evaluation score on val.
-
-\textbf{The loss was still falling when every run ended.} In every run the best epoch is the last; a 16-epoch run is in stage 4 of the run matrix. On mini, the two checkpoint rules disagreed: dev AUSE was lowest after epoch 1 while dev loss was lowest after epoch 8, which is why D14 keeps the checkpoint that the dev loss chose and leaves AUSE to the evaluation, which scores that checkpoint.
+\todo{One bold sentence with the main finding, then the numbers of Table~\ref{tab:main} and the reading of Figure~\ref{fig:sparsification}.}
 
 \begin{table*}[t]
   \centering
   \small
   \setlength{\tabcolsep}{5pt}
-  \begin{tabular}{@{}l l c c c c r r r r@{}}
+  \begin{tabular}{@{}l l c c c c c c@{}}
     \toprule
-    \textbf{Run} & \textbf{What changes} & \textbf{Feat.} & \textbf{Depth} & \textbf{Temp.} & \textbf{Radar} & \textbf{Ch.} & \textbf{Best dev loss} & \textbf{$\Delta$ baseline} & \textbf{Hours} \\
+    \textbf{Method} & \textbf{Reads} & \textbf{Lidar at inference} & \textbf{AUSE} $\downarrow$ & \textbf{AURG} $\uparrow$ & \textbf{AUROC} $\uparrow$ & \textbf{ECE} $\downarrow$ & \textbf{Brier} $\downarrow$ \\
     \midrule
-    \texttt{run1} & Nothing: the first trainval run & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & 68 & 0.5562 & $-0.0004$ & 3.5 \\
-    \texttt{run-v1-radar} & Nothing: the baseline, a repeat & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & 68 & 0.5566 & $0.0000$ & 5.5 \\
-    \texttt{run-v0-no-radar} & No radar & $\bullet$ & $\bullet$ & $\bullet$ & -- & 66 & 0.5562 & $-0.0004$ & 2.7 \\
-    \texttt{m1-no-depth} & No depth channel & $\bullet$ & -- & $\bullet$ & $\bullet$ & 67 & 0.5574 & $+0.0008$ & 1.0 \\
-    \texttt{m1-no-temporal} & No temporal spread & $\bullet$ & $\bullet$ & -- & $\bullet$ & 67 & 0.5629 & $+0.0063$ & 1.4 \\
-    \texttt{m1-features-only} & Decoder features alone & $\bullet$ & -- & -- & -- & 64 & 0.5646 & $+0.0080$ & 0.9 \\
-    \texttt{m1-no-features} & No decoder features & -- & $\bullet$ & $\bullet$ & $\bullet$ & 4 & 0.6167 & $+0.0601$ & 1.0 \\
-    \texttt{m1-depth-only} & Depth channel alone & -- & $\bullet$ & -- & -- & 1 & 0.6394 & $+0.0828$ & 0.7 \\
-    \texttt{m1-temporal-only} & Temporal spread alone & -- & -- & $\bullet$ & -- & 1 & 0.6778 & $+0.1212$ & 0.7 \\
-    \texttt{m1-seed1} & Seed 1, which picks other dev scenes & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & 68 & 0.5885 & n/a & 1.8 \\
+    Random order & -- & no & \tbd & 0 & 0.5 & -- & -- \\
+    Flip disagreement & two backbone passes & no & \tbd & \tbd & \tbd & -- & -- \\
+    Normalized disparity & channel 64 & no & \tbd & \tbd & \tbd & -- & -- \\
+    Temporal spread & channel 65 & yes & \tbd & \tbd & \tbd & -- & -- \\
+    \midrule
+    Head, depth only (\texttt{m1-depth-only}) & channel 64 & no & \tbd & \tbd & \tbd & \tbd & \tbd \\
+    Head, temporal only (\texttt{m1-temporal-only}) & channel 65 & yes & \tbd & \tbd & \tbd & \tbd & \tbd \\
+    Head, features only (\texttt{m1-features-only}) & decoder features & no & \tbd & \tbd & \tbd & \tbd & \tbd \\
+    Head, no temporal (\texttt{m1-no-temporal}) & all but channel 65 & no & \tbd & \tbd & \tbd & \tbd & \tbd \\
+    Head, all inputs (\texttt{run-v1-radar}) & all 68 channels & yes & \tbd & \tbd & \tbd & \tbd & \tbd \\
+    \midrule
+    Oracle & true error & -- & 0 & \tbd & 1 & -- & -- \\
     \bottomrule
   \end{tabular}
-  \caption{The ten trained runs: the input groups each one reads, its channel count, the lowest dev loss (always at epoch 8), the difference from the baseline \texttt{run-v1-radar}, and the training time, which depends on the cluster node. The dev loss is a health check; AUSE and AURG on the val split will decide which run is best.}
-  \label{tab:runs}
+  \caption{All methods on the nuScenes validation split (\tbd{} images, \tbd{} labeled cells), with the 95\% interval of each score from a bootstrap over the 150 scenes. ``Lidar at inference'' marks the methods that use the lidar fit of the depth scale (Section~\ref{sec:sensors}); a head so marked is an upper bound for a deployed system. The ECE is after the logit correction (Section~\ref{sec:protocol}). \todo{Fill from the per-image scores of every method on the same images, and add the intervals.}}
+  \label{tab:main}
 \end{table*}
+
+\begin{figure}[t]
+  \centering
+  \placeholderfig{0.9\columnwidth}{4.2cm}{Sparsification curves. Mean AbsRel of the remaining cells against the fraction removed, for the oracle, random order, flip disagreement, the features-only head, and the full head. \texttt{plot.py}, \texttt{sparsification\_figure}.}
+  \caption{\todo{Caption. Say what the axes are, which images the curves average over, and what the gap to the oracle means.}}
+  \label{fig:sparsification}
+\end{figure}
+
+% ----------------------------------------------------------------------------
+\subsection{Adverse Conditions}
+\label{sec:conditions}
+% MUST SHOW: the scores of the main methods for day, rain, and night, with
+% intervals, next to the scene counts (111 / 24 / 15) and the label counts of
+% Table 2. This is the claim in the title, so it gets its own table.
+% Say which gaps between conditions the intervals support and which they do
+% not: night has 15 scenes and rain 24.
+% Also say whether the head keeps its ranking quality where the depth itself
+% is worst, and whether its gain over flip disagreement grows or shrinks at night.
+
+\todo{One bold sentence with the finding, then the numbers of Table~\ref{tab:conditions}.}
+
+\begin{table*}[t]
+  \centering
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}l c c c c c c c c c@{}}
+    \toprule
+    & \multicolumn{3}{c}{\textbf{Day} (111 scenes)} & \multicolumn{3}{c}{\textbf{Rain} (24 scenes)} & \multicolumn{3}{c}{\textbf{Night} (15 scenes)} \\
+    \cmidrule(lr){2-4} \cmidrule(lr){5-7} \cmidrule(l){8-10}
+    \textbf{Method} & AUSE $\downarrow$ & AURG $\uparrow$ & AUROC $\uparrow$ & AUSE $\downarrow$ & AURG $\uparrow$ & AUROC $\uparrow$ & AUSE $\downarrow$ & AURG $\uparrow$ & AUROC $\uparrow$ \\
+    \midrule
+    Flip disagreement & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd \\
+    Temporal spread & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd \\
+    Head, features only & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd \\
+    Head, all inputs & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd \\
+    \bottomrule
+  \end{tabular}
+  \caption{Scores by condition on the validation split, with 95\% intervals from the bootstrap over the scenes of each group. Table~\ref{tab:labelcounts} gives the images and labels behind each column. \todo{Fill, with intervals; mark the differences between methods that the paired intervals support.}}
+  \label{tab:conditions}
+\end{table*}
+
+% ----------------------------------------------------------------------------
+\subsection{Which Inputs Matter}
+\label{sec:input-ablation}
+% MUST SHOW: what each input group adds, in AUSE and AURG on validation, with
+% the interval of the difference from the baseline. The dev losses below are
+% final and come from confhead/results/model_checkpoints.md (complete cache);
+% the three findings are carried over from the midterm report with those
+% losses. Restate each finding in AUSE and AURG once the runs are scored, and
+% keep the dev loss only as a column.
+
+Table~\ref{tab:input-ablation} lists the input ablation. The two runs with the same settings, \texttt{run-v1-radar} and its repeat, differ by 0.0008 in dev loss, which is the only measure of repeat noise on the dev loss. \todo{The findings below are stated on the dev loss, which shows that a run learned and does not rank the runs. Restate each with the AUSE, the AURG, and the paired interval of the difference from the baseline.}
+
+\textbf{The decoder features carry most of the signal.} Without them the dev loss rises by 0.0540, the largest cost of removing any one input group, and the features alone come within 0.0094 of all inputs. A single channel on its own, depth or the temporal spread, is far worse than any run that reads the features.
+
+\textbf{The temporal spread helps a little, and the depth channel less.} Removing the temporal spread costs 0.0059 and removing the depth channel 0.0018.
+
+\textbf{Radar makes no difference on the dev loss.} The run without radar is within the repeat gap of the baseline, which is what the coverage of radar predicts: 95.2\% of the labeled cells have no radar cell on them \todo{Refresh on the complete cache; measured on the partial cache}. A tie over all labeled cells leaves open whether the head uses radar where radar exists. \todo{Compare \texttt{run-v1-radar} with \texttt{run-v0-no-radar} on the radar-valid cells alone (checklist B2; no retraining) and report the result here, as a number with its interval.}
+
+\begin{table*}[t]
+  \centering
+  \small
+  \setlength{\tabcolsep}{5pt}
+  \begin{tabular}{@{}l l c c c c r r r r r@{}}
+    \toprule
+    \textbf{Run} & \textbf{What changes} & \textbf{Feat.} & \textbf{Depth} & \textbf{Temp.} & \textbf{Radar} & \textbf{Ch.} & \textbf{Dev loss} & \textbf{AUSE} $\downarrow$ & \textbf{AURG} $\uparrow$ & \textbf{$\Delta$AUSE} \\
+    \midrule
+    \texttt{run-v1-radar} & Nothing: the baseline & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & 68 & 0.5589 & \tbd & \tbd & 0 \\
+    \texttt{run-v1-radar-repeat} & Nothing: a repeat & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & 68 & 0.5581 & \tbd & \tbd & \tbd \\
+    \texttt{run-v0-no-radar} & No radar & $\bullet$ & $\bullet$ & $\bullet$ & -- & 66 & 0.5580 & \tbd & \tbd & \tbd \\
+    \texttt{m1-no-depth} & No depth channel & $\bullet$ & -- & $\bullet$ & $\bullet$ & 67 & 0.5607 & \tbd & \tbd & \tbd \\
+    \texttt{m1-no-temporal} & No temporal spread & $\bullet$ & $\bullet$ & -- & $\bullet$ & 67 & 0.5648 & \tbd & \tbd & \tbd \\
+    \texttt{m1-features-only} & Decoder features alone & $\bullet$ & -- & -- & -- & 64 & 0.5683 & \tbd & \tbd & \tbd \\
+    \texttt{m1-no-features} & No decoder features & -- & $\bullet$ & $\bullet$ & $\bullet$ & 4 & 0.6129 & \tbd & \tbd & \tbd \\
+    \texttt{m1-depth-only} & Depth channel alone & -- & $\bullet$ & -- & -- & 1 & 0.6368 & \tbd & \tbd & \tbd \\
+    \texttt{m1-temporal-only} & Temporal spread alone & -- & -- & $\bullet$ & -- & 1 & 0.6713 & \tbd & \tbd & \tbd \\
+    \bottomrule
+  \end{tabular}
+  \caption{The input ablation: the input groups each run reads, its channel count, its lowest dev loss on the complete cache, and its scores on the validation split. $\Delta$AUSE is the difference from the baseline with its 95\% paired interval over scenes. \todo{Fill the three score columns.}}
+  \label{tab:input-ablation}
+\end{table*}
+
+% ----------------------------------------------------------------------------
+\subsection{Design Ablations}
+\label{sec:design-ablation}
+% MUST SHOW: that the conclusions do not hang on one setting. Three or four
+% sentences and one compact table; the full list of runs is in Appendix B.
+%   - radar settings (fit, radius, sweeps): does any of them make radar useful?
+%   - tau at 0.05 and 0.2: these runs use other labels, so their dev loss is not
+%     comparable. Compare them by AUSE and AURG on the AbsRel itself, which does
+%     not depend on tau, or by AUROC at the evaluation tau of 0.10.
+%   - label range up to 50 m, a quarter of the data, another seed.
+% m2-radar-lidar-fit puts the lidar fit into the radar residual, so it is an
+% upper bound like the full head (Section 3.5).
+
+\todo{The finding in one bold sentence per group of runs, with the numbers of Table~\ref{tab:design-ablation}.}
+
+\begin{table}[t]
+  \centering
+  \small
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}l l r r r@{}}
+    \toprule
+    \textbf{Run} & \textbf{What changes} & \textbf{Dev loss} & \textbf{AUSE} $\downarrow$ & \textbf{AURG} $\uparrow$ \\
+    \midrule
+    \texttt{run-v1-radar} & Baseline & 0.5589 & \tbd & \tbd \\
+    \midrule
+    \texttt{m2-radar-lidar-fit} & Residual from lidar fit & 0.5534 & \tbd & \tbd \\
+    \texttt{m2-radius0} & Radar radius 0 & 0.5591 & \tbd & \tbd \\
+    \texttt{m2-radius2} & Radar radius 2 & 0.5581 & \tbd & \tbd \\
+    \texttt{m2-sweeps1} & Keyframe sweep only & 0.5582 & \tbd & \tbd \\
+    \midrule
+    \texttt{m3-tau005} & $\tau = 0.05$ & 0.4362$^{\ast}$ & \tbd & \tbd \\
+    \texttt{m3-tau02} & $\tau = 0.2$ & 0.6349$^{\ast}$ & \tbd & \tbd \\
+    \texttt{m6-maxdepth50} & Labels up to 50\,m & 0.5633$^{\ast}$ & \tbd & \tbd \\
+    \midrule
+    \texttt{m6-quarter-data} & A quarter of the data & 0.5664 & \tbd & \tbd \\
+    \texttt{m1-seed1} & Seed 1 & 0.5622$^{\dagger}$ & \tbd & \tbd \\
+    \bottomrule
+  \end{tabular}
+  \caption{Design ablations, each one change from the baseline. $^{\ast}$Other labels, so the dev loss is not comparable with the baseline; the scores are computed on the AbsRel itself and are. $^{\dagger}$Other dev scenes. \todo{Fill the score columns.}}
+  \label{tab:design-ablation}
+\end{table}
+
+% ----------------------------------------------------------------------------
+\subsection{Calibration}
+\label{sec:calibration}
+% MUST SHOW: whether 1 - p can be read as a probability. A reliability diagram
+% of the best head before and after the logit correction (subtract ln w+), with
+% the ECE of each, overall and at night. If the head is still off after the
+% correction, say in which direction (over- or under-confident).
+% Optional: temperature scaling fitted on dev.
+
+\todo{The finding, the two ECE values, and the reading of Figure~\ref{fig:reliability}.}
+
+\begin{figure}[t]
+  \centering
+  \placeholderfig{0.9\columnwidth}{4.2cm}{Reliability diagram of the best head, before and after the logit correction. \texttt{plot.py}, \texttt{reliability\_figure}.}
+  \caption{\todo{Caption.}}
+  \label{fig:reliability}
+\end{figure}
+
+% ----------------------------------------------------------------------------
+\subsection{Qualitative Results}
+\label{sec:qualitative}
+% MUST SHOW: what the confidence map looks like, where it is right, and where
+% it fails. Rows: image, lidar AbsRel, confidence of the head, and flip
+% disagreement for contrast. Columns: one day, one rain, one night frame where
+% the head works, and at least one failure. Name the kind of surface in each
+% (textureless road, object edge, sky, reflections, lens drops), since the
+% project scope asks for a breakdown by surface and not only by weather.
+% The map is dense and the labels are not: say what the head predicts where
+% there is no lidar, and that those cells are not scored.
+
+\todo{Two or three sentences on what Figure~\ref{fig:qualitative} shows, with the failure case named.}
 
 \begin{figure*}[t]
   \centering
-  \includegraphics[width=\textwidth]{figures/run-losses.pdf}
-  \caption{Train and dev loss per epoch of the ten runs, drawn from the \texttt{history.json} of each run folder on Hugging Face. These are the records behind the team's Trackio dashboard (\url{https://huggingface.co/spaces/nathancbao/confhead-charts}). Color names the input set; the three runs that read all inputs share a color and differ by line style. Panel (c) zooms on the runs that keep the decoder features and leaves out \texttt{m1-seed1}, which is scored on other dev scenes.}
-  \label{fig:losscurve}
+  \placeholderfig{0.95\textwidth}{6cm}{Qualitative grid. Image, lidar AbsRel, head confidence, and flip disagreement for day, rain, and night frames, with one failure case. \texttt{plot.py}, \texttt{qualitative\_figure}.}
+  \caption{\todo{Caption. Name the scene and camera of each column and the color scale.}}
+  \label{fig:qualitative}
 \end{figure*}
 
-\subsection{Sparsification Results (Pending)}
+% ----------------------------------------------------------------------------
+\subsection{Downstream Use}
+\label{sec:downstream}
+% OPTIONAL. Cut this subsection if no number is ready by the results freeze,
+% and move its idea to Section 7 as future work.
+% MUST SHOW, if kept: one number that improves when the confidence is used.
+% Candidates (checklist B4): (a) a frame selector that ranks whole images by
+% mean p_error, with the error of the remaining images as the worst are
+% dropped; (b) the radar scale-and-shift fit with each point weighted by the
+% confidence of its cell; (c) the outlier rate at a fixed coverage after the
+% least confident cells are dropped. Use the confidence as a weight or a gate;
+% multiplying a depth by a probability only shrinks it.
 
-The primary deliverable is the AUSE and AURG of every method, with the sparsification curves of the heads against the oracle and random removal. We will report both once the trained runs are scored. Every method is scored on the same labeled cells of the nuScenes val split, overall and per BEVCar condition group. The methods are random removal, temporal spread, flip disagreement, the head with all inputs, the head without radar, the head with features only, and the oracle.
+\todo{The experiment, its number against the same pipeline without the confidence, and one sentence on what it shows. Cut if not ready.}

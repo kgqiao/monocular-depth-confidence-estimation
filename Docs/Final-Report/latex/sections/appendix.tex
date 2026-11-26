@@ -1,0 +1,167 @@
+% !TEX root = ../main.tex
+% ============================================================================
+% Appendix. Not counted in the 8 pages of the body. The body must read
+% without it: a claim in the body never rests on a number that is only here.
+%
+%   A  Deviations from the proposal
+%   B  Run matrix and training curves
+%   C  Cache and infrastructure
+%   D  Additional results
+%   E  Reproducibility
+%
+% A, B, and C are carried over from the midterm report (Progress So Far and
+% Initial Results), with the numbers of the complete cache where a committed
+% file gives them (confhead/results/model_checkpoints.md,
+% confhead/guides/run-matrix.md) and a \todo where none does.
+% ============================================================================
+
+% ============================================================================
+\section{Deviations from the Proposal}
+\label{app:deviations}
+% Every row must be closed in the submitted report: no "Open".
+
+Table~\ref{tab:deviations} lists where the implementation departs from the pre-proposal and the internal plan of the first run. We accept three of them as deviations, each with a reason. MC dropout is dropped because every dropout rate in the Depth Anything V2 encoder is zero and the decoder has none, so repeated passes are identical; flip disagreement covers its role. Predictions are on the $132 \times 74$ grid rather than at image resolution; every method is scored on the same labeled cells, so the grid costs each one equally. The label share is about 25\% of cells rather than ``under 1\% of pixels''; both are true, since a cell covers about 150 pixels and carries a label when one lidar point falls in it. \todo{Say what became of the frame selector, the second dataset, and the occupancy stretch goal, in one sentence each, with a pointer to Sections~\ref{sec:downstream} and~\ref{sec:conclusion}.}
+
+\begin{table*}[t]
+  \centering
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+  \begin{tabular}{@{}l P{2.2cm} P{5.1cm} P{5.1cm} P{1.9cm}@{}}
+    \toprule
+    \textbf{ID} & \textbf{Subject} & \textbf{Proposal / Run 1 plan} & \textbf{Implemented} & \textbf{Status} \\
+    \midrule
+    D1 & Depth model & Metric checkpoint (vkitti), in meters, no fit & Relative ViT-B with per-image lidar and radar fits & Decided; lidar use stated in Section~\ref{sec:sensors} \\
+    D2 & Feature storage & Run the model inside the training loop (no store) & Features cached on a coarser grid & Follows pre-proposal \\
+    D3 & Feature map & \texttt{path\_1}, 128 ch.\ at $528 \times 296$ & \texttt{output\_conv1}, 64 ch.\ at $132 \times 74$ & Within the scope form \\
+    D4 & Temporal channel & Deferred to Run 2 & Built: relative std of inverse depth, 4 extra passes & Follows the scope form \\
+    D5 & Depth channel & $D/80$ in meters & Disparity over its image mean & Follows from D1 \\
+    D6 & Radar residual & Clipped to $[0,1]$, radius 2, keyframe sweep & Unclipped, radius 1, 5 sweeps, radar fit; empty when the fit fails (\todo{Refresh; 17.0\% of the partial cache}) & Settings tested in Section~\ref{sec:design-ablation} \\
+    D7 & Label placement & Bilinear sample at each lidar pixel & Nearest point wins a grid cell & Decided \\
+    D8 & CAM\_BACK ego body & Drop lidar hidden by the trunk (3.2\% of CAM\_BACK on mini) & \todo{Masked, or not} & \todo{Close} \\
+    D9 & Occlusion bleed-through & Not covered & \todo{Removed, or not} (0.35\% of lidar pixels on mini) & \todo{Close} \\
+    D10 & Data & Full nuScenes with train/dev/report splits & Complete trainval cache of 204,894 images; dev split is 10\% of the train scenes; scores on the official validation split & Done \\
+    D11 & Weather tag & Decide how to count ``night, after rain'' & BEVCar division: such a scene is night (3 scenes) & Decided \\
+    D12 & Label gate & Positive rate within 5--70\% on train & \todo{Refresh; 37.6\% positive on the partial cache} & Inside gate \\
+    D13 & Images with no fit & Not covered & \todo{Dropped and counted, or labeled} & \todo{Close} \\
+    D14 & Checkpoint choice & Lowest dev AUSE & Lowest dev loss; AUSE computed afterwards & Decided \\
+    \bottomrule
+  \end{tabular}
+  \caption{Deviations between the plans and the implementation. The scope form is the team's project scope document.}
+  \label{tab:deviations}
+\end{table*}
+
+% ============================================================================
+\section{Run Matrix and Training Curves}
+\label{app:runs}
+% The dev losses are from confhead/results/model_checkpoints.md.
+% Add the AUSE and AURG of every run once scored, so that this table is the
+% complete record and Tables 5 and 6 of the body are extracts of it.
+
+Table~\ref{tab:runs} lists the 18 heads trained on the complete cache. Every run trained for 8 epochs, and in every run the best epoch is the last or the one before it. The dev loss shows that a run learned; the scores on the validation split decide which run is best.
+
+\begin{table*}[t]
+  \centering
+  \small
+  \setlength{\tabcolsep}{5pt}
+  \begin{tabular}{@{}c l l r r r r@{}}
+    \toprule
+    \textbf{Stage} & \textbf{Run} & \textbf{What changes from the baseline} & \textbf{Ch.} & \textbf{Dev loss} & \textbf{AUSE} $\downarrow$ & \textbf{AURG} $\uparrow$ \\
+    \midrule
+    0 & \texttt{run-v1-radar} & Nothing: the baseline & 68 & 0.5589 & \tbd & \tbd \\
+    0 & \texttt{run-v1-radar-repeat} & Nothing: a repeat of the baseline & 68 & 0.5581 & \tbd & \tbd \\
+    0 & \texttt{run-v0-no-radar} & No radar & 66 & 0.5580 & \tbd & \tbd \\
+    \midrule
+    1 & \texttt{m1-no-depth} & No depth channel & 67 & 0.5607 & \tbd & \tbd \\
+    1 & \texttt{m1-no-temporal} & No temporal spread & 67 & 0.5648 & \tbd & \tbd \\
+    1 & \texttt{m1-features-only} & Decoder features alone & 64 & 0.5683 & \tbd & \tbd \\
+    1 & \texttt{m1-no-features} & No decoder features & 4 & 0.6129 & \tbd & \tbd \\
+    1 & \texttt{m1-depth-only} & Depth channel alone & 1 & 0.6368 & \tbd & \tbd \\
+    1 & \texttt{m1-temporal-only} & Temporal spread alone & 1 & 0.6713 & \tbd & \tbd \\
+    1 & \texttt{m1-seed1} & Seed 1, which also picks other dev scenes & 68 & 0.5622$^{\dagger}$ & \tbd & \tbd \\
+    \midrule
+    2 & \texttt{m2-radar-lidar-fit} & Radar residual from the lidar fit & 68 & 0.5534 & \tbd & \tbd \\
+    2 & \texttt{m2-radius0} & Radar radius 0 & 68 & 0.5591 & \tbd & \tbd \\
+    2 & \texttt{m2-radius2} & Radar radius 2 & 68 & 0.5581 & \tbd & \tbd \\
+    2 & \texttt{m2-sweeps1} & The keyframe radar sweep only & 68 & 0.5582 & \tbd & \tbd \\
+    \midrule
+    3 & \texttt{m3-tau005} & $\tau = 0.05$ & 68 & 0.4362$^{\ast}$ & \tbd & \tbd \\
+    3 & \texttt{m3-tau02} & $\tau = 0.2$ & 68 & 0.6349$^{\ast}$ & \tbd & \tbd \\
+    \midrule
+    6 & \texttt{m6-maxdepth50} & Label depth range up to 50\,m & 68 & 0.5633$^{\ast}$ & \tbd & \tbd \\
+    6 & \texttt{m6-quarter-data} & 38,000 train images per epoch, a quarter & 68 & 0.5664 & \tbd & \tbd \\
+    \bottomrule
+  \end{tabular}
+  \caption{The 18 heads trained on the complete cache (152,124 training images), with the lowest dev loss of each and its scores on the validation split. $^{\ast}$Other labels, so the dev loss is not comparable with the other runs. $^{\dagger}$Other dev scenes. Stages 4 (learning rate, 16 epochs, head width) and 5 (final seeds) \todo{Were not run / add their rows}. \todo{Fill the score columns.}}
+  \label{tab:runs}
+\end{table*}
+
+\begin{figure*}[t]
+  \centering
+  \placeholderfig{0.95\textwidth}{5cm}{Train and dev loss per epoch of the 18 runs, drawn from the \texttt{history.json} of each run folder in \texttt{csci566-depthconf/confhead}. The midterm figure (\texttt{figures/run-losses.pdf}) shows the ten partial-cache runs and must not be reused.}
+  \caption{\todo{Caption. Say what color and line style encode.}}
+  \label{fig:losscurve}
+\end{figure*}
+
+% ============================================================================
+\section{Cache and Infrastructure}
+\label{app:cache}
+% Keep this to what a reader needs in order to rebuild the cache.
+
+\paragraph{Build.} We downloaded full nuScenes v1.0 (trainval and test, over 800\,GB) to the cluster of the USC Center for Advanced Research Computing (CARC) and built the cache of head inputs for the trainval camera images as a 16-shard GPU job array. The cache holds 204,894 entries from all 850 scenes. Each entry is one \texttt{.npz} plus one \texttt{.json}: the fp16 feature map, the disparity grid, the temporal spread and its frame count, the lidar and radar points with the model disparity at each, and the two fits. Labels and radar channels are computed when an entry loads, so $\tau$, the radar radius, and the choice of fit are settings rather than rebuilds. A fingerprint of the content settings lets a stopped build resume. A first build missed about a quarter of the entries; we built the missing entries and retrained every head on the complete cache, and no number in this report comes from the partial cache. \todo{Confirm the last clause once every \textbackslash todo that says ``refresh'' is closed.} Training runs as a single-GPU batch job and resumes from the last checkpoint.
+
+\paragraph{Statistics.} Table~\ref{tab:cachestats} summarizes the development cache built on nuScenes v1.0-mini and the trainval cache, both at the $132 \times 74$ grid. Labels cover a quarter of the grid cells, and 37\% of the labeled cells of mini are positive at $\tau = 0.10$. Night is harder: the median per-image AbsRel on mini is 0.052 by day and 0.079 at night, and the only mini images with no usable lidar fit are four night frames. Both medians are measured after the per-image lidar fit, so they describe the shape of the depth under the best scale and shift. The radar residual is noisy: on mini its median is 0.25 under the radar fit and 0.28 under the lidar fit, about five times the lidar-measured depth error, and 13.5\% of mini images have no radar fit at all. The likely cause is that nuScenes radar has no elevation, so a radar point can project onto a pixel showing another surface.
+
+\begin{table}[t]
+  \centering
+  \small
+  \setlength{\tabcolsep}{2pt}
+  \begin{tabular}{@{}l r r@{}}
+    \toprule
+    & \textbf{mini ($\times 2$)} & \textbf{trainval ($\times 2$)} \\
+    \midrule
+    Camera images & 2,424 & 204,894 \\
+    Cache entries & 2,424 & 204,894 \\
+    Cache size & 3.43\,GB & \tbd \\
+    Build time & 42\,min & \tbd \\
+    Lidar points / image & 3,613 & \tbd \\
+    Radar points / image (5 sweeps) & 150 & \tbd \\
+    Images with a lidar fit & 99.8\% & \tbd \\
+    Images with a radar fit & 86.5\% & \tbd \\
+    Labeled cells & 26.2\% & \tbd \\
+    Positive labels ($\tau = 0.10$) & 37.2\% & \tbd \\
+    Median AbsRel, day / night & 0.052 / 0.079 & \tbd \\
+    Median radar residual & 0.25 & \tbd \\
+    \bottomrule
+  \end{tabular}
+  \caption{Statistics of the cached head inputs and labels. ``$\times 2$'' names the grid, twice the ViT patch grid ($132 \times 74$); the image count is unchanged. The radar residual is under the radar fit. \todo{Fill the trainval column from the summary of the complete cache.}}
+  \label{tab:cachestats}
+\end{table}
+
+\paragraph{Label pitfalls.} We measured two label pitfalls on mini: 3.2\% of CAM\_BACK lidar pixels fall on the ego vehicle's trunk, and about 0.35\% of lidar pixels are returns from behind a nearer object that bleed through. Both place labels on surfaces the camera does not see. The rule that the nearest point wins a cell already removes a bleed-through return whenever a return from the nearer object falls in the same cell. \todo{Say how D8 and D9 were settled and what share survives on the grid.}
+
+\paragraph{Radar coverage.} \todo{Refresh on the complete cache with \texttt{radar\_coverage.py}. On the partial cache, with the training settings (radius 1, every sweep), the radar validity channel marked 3.4\% of the grid cells (6.2\% at radius 2, 1.7\% with the keyframe sweep only), only 4.8\% of the lidar-labeled cells had a valid radar cell on them, and the radar fit failed on 17.0\% of images (32\% for the two back-side cameras).} Images with no radar fit get an all-zero radar residual and validity, so a loss computed on labeled cells can barely move with radar.
+
+% ============================================================================
+\section{Additional Results}
+\label{app:more}
+% Whatever supports the body and does not fit in it.
+% Candidates: scores per camera (the six cameras differ in ego body, radar
+% coverage, and sun); the sparsification curves per condition; more
+% qualitative examples; the AUSE of each run with the label threshold varied
+% at evaluation; the per-image AUROC with the count of single-class images
+% left out per condition.
+
+\todo{Add the tables and figures that the body refers to, or delete this section.}
+
+% ============================================================================
+\section{Reproducibility}
+\label{app:repro}
+% Rubric gate 7: commit, checkpoints, configs, and one
+% script per figure and table.
+
+\paragraph{Code.} The code is at \url{https://github.com/kgqiao/monocular-depth-confidence-estimation}; the results of this report are from commit \todo{Commit hash or tag}. The library is in \texttt{confhead/}, with the evaluation metrics in \texttt{confhead/src/evals} and their tests in \texttt{confhead/tests}.
+
+\paragraph{Checkpoints.} Every run folder is on Hugging Face in \texttt{csci566-depthconf/confhead}, with the best and last checkpoints (\texttt{best.pt}, \texttt{last.pt}), every setting (\texttt{config.json}), and the loss of each epoch (\texttt{history.json}). The runs take different input channels, so a checkpoint loads together with the list of inputs it was trained on. The model card of the repository is rebuilt from these records. \todo{Say whether the repository is public at submission; it is gated today.}
+
+\paragraph{Commands.} The default settings are in \texttt{confhead/configs/train-trainval.toml} and the runs in \texttt{confhead/configs/run-matrix.toml}; \texttt{confhead train run configs/run-matrix.toml} trains them. A trained head is scored with \texttt{examples/evaluate\_head.py}, the flip baseline with \texttt{examples/run\_flip\_baseline.py}, and the tables are built with \texttt{examples/build\_results\_table.py}. \todo{One line per table and figure of the report with the command that makes it; the figure scripts go in \texttt{Docs/Final-Report/figures-src}.}

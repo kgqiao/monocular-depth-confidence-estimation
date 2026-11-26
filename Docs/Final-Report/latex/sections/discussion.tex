@@ -1,0 +1,26 @@
+% !TEX root = ../main.tex
+% ============================================================================
+% Budget: 0.6 page.
+%
+% Two jobs. (1) Answer the three questions of the introduction, each in two or
+% three sentences that cite a table. (2) State the limits honestly; a reviewer
+% who finds a limit we did not name trusts the rest less (rubric: limitations
+% and honesty, 10 points; gates 4 and 5).
+% The limitation paragraphs below are facts carried over from the midterm
+% report (its Risks and its results section). Keep the ones that still hold,
+% refresh their numbers, and add what the final results reveal.
+% ============================================================================
+\section{Discussion and Limitations}
+\label{sec:discussion}
+
+\paragraph{What the results say.} \todo{Answer the three questions of Section~\ref{sec:intro} in order. (1) Do the frozen decoder features predict the model's own error? Cite Tables~\ref{tab:main} and~\ref{tab:input-ablation}. (2) What do the temporal spread and radar add? If radar adds nothing, say so and give the likely reason: it covers few cells, and it has no elevation, so a point can project onto another surface. (3) Does the confidence hold at night and in rain? Cite Table~\ref{tab:conditions}. Close with what a consumer of the depth can do with the map today.}
+
+\paragraph{Lidar in the pipeline.} The labels and every error statistic are measured with the relative model and a per-image lidar fit, a sensor the deployed system lacks. AbsRel is therefore the error of shape under the best scale and shift of each image (Section~\ref{sec:formulation}); a confidence that is right about shape says nothing about an error of overall scale. The heads that read the temporal spread also use the lidar fit at inference and are upper bounds (Section~\ref{sec:sensors}).
+
+\paragraph{Sparse and uneven labels.} The head is trained and scored only on cells that receive a lidar return, about a quarter of the grid, within 1 to 80\,m. It predicts for the sky, for surfaces beyond the range, and for cells between lidar beams, and none of those predictions is scored. Lidar returns are also fewer in rain than by day (Table~\ref{tab:labelcounts}). \todo{Confirm the rain count on the complete cache, and say what share of the labels falls on the ego body (D8) and on bleed-through returns (D9) after the masks, or that they were removed.}
+
+\paragraph{Few adverse scenes.} The validation split has 24 rain and 15 night scenes. The intervals over scenes are wide for both, and a difference between conditions that they do not support is a hint, not a result. The dataset has no fog and no snow.
+
+\paragraph{One dataset, one backbone, one grid.} All results are on nuScenes with the ViT-B checkpoint of Depth Anything V2, at a grid of $132 \times 74$ cells, so the confidence is coarser than the depth by a factor of about 12 in each direction. We did not test whether a head trained here transfers to another dataset or another backbone.
+
+\paragraph{What was not run.} \todo{Name the runs that were planned and not trained (the learning-rate, 16-epoch, and head-width runs, and the final seeds), and what that leaves open: the repeat noise rests on one pair of runs, and the dev loss had nearly stopped falling at epoch 8. Remove any item that was run after all.}

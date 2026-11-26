@@ -1,0 +1,117 @@
+% !TEX root = ../main.tex
+% ============================================================================
+% Budget: 1.5 pages, with Figure 2 (pipeline) and Table 1 (inputs).
+%
+% This section says what the method IS, in the present tense, so that a reader
+% could build it again. It holds no results, no cluster detail, and no history
+% of how the team got here: results go to Section 5, the cache and the cluster
+% to Appendix C, the differences from the proposal to Appendix A.
+%
+% The prose of 3.2 to 3.4 is carried over from the midterm report (Method as
+% Implemented). The equations of 3.1 are new and were written from
+% confhead/src/confhead/labels.py, geometry.py (Fit, fit_scale_shift) and
+% head.py (masked_bce); the owners should check them against the code.
+% ============================================================================
+\section{Method}
+\label{sec:method}
+
+Figure~\ref{fig:pipeline} shows the pipeline from the raw data to the loss. Only the head is trained; everything to its left is computed once per image and cached.
+
+\begin{figure*}[t]
+  \centering
+  \resizebox{\textwidth}{!}{\input{figures/pipeline}}
+  \caption{The pipeline. Orange: raw nuScenes data. Violet: a computation done once per image when the cache is built. Cyan: an array stored in the cache. Green: an input group of the head, which a run can switch off (Table~\ref{tab:input-ablation}). Yellow: the lidar labels and the loss. The dashed arrow marks that the temporal spread uses the lidar fit to lift each cell to a 3D point.}
+  \label{fig:pipeline}
+\end{figure*}
+
+% ----------------------------------------------------------------------------
+\subsection{Problem Formulation}
+\label{sec:formulation}
+% New for the final report (checklist B5: numbered equations).
+% \todo for the owners: check each equation against the code named above.
+
+The depth model returns a disparity map $q$ that is inverse depth up to an unknown scale and shift. For an image with lidar returns $i = 1, \dots, N$ at depths $z_i$, let $q_i$ be the disparity sampled at the pixel of return $i$. We fit the two unknowns per image by least squares against inverse depth,
+\begin{equation}
+  (s, t) = \operatorname*{arg\,min}_{s,\,t} \sum_{i=1}^{N} \Bigl( s\,q_i + t - \frac{1}{z_i} \Bigr)^{2},
+  \label{eq:fit}
+\end{equation}
+and call the fit failed when $s \le 0$ or the returns are too few. The predicted depth at a return clips the fitted inverse depth to the range of the labels before inverting it,
+\begin{equation}
+  \hat d_i = \Bigl[ \operatorname{clip}\bigl( s\,q_i + t,\ 1/z_{\max},\ 1/z_{\min} \bigr) \Bigr]^{-1},
+  \label{eq:depth}
+\end{equation}
+with $z_{\min} = 1$\,m and $z_{\max} = 80$\,m. The error of the depth at a return is its absolute relative error,
+\begin{equation}
+  e_i = \frac{|\hat d_i - z_i|}{z_i}.
+  \label{eq:absrel}
+\end{equation}
+Because of Eq.~\ref{eq:fit}, $e_i$ is the error under the best scale and shift of that image: it measures the shape of the depth, and a frame whose overall scale is off still counts as correct.
+
+Let $c$ index the cells of the output grid, let $M$ be the set of cells that receive at least one return, and let $e_c$ be the error of the nearest return in cell $c \in M$. The label is
+\begin{equation}
+  y_c = \mathbf{1}\,[\, e_c > \tau \,], \qquad \tau = 0.10 .
+  \label{eq:label}
+\end{equation}
+The head $f_\theta$ maps the input $x$ (Section~\ref{sec:inputs}) to one logit per cell, and
+\begin{equation}
+  p_c = \sigma\bigl( f_\theta(x)_c \bigr)
+  \label{eq:perror}
+\end{equation}
+is its estimate of the probability that $y_c = 1$. The confidence of cell $c$ is $1 - p_c$. The head is trained on the cells in $M$ and predicts for every cell.
+
+\todo{Check Eqs.~\ref{eq:fit} to \ref{eq:perror} against \texttt{labels.py}, \texttt{geometry.py}, and \texttt{head.py}; state the minimum number of returns for a fit.}
+
+% ----------------------------------------------------------------------------
+\subsection{Frozen Backbone and Head Inputs}
+\label{sec:inputs}
+
+\paragraph{Backbone.} The backbone is the stock relative Depth Anything V2 ViT-B checkpoint \citep{yang2024depthanythingv2}, frozen and run once per image at $924 \times 518$. Its output is disparity with unknown scale and shift, so each cached entry carries two per-image fits of the form of Eq.~\ref{eq:fit}: one against the keyframe lidar, used for the labels and the temporal channel, and one against the radar points, used for the radar residual.
+
+\paragraph{Inputs.} Everything lives on a $132 \times 74$ grid, the ViT patch grid times two, where one cell covers about $12 \times 12$ pixels of the $1600 \times 900$ camera image. We use times two to fit the storage (about 290\,GB, against 1.1\,TB at times four). The head input has 68 channels (Table~\ref{tab:inputs}), each standardized by its training-set mean and standard deviation. Channel groups can be switched off at load time, which is how the ablation runs of Section~\ref{sec:input-ablation} are made.
+
+\begin{table}[t]
+  \centering
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}l l p{3.2cm}@{}}
+    \toprule
+    \textbf{Ch.} & \textbf{Input} & \textbf{How it is made} \\
+    \midrule
+    0--63 & Decoder features & \texttt{output\_conv1} tap, 64 channels, area-averaged to the grid \\
+    64 & Norm.\ disparity & Disparity divided by its image mean; no fit \\
+    65 & Temporal spread & Std divided by mean ($\sigma/\mu$) of inverse depth over the keyframe and its neighbors at $\pm1, \pm2$ (12\,Hz; up to 5 frames), ego-motion compensated \\
+    66 & Radar residual & $|\hat d - z| / z$ under the radar fit, 5 sweeps, radius 1 cell \\
+    67 & Radar validity & 1 where the residual holds a measurement \\
+    \bottomrule
+  \end{tabular}
+  \caption{The 68 input channels of the confidence head. Channel 64 is called the depth channel in the rest of the report. In channel 66, $\hat d$ is the depth that the radar fit gives the model's disparity at a radar point, $z$ is the range of that point, and the nearest point wins a cell where two footprints overlap.}
+  \label{tab:inputs}
+\end{table}
+
+% ----------------------------------------------------------------------------
+\subsection{Lidar-Derived Labels}
+\label{sec:labels}
+
+For each lidar return within 1--80\,m, the absolute relative error (AbsRel, Eq.~\ref{eq:absrel}) of the fitted prediction at that pixel is placed in its grid cell; the nearest point wins a cell. Here the prediction is the model disparity sampled at the return's own pixel and passed through the lidar fit (Eq.~\ref{eq:depth}). The target is Eq.~\ref{eq:label}, and a mask marks the labeled cells. About 25\% of cells on the $132 \times 74$ grid carry a label, about 2,450 per image. The lidar returns behind them, about 3,600 per image, cover 0.25\% of pixels. \todo{Refresh the three counts on the complete cache, and say how the label masks were settled: the ego body in CAM\_BACK (D8), bleed-through returns (D9), and images with no lidar fit (D13). These change the labels, so they must be settled before the final scoring (checklist B1).}
+
+% ----------------------------------------------------------------------------
+\subsection{Confidence Head and Loss}
+\label{sec:head}
+
+The head is three $3 \times 3$ convolutions (stride 1 and padding 1, so the grid size is kept) with ReLU and widths 64, 64, 32, then a $1 \times 1$ convolution to one logit per cell. With all 68 inputs it has 94,657 weights, and its receptive field is $7 \times 7$ cells. The loss is binary cross-entropy (BCE) over the labeled cells only, with positives weighted by the negative-to-positive ratio $w_+$ of the training labels:
+\begin{equation}
+  \mathcal{L} = -\frac{1}{|M|} \sum_{c \in M} \Bigl[ w_+\, y_c \log p_c + (1 - y_c) \log (1 - p_c) \Bigr].
+  \label{eq:loss}
+\end{equation}
+This weight raises every logit by $\ln w_+$ (\todo{Refresh; 0.506 for $w_+ = 1.658$ on the partial cache; give the value of the complete cache}). The ranking metrics are unaffected, but the calibration shifts, so we report the expected calibration error (ECE) after subtracting it (Section~\ref{sec:protocol}).
+
+% ----------------------------------------------------------------------------
+\subsection{Sensors Needed at Inference}
+\label{sec:sensors}
+% New subsection. It answers the critical item of the midterm review (A1, A2,
+% B1 "lidar in the inputs") in one place, so that the results can refer to it.
+% Rubric gate 4 checks this subsection.
+
+Training needs lidar for the labels. Whether inference needs it depends on the inputs a head reads. The decoder features and the normalized disparity need no fit. The radar residual uses the radar fit, which a production car can compute. The temporal spread lifts each cell to a 3D point with the lidar fit, so every head that reads it uses lidar at inference and is an upper bound for a deployed system. Two heads are therefore free of lidar: \texttt{m1-features-only}, which reads the decoder features alone and needs no sensor fit at all, and \texttt{m1-no-temporal}. Table~\ref{tab:main} marks each method accordingly.
+
+\todo{State the team's decision on checklist item B1. Either (a) the temporal channel was rebuilt without lidar, or (b) it was kept and the lidar-free heads are presented as the deployable models, with the 68-channel head and \texttt{m2-radar-lidar-fit} as upper bounds. This paragraph assumes (b).}

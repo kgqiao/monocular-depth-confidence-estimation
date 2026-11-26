@@ -1,5 +1,5 @@
 # LaTeX build outputs. Build locally as you like; none of this is committed.
-# The PDF for reading is ../midterm-report.pdf, refreshed on the midterm-report branch.
+# The PDF for reading is ../final-report.pdf, refreshed on main after each merge.
 main.pdf
 main.bbl
 *.aux

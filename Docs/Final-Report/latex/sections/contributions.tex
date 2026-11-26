@@ -1,0 +1,23 @@
+% !TEX root = ../main.tex
+% ============================================================================
+% Owner: all. One page at most, on its own page (main.tex puts a \clearpage
+% before it). The syllabus asks for a statement of who did what, which every
+% member agrees to.
+%
+% The entries below are a DRAFT taken from the team roles and from the commit
+% history and the worklog. Each member rewrites their own entry, in their own
+% words, and confirms it; nobody's entry is final until they have done so.
+% ============================================================================
+\section*{Contribution Statement}
+
+The team assigned three roles at the start of the project: datasets and training (Aday, Bao), evaluation (Qiao, Tawde), and coordination across the two (Arteaga). \todo{Every entry below is a draft from the commit history. Rewrite your own entry and confirm it.}
+
+\begin{description}[leftmargin=1em, itemsep=3pt, topsep=4pt]
+  \item[Nathan Aday.] \todo{Confirm.} The \texttt{confhead} library: the cache of head inputs and its build on the cluster, the labels, the head, the training loop and its command-line tool, the cluster jobs, and the guides and notebooks. Downloaded nuScenes, built and repaired the trainval cache, and trained the 18 heads. Report: Method, Appendix C and E.
+  \item[Alejandro Arteaga.] \todo{Confirm.} Coordination between the training and evaluation teams. The literature review and its evidence sheets, the midterm report and the triage of its review, and the structure and internal rubric of this report. Report: Introduction, Related Work, Discussion, Conclusion, Appendix A.
+  \item[Nathan Bao.] \todo{Confirm.} The run matrix and its guide, the configuration of the runs, the radar coverage analysis, the tracking of the runs and their upload to Hugging Face, the checkpoint catalogue and the evaluation guide, and the per-run diagrams. Report: Experimental Setup (training), Appendix B.
+  \item[Katherine Qiao.] \todo{Confirm.} The evaluation metrics and their tests: sparsification curves, AUSE and AURG, rejection AUROC, ECE, Brier score, and reliability bins. The figures of the evaluation, the script that scores a trained head and its cluster job, and the scoring of the heads. Report: Experimental Setup (metrics), Results.
+  \item[Varad Jaideep Tawde.] \todo{Confirm.} The flip-disagreement baseline and its run on the validation split, the day, rain, and night scene lists and the audit of the condition tags, the label counts per condition, and the results table with intervals. Report: Experimental Setup (methods), Results (conditions, qualitative), Limitations.
+\end{description}
+
+\todo{Replace this marker with the sentence ``All five authors have read this statement and agree with it.'' once all five have confirmed.}

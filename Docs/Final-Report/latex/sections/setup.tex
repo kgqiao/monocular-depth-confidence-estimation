@@ -1,0 +1,94 @@
+% !TEX root = ../main.tex
+% ============================================================================
+% Budget: 1.2 pages, with Table 2 (label counts per condition).
+%
+% This section fixes everything a reader needs in order to trust Section 5:
+% the data, how the heads were trained, what they are compared with, and how
+% each number is computed. It is written before the results are read, and it
+% does not change afterwards (rubric: experimental design and rigor).
+%
+% Carried over from the midterm report: the training settings, the BEVCar
+% split, the flip baseline, and the metric definitions. The detail of the
+% cache and of the cluster is in Appendix C.
+% ============================================================================
+\section{Experimental Setup}
+\label{sec:setup}
+
+% ----------------------------------------------------------------------------
+\subsection{Dataset, Cache, and Condition Splits}
+\label{sec:data}
+
+We train and evaluate on nuScenes v1.0 trainval \citep{caesar2020nuscenes} with its official split of 700 training and 150 validation scenes. The backbone runs once per image, and its outputs are stored in a cache of head inputs that holds all 204,894 trainval camera images, of which 36,114 are validation images. Labels and radar channels are computed when an entry loads, so $\tau$, the radar radius, and the choice of fit are settings of a run and need no rebuild (Appendix~\ref{app:cache}).
+
+\paragraph{Condition groups.} We report every result for day, rain, and night with the division of the validation scenes released with BEVCar \citep{schramm2024bevcar}: 111 day, 24 rain, and 15 night scenes, which together are the 150 validation scenes. Three scenes are tagged both night and rain; the division places them in night. Table~\ref{tab:labelcounts} gives the images and the lidar labels of each group, so that a lack of labels in one condition is visible next to its scores.
+
+\begin{table}[t]
+  \centering
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}l r r r r@{}}
+    \toprule
+    & \textbf{Scenes} & \textbf{Images} & \textbf{Labels / image} & \textbf{Wrong} \\
+    \midrule
+    Day   & 111 & \tbd & \tbd & \tbd\,\% \\
+    Rain  &  24 & \tbd & \tbd & \tbd\,\% \\
+    Night &  15 & \tbd & \tbd & \tbd\,\% \\
+    \midrule
+    All   & 150 & \tbd & \tbd & \tbd\,\% \\
+    \bottomrule
+  \end{tabular}
+  \caption{The validation split by condition: scenes, scored images, labeled cells per image, and the share of labeled cells whose AbsRel exceeds $\tau = 0.10$. \todo{Fill from \texttt{label\_count\_table.py} on the complete cache. The committed \texttt{lidar\_pixels\_per\_condition.csv} counts 26,207 images, which is the partial cache; the complete cache has 36,114 validation images.}}
+  \label{tab:labelcounts}
+\end{table}
+
+\paragraph{What the data says before any head is trained.} Night is harder than day: on the development cache the median per-image AbsRel is 0.052 by day and 0.079 at night. The radar residual is noisy and sparse: its median is about five times the lidar-measured depth error, and the radar validity channel marks 3.4\% of the grid cells. Appendix~\ref{app:cache} has the full statistics. \todo{Refresh these numbers on the complete cache; they are from the mini cache and the partial trainval cache.}
+
+% ----------------------------------------------------------------------------
+\subsection{Training}
+\label{sec:training}
+
+We train with AdamW at a learning rate of $10^{-3}$ and a weight decay of $10^{-4}$, on a cosine schedule, with batch size 8, for 8 epochs. The dev split is 10\% of the training scenes, and we compute the dev loss on a fixed random subset of 3,000 of its images. We keep the checkpoint with the lowest dev loss. \todo{Give the training time of one run and the GPU.}
+
+\paragraph{Runs.} Every run changes one thing from this default, so each run answers one question. We trained 18 heads on the complete cache: the baseline with all inputs, its repeat, and a run without radar; seven runs that remove or isolate an input group or change the seed; four that change the radar settings; two that move $\tau$ to 0.05 and 0.2; and two that shorten the label range to 50\,m or train on a quarter of the data. Table~\ref{tab:runs} in Appendix~\ref{app:runs} lists them. The training seed also picks the dev scenes, so the seed run is compared with the others on the validation split only. \todo{Say whether the learning-rate, 16-epoch, and head-width runs (stage 4) and the final seeds (stage 5) were trained; if not, say so here in one sentence and in Section~\ref{sec:discussion}.}
+
+% ----------------------------------------------------------------------------
+\subsection{Compared Methods}
+\label{sec:methods}
+% One line per method: what the score is, and what it costs at inference.
+% Rubric gate 2: every method in one table is scored on the same validation
+% images and the same labeled cells. State the counts.
+
+Every method gives each labeled cell a score, and the scores are compared on the same cells.
+
+\begin{description}[leftmargin=1em, itemsep=1pt, topsep=2pt]
+  \item[Random and oracle.] The two bounds of sparsification: a random order of the cells, and the order of the true error.
+  \item[Flip disagreement.] The backbone runs on the image and on its mirror image, and the score of a pixel is the relative disagreement $|q - q'| / (|q| + |q'|)$ of the two disparity maps, averaged over each cell. It is adapted from the ``Post'' method of \citet{poggi2020uncertainty} and needs no training, at the cost of a second pass of the backbone.
+  \item[Normalized disparity.] Channel 64 as a score, with the farthest cells removed first. It tests whether the head learns more than ``far is uncertain''. \todo{Not built yet (checklist B3).}
+  \item[Temporal spread.] Channel 65 as a score, with no head: the simplest use of the temporal cue, and the score a trained head has to beat. \todo{Not built yet.}
+  \item[Single-cue heads.] \texttt{m1-depth-only} and \texttt{m1-temporal-only}: a head trained on one channel.
+  \item[Features-only head.] \texttt{m1-features-only}: the 64 decoder features and no other input. It needs no sensor at inference.
+  \item[Full head.] \texttt{run-v1-radar}: all 68 inputs. It uses the lidar fit at inference through the temporal spread (Section~\ref{sec:sensors}).
+\end{description}
+
+We do not compare with Monte Carlo dropout, because every dropout rate in the Depth Anything V2 encoder is zero and the decoder has none, so repeated passes are identical; nor with the gradient method of \citet{hornauer2022gradient} (Section~\ref{sec:related}).
+
+% ----------------------------------------------------------------------------
+\subsection{Metrics and Protocol}
+\label{sec:protocol}
+% Rubric gate 3 and checklist B2. The three choices the midterm review asked us
+% to write down are: (1) the error on the curve, (2) per image then averaged, or
+% pooled, (3) whether a curve is normalized. The text below states what
+% src/evals/metrics.py and examples/evaluate_head.py do today.
+
+\paragraph{Sparsification.} Following \citet{poggi2020uncertainty}, the labeled cells of an image are removed in order of decreasing uncertainty $p_c$, and the mean AbsRel of the cells that remain is recorded at 50 removed fractions $\alpha$ from 0 to 0.99. This gives the curve $S(\alpha)$ of a method, the curve $S^{*}(\alpha)$ of the oracle that removes cells by their true error, and the flat curve $\bar e$ of a random order, which is the mean AbsRel of the image. Then
+\begin{align}
+  \mathrm{AUSE} &= \int_{0}^{0.99} \bigl( S(\alpha) - S^{*}(\alpha) \bigr)\, d\alpha, \label{eq:ause} \\
+  \mathrm{AURG} &= \int_{0}^{0.99} \bigl( \bar e - S(\alpha) \bigr)\, d\alpha, \label{eq:aurg}
+\end{align}
+both by the trapezoid rule. AUSE is the distance from the oracle (lower is better, 0 is perfect) and AURG the gain over a random order (higher is better, 0 is random). The curves are in units of AbsRel and are not normalized. We compute both per image and average over the images of a group. \todo{Confirm ``per image, then averaged'' as the reported number, and say how images with a single labeled cell are handled.}
+
+\paragraph{Classification and calibration.} The rejection AUROC is the area under the ROC curve for separating correct from wrong cells by confidence. The ECE uses 10 equal-width bins of confidence, and the Brier score is the mean squared difference between $p_c$ and $y_c$. We report the AUROC and the ECE pooled over all labeled cells of a group. \todo{Apply the logit correction of Section~\ref{sec:head} in \texttt{evaluate\_head.py} (subtract $\ln w_+$ before the sigmoid) and report the ECE before and after. Scores that are not probabilities, such as flip disagreement, get no ECE and no Brier score.}
+
+\paragraph{Intervals.} \todo{Replace the image-level bootstrap of \texttt{build\_results\_table.py} with a paired bootstrap over scenes (checklist B2): resample the 150 validation scenes with replacement, keep the images of a scene together, $B = 1{,}000$, and report the 95\% interval of each score and of the difference between two methods. Frames of one scene are correlated, so an interval over images is too narrow.}
+
+\paragraph{Evaluation set.} \todo{State the number of validation images and labeled cells that every method is scored on, and the number skipped for having no label. The flip baseline was scored on 26,207 images and the first head on 35,927; they must be scored on the same images before they share a table.}

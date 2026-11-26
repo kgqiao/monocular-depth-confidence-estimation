@@ -1,0 +1,16 @@
+% !TEX root = ../main.tex
+% ============================================================================
+% Budget: 0.3 page.
+%
+% Three or four sentences that restate what was shown, with the one or two
+% numbers a reader should remember, and nothing that Section 5 does not
+% support (rubric gate 1). Then the future work, each item with the reason it
+% is the next step. The two future-work items below are carried over from the
+% midterm plan ("Dropped from the Plan").
+% ============================================================================
+\section{Conclusion and Future Work}
+\label{sec:conclusion}
+
+\todo{The conclusion in three or four sentences. What the head is, the headline number against flip disagreement and the oracle, what the ablation showed about the inputs, and how the confidence behaves at night and in rain.}
+
+\paragraph{Future work.} Two parts of the original plan remain. The first is a second dataset with fog and snow, Seeing Through Fog \citep{bijelic2020seeing} or the Zenseact Open Dataset \citep{alibeigi2023zod}, to test whether a head trained on nuScenes transfers to weather it has not seen. The second is a downstream consumer in 3D: weighting the camera-to-voxel lift of an occupancy network by the confidence map and measuring the mean intersection over union on Occ3D \citep{tian2023occ3d}. \todo{Add the next step that the results themselves suggest, for example a temporal channel that needs no lidar, or a continuous target in place of the threshold (checklist B4).}

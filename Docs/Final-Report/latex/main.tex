@@ -2,7 +2,8 @@
 
 % "review" gives line numbers and page numbers, as in the course reference.
 % The \acl@anonymizefalse line below keeps author names visible.
-% For a clean copy without line numbers, change "review" to "preprint".
+% Keep "review" while the team reviews the draft (the rubric review cites line numbers).
+% For the submitted copy without line numbers, change "review" to "preprint".
 \usepackage[review]{acl}
 \makeatletter\acl@anonymizefalse\makeatother
 
@@ -21,27 +22,37 @@
 \usepackage{tikz}
 \usetikzlibrary{positioning, arrows.meta}
 
-% Red, bracketed markers for anything still to be written or measured.
-% Search the PDF for "TODO" to find every open item.
+% ----------------------------------------------------------------------------
+% Markers for open items. The submitted report has none of them left
+% (rubric gate 6). To list them: grep -n '\\todo\|\\tbd\|\\placeholderfig' sections/*.tex
+% ----------------------------------------------------------------------------
+% Red, bracketed marker for anything still to be written or measured.
 \newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+% A table cell whose number is not measured yet.
+\newcommand{\tbd}{\textcolor{red}{?}}
+% A framed box that holds the place of a figure: \placeholderfig{width}{height}{what goes here}
+\newcommand{\placeholderfig}[3]{\fbox{\parbox[c][#2][c]{#1}{\centering\todo{#3}}}}
 
 % The teaser figure below the authors needs room, so shrink the default title box.
 \setlength\titlebox{3.3cm}
 
 \title{Knowing When Not to Trust Depth:\\
 A Learned Per-Pixel Confidence Head for Monocular Depth\\
-in Adverse Driving Conditions\\
-\large Midterm Report}
+in Adverse Driving Conditions}
 
 \author{Nathan Aday, Alejandro Arteaga, Nathan Bao, Katherine Qiao, Varad Jaideep Tawde}
 
 \begin{document}
 
+% Teaser. It still shows one cache entry (the inputs and the label). For the final
+% report, replace it with a result: one night or rain image, its lidar AbsRel, and the
+% head's confidence map side by side (src/evals/plot.py, qualitative_figure). The cache
+% entry figure then moves to Appendix C.
 \makeatletter
 \g@addto@macro\@maketitle{%
   \begin{center}
     \includegraphics[width=0.46\textwidth]{figures/cache-entry-preview.png}
-    \captionof{figure}{One cache entry (nuScenes scene-0553, CAM\_FRONT, day). Top: the image with projected keyframe lidar, and the Depth Anything V2 prediction after the lidar fit. Middle: the temporal spread input and the first three principal components of the 64 decoder features. Bottom: the lidar AbsRel label on the grid, and the radar residual input. The head reads the middle-left temporal spread and the three right-hand quantities, with a radar validity mask that is not shown, and must predict the bottom-left map. Two panels differ from what the head sees. The top-right depth is in meters after the lidar fit, while the head reads the disparity divided by its image mean, and the bottom-left AbsRel is drawn before thresholding at $\tau = 0.10$.}
+    \captionof{figure}{\todo{Replace with image / lidar AbsRel / confidence of one adverse-condition frame.} One cache entry (nuScenes scene-0553, CAM\_FRONT, day). Top: the image with projected keyframe lidar, and the Depth Anything V2 prediction after the lidar fit. Middle: the temporal spread input and the first three principal components of the 64 decoder features. Bottom: the lidar AbsRel label on the grid, and the radar residual input. The head reads the middle-left temporal spread and the three right-hand quantities, with a radar validity mask that is not shown, and must predict the bottom-left map. Two panels differ from what the head sees. The top-right depth is in meters after the lidar fit, while the head reads the disparity divided by its image mean, and the bottom-left AbsRel is drawn before thresholding at $\tau = 0.10$.}
     \label{fig:teaser}
   \end{center}
   \vskip 0.05in}
@@ -49,14 +60,28 @@ in Adverse Driving Conditions\\
 
 \maketitle
 
-% Each section lives in its own file under sections/. Edit your section there.
+% ----------------------------------------------------------------------------
+% Body: at most 8 pages (rubric gate 8). Each section lives in its own file
+% under sections/. The page budget of each section is in its header comment
+% and in ../README.md.
+% ----------------------------------------------------------------------------
 \input{sections/abstract}
-\input{sections/introduction}
-\input{sections/literature-review}
-\input{sections/progress}
-\input{sections/results}
-\input{sections/plan}
+\input{sections/introduction}   % 1  Introduction               0.9 page
+\input{sections/related-work}   % 2  Related Work               0.8 page
+\input{sections/method}         % 3  Method                     1.5 pages
+\input{sections/setup}          % 4  Experimental Setup         1.2 pages
+\input{sections/results}        % 5  Results                    2.3 pages
+\input{sections/discussion}     % 6  Discussion and Limitations 0.6 page
+\input{sections/conclusion}     % 7  Conclusion and Future Work 0.3 page
 
 \bibliography{references}
+
+% Not counted in the 8 pages.
+\appendix
+\input{sections/appendix}
+
+% One page, on its own page, agreed by all five members.
+\clearpage
+\input{sections/contributions}
 
 \end{document}

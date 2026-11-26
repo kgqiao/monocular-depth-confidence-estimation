@@ -1,9 +1,30 @@
 % !TEX root = ../main.tex
 % ============================================================================
-% Owner: Arteaga
+% Budget: 0.9 page.
+%
+% Shape: (1) why depth needs a confidence, (2) what we do, (3) the questions the
+% experiments answer, (4) the headline result in one or two sentences with
+% numbers, (5) the contributions, each pointing to a section.
+% Paragraphs 1 and 2 are carried over from the midterm report.
 % ============================================================================
 \section{Introduction}
+\label{sec:intro}
 
 Depth Anything and similar models supply depth to systems that have no depth sensor. They are used in driving, robotics, augmented reality, and 3D reconstruction, usually as a drop-in component. Every pixel gets a depth value and no measure of reliability: an estimate that is wrong by thirty percent looks exactly like one that is right. The cost of that silence is highest in the conditions where camera depth is least reliable: night, rain on the lens, spray, and low sun. A confidence map lets a downstream consumer weight the depth, discard it, or fall back to another sensor.
 
-This project trains a model to predict that error without touching the depth model. A small convolutional head reads the frozen model's internal features along with its predicted depth, the temporal spread of depth across neighboring frames, a radar residual, and a radar validity mask. It outputs, per cell of a $132 \times 74$ grid, the probability that the depth there is wrong by more than a threshold; the confidence is one minus that probability. Lidar projected into the image gives the true error at the cells that receive a return, so the head learns from scattered labels and produces a dense map at inference. Training needs lidar. The design goal is that inference does not, while radar, which a production car does carry, is present in both. So far the heads meet that goal only in part. The temporal spread is computed with a lidar fit of the depth scale, so a head that reads it still depends on lidar; a head that leaves it out, such as the one that reads the decoder features alone, does not (Section~\ref{sec:runs}).
+We train a model to predict that error without touching the depth model. A small convolutional head reads the frozen model's internal features along with its predicted depth, the temporal spread of depth across neighboring frames, a radar residual, and a radar validity mask. It outputs, per cell of a $132 \times 74$ grid, the probability that the depth there is wrong by more than a threshold; the confidence is one minus that probability. Lidar projected into the image gives the true error at the cells that receive a return, so the head learns from scattered labels and produces a dense map at inference. Training needs lidar. The design goal is that inference does not, while radar, which a production car does carry, is present in both. The heads meet that goal only in part. The temporal spread is computed with a lidar fit of the depth scale, so a head that reads it still depends on lidar; a head that leaves it out, such as the one that reads the decoder features alone, does not (Section~\ref{sec:sensors}).
+
+% (3) The research questions. Keep them as questions the results answer one by one.
+We ask three questions. Do the frozen decoder features carry enough information to predict the model's own error? How much do the temporal spread and radar add to them? And does the confidence hold up at night and in rain, where the depth is worst?
+
+% (4) Headline result.
+\todo{The headline result in one or two sentences, with numbers and a pointer to Table~\ref{tab:main} and Table~\ref{tab:conditions}. Say plainly which head it is and whether it needs lidar at inference.}
+
+% (5) Contributions. Three bullets, each a thing a reader can check in the named
+% section. Rewrite once the results are final; drop any bullet the results do not support.
+Our contributions are:
+\begin{itemize}[leftmargin=*, itemsep=1pt, topsep=2pt]
+  \item A confidence head for a frozen depth foundation model, trained on error labels from projected lidar with no change to the depth model (Section~\ref{sec:method}). \todo{Confirm wording.}
+  \item An input study of 18 trained heads that separates what the decoder features, the predicted depth, the temporal spread, and radar each contribute (Sections~\ref{sec:input-ablation} and~\ref{sec:design-ablation}). \todo{Add the finding in a clause.}
+  \item An evaluation by sparsification on the nuScenes validation split, overall and for day, rain, and night, against flip disagreement and other scores that need no training, with intervals over scenes (Sections~\ref{sec:main} and~\ref{sec:conditions}). \todo{Add the finding in a clause, including any negative result.}
+\end{itemize}
